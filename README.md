@@ -8,5 +8,4 @@ TBA
 
 ### Todo
 
-- Adding dependencies
-- DSB
+- Finish the auth
