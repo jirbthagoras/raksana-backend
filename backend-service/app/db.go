@@ -1,7 +1,8 @@
-package helpers
+package app
 
 import (
 	"context"
+	"jirbthagoras/raksana-backend/helpers"
 	"log/slog"
 	"os"
 	"time"
@@ -10,7 +11,7 @@ import (
 )
 
 func GetConnection() *pgxpool.Pool {
-	dbUrl := NewConfig().GetString("DATABASE_URL")
+	dbUrl := helpers.NewConfig().GetString("DATABASE_URL")
 
 	config, err := pgxpool.ParseConfig(dbUrl)
 	if err != nil {

@@ -9,24 +9,71 @@ import (
 	"context"
 )
 
-const getUser = `-- name: GetUser :one
-SELECT id, name, email, email_verified_at, password, is_admin, remember_token, created_at, updated_at FROM users
-WHERE id = $1 LIMIT 1
+const createProfile = `-- name: CreateProfile :exec
+INSERT INTO profiles (user_id, exp_needed)
+VALUES ($1, $2)
 `
 
-func (q *Queries) GetUser(ctx context.Context, id int64) (User, error) {
-	row := q.db.QueryRow(ctx, getUser, id)
-	var i User
-	err := row.Scan(
-		&i.ID,
-		&i.Name,
-		&i.Email,
-		&i.EmailVerifiedAt,
-		&i.Password,
-		&i.IsAdmin,
-		&i.RememberToken,
-		&i.CreatedAt,
-		&i.UpdatedAt,
-	)
+type CreateProfileParams struct {
+	UserID    int64
+	ExpNeeded int64
+}
+
+func (q *Queries) CreateProfile(ctx context.Context, arg CreateProfileParams) error {
+	_, err := q.db.Exec(ctx, createProfile, arg.UserID, arg.ExpNeeded)
+	return err
+}
+
+const createStatistics = `-- name: CreateStatistics :exec
+INSERT INTO statistics (user_id)
+VALUES ($1)
+`
+
+func (q *Queries) CreateStatistics(ctx context.Context, userID int64) error {
+	_, err := q.db.Exec(ctx, createStatistics, userID)
+	return err
+}
+
+const createUser = `-- name: CreateUser :one
+INSERT INTO users (username, email, password)
+VALUES ($1, $2, $3)
+RETURNING id, username, email
+`
+
+type CreateUserParams struct {
+	Username string
+	Email    string
+	Password string
+}
+
+type CreateUserRow struct {
+	ID       int64
+	Username string
+	Email    string
+}
+
+func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (CreateUserRow, error) {
+	row := q.db.QueryRow(ctx, createUser, arg.Username, arg.Email, arg.Password)
+	var i CreateUserRow
+	err := row.Scan(&i.ID, &i.Username, &i.Email)
+	return i, err
+}
+
+const getUserById = `-- name: GetUserById :one
+SELECT id, username, email
+FROM users
+WHERE id = $1
+`
+
+type GetUserByIdRow struct {
+	ID       int64
+	Username string
+	Email    string
+}
+
+func (q *Queries) GetUserById(ctx context.Context, id int64) (GetUserByIdRow, error) {
+	row := q.db.QueryRow(ctx, getUserById, id)
+	var i GetUserByIdRow
+	err := row.Scan(&i.ID, &i.Username, &i.Email)
 	return i, err
 }

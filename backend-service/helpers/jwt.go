@@ -14,6 +14,12 @@ var (
 	secretKey []byte
 )
 
+type Claims struct {
+	Username string `json:"usernmae"`
+	Email    string `json:"email"`
+	jwt.RegisteredClaims
+}
+
 func getSecretKey() []byte {
 	// taking the cached secret key
 	if secretKey != nil {
@@ -45,14 +51,17 @@ func TokenMiddleware(c *fiber.Ctx) error {
 	return nil
 }
 
-func GenerateToken(id int, expiry time.Time) (string, error) {
-	// Make a claim to register, using email as a subject cause why not?
-	claims := jwt.RegisteredClaims{
-		Subject:   strconv.Itoa(id),
-		Issuer:    "Hon",
-		ExpiresAt: jwt.NewNumericDate(expiry),
-		NotBefore: jwt.NewNumericDate(time.Now()),
-		IssuedAt:  jwt.NewNumericDate(time.Now()),
+func GenerateToken(id int, username string, email string, expiry time.Time) (string, error) {
+	claims := &Claims{
+		Username: username,
+		Email:    email,
+		RegisteredClaims: jwt.RegisteredClaims{
+			Subject:   strconv.Itoa(id),
+			Issuer:    "Raksana",
+			ExpiresAt: jwt.NewNumericDate(expiry),
+			NotBefore: jwt.NewNumericDate(time.Now()),
+			IssuedAt:  jwt.NewNumericDate(time.Now()),
+		},
 	}
 
 	//  Generate a secret key

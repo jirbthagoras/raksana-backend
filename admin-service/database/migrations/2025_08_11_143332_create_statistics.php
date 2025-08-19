@@ -14,11 +14,11 @@ return new class extends Migration
         Schema::create('statistics', function (Blueprint $table) {
             $table->id();
             $table->foreignId("user_id")->references("id")->on("users");
-            $table->integer("challenges");
-            $table->integer("events");
-            $table->integer("quests");
-            $table->integer("treasures");
-            $table->integer("tree_grown");
+            $table->integer("challenges")->default(0);
+            $table->integer("events")->default(0);
+            $table->integer("quests")->default(0);
+            $table->integer("treasures")->default(0);
+            $table->integer("tree_grown")->default(0);
         });
     }
 

@@ -155,7 +155,6 @@ type Profile struct {
 	UserID     int64
 	CurrentExp int64
 	ExpNeeded  int64
-	Level      int32
 	Points     int64
 }
 
@@ -198,7 +197,7 @@ type Treasure struct {
 
 type User struct {
 	ID              int64
-	Name            string
+	Username        string
 	Email           string
 	EmailVerifiedAt pgtype.Timestamp
 	Password        string

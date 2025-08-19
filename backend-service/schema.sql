@@ -454,16 +454,13 @@ CREATE TABLE public.password_reset_tokens (
 --
 -- Name: profiles; Type: TABLE; Schema: public; Owner: -
 --
-
 CREATE TABLE public.profiles (
     id bigint NOT NULL,
     user_id bigint NOT NULL,
-    current_exp bigint NOT NULL,
+    current_exp bigint DEFAULT '0'::bigint NOT NULL,
     exp_needed bigint NOT NULL,
-    level integer NOT NULL,
-    points bigint NOT NULL
+    points bigint DEFAULT '0'::bigint NOT NULL
 );
-
 
 --
 -- Name: profiles_id_seq; Type: SEQUENCE; Schema: public; Owner: -
@@ -537,13 +534,12 @@ CREATE TABLE public.sessions (
 CREATE TABLE public.statistics (
     id bigint NOT NULL,
     user_id bigint NOT NULL,
-    challenges integer NOT NULL,
-    events integer NOT NULL,
-    quests integer NOT NULL,
-    treasures integer NOT NULL,
-    tree_grown integer NOT NULL
+    challenges integer DEFAULT 0 NOT NULL,
+    events integer DEFAULT 0 NOT NULL,
+    quests integer DEFAULT 0 NOT NULL,
+    treasures integer DEFAULT 0 NOT NULL,
+    tree_grown integer DEFAULT 0 NOT NULL
 );
-
 
 --
 -- Name: statistics_id_seq; Type: SEQUENCE; Schema: public; Owner: -
@@ -604,7 +600,7 @@ ALTER SEQUENCE public.treasures_id_seq OWNED BY public.treasures.id;
 
 CREATE TABLE public.users (
     id bigint NOT NULL,
-    name character varying(255) NOT NULL,
+    username  character varying(255) NOT NULL,
     email character varying(255) NOT NULL,
     email_verified_at timestamp(0) without time zone,
     password character varying(255) NOT NULL,

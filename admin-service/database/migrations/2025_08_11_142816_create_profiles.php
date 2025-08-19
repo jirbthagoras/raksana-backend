@@ -14,10 +14,10 @@ return new class extends Migration
         Schema::create('profiles', function (Blueprint $table) {
             $table->id();
             $table->foreignId("user_id")->references("id")->on("users");
-            $table->bigInteger("current_exp");
+            $table->bigInteger("current_exp")->default(0);
             $table->bigInteger("exp_needed");
-            $table->integer("level");
-            $table->bigInteger("points");
+            // $table->integer("level")->default(1);
+            $table->bigInteger("points")->default(0);
         });
     }
 

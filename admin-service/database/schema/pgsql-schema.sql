@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict VucVh6t19x6aRf5j766WW08G9b3CiU2A5E1E0dvnW51Jg2YRImdprGU1x0YUHOw
+\restrict xbPzjnsbZPMFcKUOWp24c4cUOzraOUAZVbOo4cNemmJ8s8hIuacvzHhdfm4Y63J
 
 -- Dumped from database version 17.5
 -- Dumped by pg_dump version 17.6 (Ubuntu 17.6-1.pgdg24.04+1)
@@ -494,10 +494,9 @@ CREATE TABLE public.password_reset_tokens (
 CREATE TABLE public.profiles (
     id bigint NOT NULL,
     user_id bigint NOT NULL,
-    current_exp bigint NOT NULL,
+    current_exp bigint DEFAULT '0'::bigint NOT NULL,
     exp_needed bigint NOT NULL,
-    level integer NOT NULL,
-    points bigint NOT NULL
+    points bigint DEFAULT '0'::bigint NOT NULL
 );
 
 
@@ -573,11 +572,11 @@ CREATE TABLE public.sessions (
 CREATE TABLE public.statistics (
     id bigint NOT NULL,
     user_id bigint NOT NULL,
-    challenges integer NOT NULL,
-    events integer NOT NULL,
-    quests integer NOT NULL,
-    treasures integer NOT NULL,
-    tree_grown integer NOT NULL
+    challenges integer DEFAULT 0 NOT NULL,
+    events integer DEFAULT 0 NOT NULL,
+    quests integer DEFAULT 0 NOT NULL,
+    treasures integer DEFAULT 0 NOT NULL,
+    tree_grown integer DEFAULT 0 NOT NULL
 );
 
 
@@ -640,7 +639,7 @@ ALTER SEQUENCE public.treasures_id_seq OWNED BY public.treasures.id;
 
 CREATE TABLE public.users (
     id bigint NOT NULL,
-    name character varying(255) NOT NULL,
+    username character varying(255) NOT NULL,
     email character varying(255) NOT NULL,
     email_verified_at timestamp(0) without time zone,
     password character varying(255) NOT NULL,
@@ -990,6 +989,14 @@ ALTER TABLE ONLY public.users
 
 
 --
+-- Name: users users_username_unique; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.users
+    ADD CONSTRAINT users_username_unique UNIQUE (username);
+
+
+--
 -- Name: jobs_queue_index; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -1166,13 +1173,13 @@ ALTER TABLE ONLY public.treasures
 -- PostgreSQL database dump complete
 --
 
-\unrestrict VucVh6t19x6aRf5j766WW08G9b3CiU2A5E1E0dvnW51Jg2YRImdprGU1x0YUHOw
+\unrestrict xbPzjnsbZPMFcKUOWp24c4cUOzraOUAZVbOo4cNemmJ8s8hIuacvzHhdfm4Y63J
 
 --
 -- PostgreSQL database dump
 --
 
-\restrict LhcBTbIMfJ9apg9FhgjTCOde8hA4Ow3ouhepTnpOBspb31YT9mmidKeyo7VRdpz
+\restrict n3ZgPBZIhQ2G5sUieu8oFxbbTw3UgIK02JOSoohvLFbtoJn1YzrYQeX5dOqt99q
 
 -- Dumped from database version 17.5
 -- Dumped by pg_dump version 17.6 (Ubuntu 17.6-1.pgdg24.04+1)
@@ -1225,5 +1232,5 @@ SELECT pg_catalog.setval('public.migrations_id_seq', 17, true);
 -- PostgreSQL database dump complete
 --
 
-\unrestrict LhcBTbIMfJ9apg9FhgjTCOde8hA4Ow3ouhepTnpOBspb31YT9mmidKeyo7VRdpz
+\unrestrict n3ZgPBZIhQ2G5sUieu8oFxbbTw3UgIK02JOSoohvLFbtoJn1YzrYQeX5dOqt99q
 

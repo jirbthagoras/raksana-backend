@@ -1,5 +1,17 @@
--- name: GetUser :one
-SELECT * FROM users
-WHERE id = $1 LIMIT 1;
+-- name: CreateUser :one
+INSERT INTO users (username, email, password)
+VALUES ($1, $2, $3)
+RETURNING id, username, email;
 
--- name
+-- name: GetUserById :one
+SELECT id, username, email
+FROM users
+WHERE id = $1;
+
+-- name: CreateProfile :exec
+INSERT INTO profiles (user_id, exp_needed)
+VALUES ($1, $2);
+
+-- name: CreateStatistics :exec
+INSERT INTO statistics (user_id)
+VALUES ($1);
