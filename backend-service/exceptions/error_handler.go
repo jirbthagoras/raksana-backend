@@ -26,22 +26,29 @@ func (f FailedValidationError) Error() string {
 func ErrorHandler(c *fiber.Ctx, err error) error {
 	if errors.As(err, &FailedValidationError{}) {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"message": "Failed validation",
-			"errors":  err.(FailedValidationError).Errors,
+			"success": false,
+			"error": fiber.Map{
+				"message": "Failed validation",
+				"fields":  err.(FailedValidationError).Errors,
+			},
 		})
 	}
 
 	var fiberErr *fiber.Error
 	if !errors.As(err, &fiberErr) {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"message": "Internal Server Error",
-			"errors":  nil,
+			"success": false,
+			"error": fiber.Map{
+				"message": "Internal server error",
+			},
 		})
 	}
 
 	return c.Status(fiberErr.Code).JSON(fiber.Map{
-		"message": fiberErr.Message,
-		"errors":  nil,
+		"success": false,
+		"error": fiber.Map{
+			"message": err.Error(),
+		},
 	})
 }
 
@@ -50,11 +57,6 @@ func handleFailedValidation(obj interface{}, err validator.ValidationErrors) Err
 	objRef := reflect.TypeOf(obj)
 
 	errMsgs := make(map[string]interface{})
-
-	// for i := range objRef.NumField() {
-	// 	structField := objRef.Field(i)
-	// 	errMsgs[structField.Tag.Get("json")] = nil
-	// }
 
 	for _, err := range err {
 		structField, _ := objRef.FieldByName(err.Field())

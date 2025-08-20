@@ -6,7 +6,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/gofiber/fiber"
+	"github.com/gofiber/fiber/v2"
 	"github.com/golang-jwt/jwt/v5"
 )
 
@@ -34,10 +34,10 @@ func getSecretKey() []byte {
 
 func TokenMiddleware(c *fiber.Ctx) error {
 	// getting the token
-	jwtToken, err := getTokenFromRequest(c)
+	jwtToken, err := GetTokenFromRequest(c)
 	if err != nil {
 		slog.Error("Error getting token from request", "err", err)
-		return fiber.NewError(fiber.StatusUnauthorized, err.Error())
+		return fiber.NewError(fiber.StatusUnauthorized, "Token does not exists")
 	}
 
 	// validate the token
@@ -73,9 +73,9 @@ func GenerateToken(id int, username string, email string, expiry time.Time) (str
 	return token.SignedString(secret)
 }
 
-func ValidateToken(tokenStr string) (*jwt.Token, *jwt.RegisteredClaims, error) {
+func ValidateToken(tokenStr string) (*jwt.Token, *Claims, error) {
 	// Create a instance or new claims to make sure if the parsed claims are type of RegisteredClaims
-	claims := &jwt.RegisteredClaims{}
+	claims := &Claims{}
 	token, err := jwt.ParseWithClaims(tokenStr, claims, func(token *jwt.Token) (any, error) {
 		// Validate the algorithm
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
@@ -93,7 +93,7 @@ func ValidateToken(tokenStr string) (*jwt.Token, *jwt.RegisteredClaims, error) {
 	return token, claims, nil
 }
 
-func getTokenFromRequest(c *fiber.Ctx) (string, error) {
+func GetTokenFromRequest(c *fiber.Ctx) (string, error) {
 	//  get the token
 	token := c.Get("Authorization")
 
@@ -107,7 +107,7 @@ func getTokenFromRequest(c *fiber.Ctx) (string, error) {
 
 func GetSubjectFromToken(c *fiber.Ctx) (int, error) {
 	// get token with function
-	token, err := getTokenFromRequest(c)
+	token, err := GetTokenFromRequest(c)
 	if err != nil {
 		return 0, fiber.NewError(fiber.StatusUnauthorized, err.Error())
 	}
