@@ -3,6 +3,7 @@ package handlers
 import (
 	"context"
 	"errors"
+	"jirbthagoras/raksana-backend/exceptions"
 	"jirbthagoras/raksana-backend/helpers"
 	"jirbthagoras/raksana-backend/models"
 	"jirbthagoras/raksana-backend/repositories"
@@ -40,7 +41,7 @@ func (h *AuthHandler) RegisterRoute(router fiber.Router) {
 
 func (h *AuthHandler) handlRegister(c *fiber.Ctx) error {
 	req := &models.PostUserRegister{}
-	err := h.Validator.Struct(req)
+	err := c.BodyParser(req)
 	if err != nil {
 		slog.Error("Failed to parse payload", "err", err.Error())
 		return err
@@ -48,9 +49,8 @@ func (h *AuthHandler) handlRegister(c *fiber.Ctx) error {
 
 	err = h.Validator.Struct(req)
 	if err != nil && errors.As(err, &validator.ValidationErrors{}) {
-		return helpers.NewFailedValidationError(*req, err.(validator.ValidationErrors))
+		return exceptions.NewFailedValidationError(*req, err.(validator.ValidationErrors))
 	}
-
 	hashedPassword, err := helpers.HashPassword(req.Password)
 	if err != nil {
 		slog.Error("Failed to hash password", "err", err.Error())

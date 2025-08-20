@@ -1,4 +1,4 @@
-package app
+package exceptions
 
 import (
 	"errors"
@@ -25,7 +25,7 @@ func (f FailedValidationError) Error() string {
 
 func ErrorHandler(c *fiber.Ctx, err error) error {
 	if errors.As(err, &FailedValidationError{}) {
-		return c.Status(fiber.StatusUnprocessableEntity).JSON(fiber.Map{
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"message": "Failed validation",
 			"errors":  err.(FailedValidationError).Errors,
 		})
@@ -51,10 +51,10 @@ func handleFailedValidation(obj interface{}, err validator.ValidationErrors) Err
 
 	errMsgs := make(map[string]interface{})
 
-	for i := 0; i < objRef.NumField(); i++ {
-		structField := objRef.Field(i)
-		errMsgs[structField.Tag.Get("json")] = nil
-	}
+	// for i := range objRef.NumField() {
+	// 	structField := objRef.Field(i)
+	// 	errMsgs[structField.Tag.Get("json")] = nil
+	// }
 
 	for _, err := range err {
 		structField, _ := objRef.FieldByName(err.Field())
@@ -72,7 +72,7 @@ func handleValidationErrorMessage(tag string, param string, field string) string
 	case "required":
 		msg = fmt.Sprintf("The %s field is required", field)
 	case "email":
-		msg = "This is not a valid email"
+		msg = "The email field is not valid"
 	case "min":
 		msg = fmt.Sprintf("The %s field must be at least %s characters", strings.ToLower(field), param)
 	case "max":

@@ -15,12 +15,12 @@ var (
 
 func NewConfig() *viper.Viper {
 	configOnce.Do(func() {
-		slog.Debug("Initiate new config")
+		slog.Info("Initiate new config")
 		newConfig := viper.New()
 
-		configFile := "../.env"
+		configFile := ".env"
 		if _, err := os.Stat(configFile); err == nil {
-			slog.Debug(".env file found, using .env file")
+			slog.Info(".env file found, using .env file")
 			newConfig.SetConfigFile(configFile)
 
 			if err := newConfig.ReadInConfig(); err != nil {

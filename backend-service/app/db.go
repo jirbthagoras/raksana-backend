@@ -11,7 +11,8 @@ import (
 )
 
 func GetConnection() *pgxpool.Pool {
-	dbUrl := helpers.NewConfig().GetString("DATABASE_URL")
+	cnf := helpers.NewConfig()
+	dbUrl := cnf.GetString("DATABASE_URL")
 
 	config, err := pgxpool.ParseConfig(dbUrl)
 	if err != nil {

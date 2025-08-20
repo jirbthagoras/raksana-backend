@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict xbPzjnsbZPMFcKUOWp24c4cUOzraOUAZVbOo4cNemmJ8s8hIuacvzHhdfm4Y63J
+\restrict cLNeSlrfcK7pFj6oFfzNdtZGXsBkZ8pLiC0fg3cOc2njgmAtYbBoM4obF3STCo3
 
 -- Dumped from database version 17.5
 -- Dumped by pg_dump version 17.6 (Ubuntu 17.6-1.pgdg24.04+1)
@@ -643,7 +643,7 @@ CREATE TABLE public.users (
     email character varying(255) NOT NULL,
     email_verified_at timestamp(0) without time zone,
     password character varying(255) NOT NULL,
-    is_admin boolean NOT NULL,
+    is_admin boolean DEFAULT false NOT NULL,
     remember_token character varying(100),
     created_at timestamp(0) without time zone,
     updated_at timestamp(0) without time zone
@@ -1173,13 +1173,13 @@ ALTER TABLE ONLY public.treasures
 -- PostgreSQL database dump complete
 --
 
-\unrestrict xbPzjnsbZPMFcKUOWp24c4cUOzraOUAZVbOo4cNemmJ8s8hIuacvzHhdfm4Y63J
+\unrestrict cLNeSlrfcK7pFj6oFfzNdtZGXsBkZ8pLiC0fg3cOc2njgmAtYbBoM4obF3STCo3
 
 --
 -- PostgreSQL database dump
 --
 
-\restrict n3ZgPBZIhQ2G5sUieu8oFxbbTw3UgIK02JOSoohvLFbtoJn1YzrYQeX5dOqt99q
+\restrict WhXe2J0mWfYoNtNqVlUnq34dGxO4r88RMu7awlgKn4hJBKtdf5TScQhAfso718y
 
 -- Dumped from database version 17.5
 -- Dumped by pg_dump version 17.6 (Ubuntu 17.6-1.pgdg24.04+1)
@@ -1232,5 +1232,5 @@ SELECT pg_catalog.setval('public.migrations_id_seq', 17, true);
 -- PostgreSQL database dump complete
 --
 
-\unrestrict n3ZgPBZIhQ2G5sUieu8oFxbbTw3UgIK02JOSoohvLFbtoJn1YzrYQeX5dOqt99q
+\unrestrict WhXe2J0mWfYoNtNqVlUnq34dGxO4r88RMu7awlgKn4hJBKtdf5TScQhAfso718y
 

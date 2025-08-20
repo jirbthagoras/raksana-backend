@@ -2,6 +2,7 @@ package main
 
 import (
 	"jirbthagoras/raksana-backend/app"
+	"jirbthagoras/raksana-backend/exceptions"
 	"jirbthagoras/raksana-backend/repositories"
 	"log/slog"
 	"os"
@@ -12,7 +13,7 @@ import (
 
 func main() {
 	server := fiber.New(fiber.Config{
-		ErrorHandler: app.ErrorHandler,
+		ErrorHandler: exceptions.ErrorHandler,
 	})
 
 	conn := app.GetConnection()
