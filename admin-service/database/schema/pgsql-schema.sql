@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict cLNeSlrfcK7pFj6oFfzNdtZGXsBkZ8pLiC0fg3cOc2njgmAtYbBoM4obF3STCo3
+\restrict YiSxZ49eHPL4CxSgAuZIZymsugiTpnVhqVsUIc3aSz6cgUwEzFcGoymQPD9qY2s
 
 -- Dumped from database version 17.5
 -- Dumped by pg_dump version 17.6 (Ubuntu 17.6-1.pgdg24.04+1)
@@ -235,7 +235,8 @@ CREATE TABLE public.events (
     location text NOT NULL,
     contact character varying(255) NOT NULL,
     starts_at date NOT NULL,
-    ends_at date NOT NULL
+    ends_at date NOT NULL,
+    cover_url character varying(255)
 );
 
 
@@ -528,6 +529,8 @@ CREATE TABLE public.quests (
     detail_id bigint NOT NULL,
     code_id character varying(255) NOT NULL,
     location text NOT NULL,
+    latitude numeric(10,7),
+    longitude numeric(10,7),
     max_contributors integer NOT NULL
 );
 
@@ -549,6 +552,41 @@ CREATE SEQUENCE public.quests_id_seq
 --
 
 ALTER SEQUENCE public.quests_id_seq OWNED BY public.quests.id;
+
+
+--
+-- Name: recaps; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.recaps (
+    id bigint NOT NULL,
+    user_id bigint NOT NULL,
+    description text NOT NULL,
+    task_finished integer NOT NULL,
+    task_assigned integer NOT NULL,
+    growth numeric(5,2) NOT NULL,
+    created_at timestamp(0) without time zone,
+    updated_at timestamp(0) without time zone
+);
+
+
+--
+-- Name: recaps_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.recaps_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: recaps_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.recaps_id_seq OWNED BY public.recaps.id;
 
 
 --
@@ -639,7 +677,8 @@ ALTER SEQUENCE public.treasures_id_seq OWNED BY public.treasures.id;
 
 CREATE TABLE public.users (
     id bigint NOT NULL,
-    username character varying(255) NOT NULL,
+    name character varying(255),
+    username character varying(255),
     email character varying(255) NOT NULL,
     email_verified_at timestamp(0) without time zone,
     password character varying(255) NOT NULL,
@@ -765,6 +804,13 @@ ALTER TABLE ONLY public.profiles ALTER COLUMN id SET DEFAULT nextval('public.pro
 --
 
 ALTER TABLE ONLY public.quests ALTER COLUMN id SET DEFAULT nextval('public.quests_id_seq'::regclass);
+
+
+--
+-- Name: recaps id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.recaps ALTER COLUMN id SET DEFAULT nextval('public.recaps_id_seq'::regclass);
 
 
 --
@@ -949,6 +995,14 @@ ALTER TABLE ONLY public.quests
 
 
 --
+-- Name: recaps recaps_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.recaps
+    ADD CONSTRAINT recaps_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: sessions sessions_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -978,6 +1032,14 @@ ALTER TABLE ONLY public.treasures
 
 ALTER TABLE ONLY public.users
     ADD CONSTRAINT users_email_unique UNIQUE (email);
+
+
+--
+-- Name: users users_name_unique; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.users
+    ADD CONSTRAINT users_name_unique UNIQUE (name);
 
 
 --
@@ -1154,6 +1216,14 @@ ALTER TABLE ONLY public.quests
 
 
 --
+-- Name: recaps recaps_user_id_foreign; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.recaps
+    ADD CONSTRAINT recaps_user_id_foreign FOREIGN KEY (user_id) REFERENCES public.users(id);
+
+
+--
 -- Name: statistics statistics_user_id_foreign; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -1173,13 +1243,13 @@ ALTER TABLE ONLY public.treasures
 -- PostgreSQL database dump complete
 --
 
-\unrestrict cLNeSlrfcK7pFj6oFfzNdtZGXsBkZ8pLiC0fg3cOc2njgmAtYbBoM4obF3STCo3
+\unrestrict YiSxZ49eHPL4CxSgAuZIZymsugiTpnVhqVsUIc3aSz6cgUwEzFcGoymQPD9qY2s
 
 --
 -- PostgreSQL database dump
 --
 
-\restrict WhXe2J0mWfYoNtNqVlUnq34dGxO4r88RMu7awlgKn4hJBKtdf5TScQhAfso718y
+\restrict N6VEK6yrMzZWrsxH0CpEM5roaJ3xHZ7WU0xBdhkOY8OFR8vk5HkFHmdlRdCRGWN
 
 -- Dumped from database version 17.5
 -- Dumped by pg_dump version 17.6 (Ubuntu 17.6-1.pgdg24.04+1)
@@ -1218,6 +1288,7 @@ COPY public.migrations (id, migration, batch) FROM stdin;
 15	2025_08_11_151803_create_treasures_table	1
 16	2025_08_11_152019_create_claimed	1
 17	2025_08_11_152127_create_logs	1
+18	2025_08_20_124603_create_recaps	1
 \.
 
 
@@ -1225,12 +1296,12 @@ COPY public.migrations (id, migration, batch) FROM stdin;
 -- Name: migrations_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
 --
 
-SELECT pg_catalog.setval('public.migrations_id_seq', 17, true);
+SELECT pg_catalog.setval('public.migrations_id_seq', 18, true);
 
 
 --
 -- PostgreSQL database dump complete
 --
 
-\unrestrict WhXe2J0mWfYoNtNqVlUnq34dGxO4r88RMu7awlgKn4hJBKtdf5TScQhAfso718y
+\unrestrict N6VEK6yrMzZWrsxH0CpEM5roaJ3xHZ7WU0xBdhkOY8OFR8vk5HkFHmdlRdCRGWN
 

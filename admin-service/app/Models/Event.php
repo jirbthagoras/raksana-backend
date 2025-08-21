@@ -9,11 +9,24 @@ class Event extends Model
 {
     public function detail(): BelongsTo
     {
-        return $this->belongsTo(Details::class);
+        return $this->belongsTo(Details::class, "detail_id");
     }
+
+    public $timestamps = false;
+
+
+    protected $fillable = [
+    'detail_id',
+    'code_id',
+    'location',
+    'contact',
+    'starts_at',
+    'ends_at',
+    'cover_url',
+    ];
 
     public function code(): BelongsTo
     {
-        return $this->belongsTo(Codes::class);
+        return $this->belongsTo(Codes::class, "code_id");
     }
 }

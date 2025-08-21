@@ -7,9 +7,16 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class Details extends Model
 {
+    protected $fillable = [
+        "id",
+        "name",
+        "description",
+        "point_gain"
+    ];
+
     public function quest(): HasOne
     {
-        return $this->hasOne(Quest::class);
+        return $this->hasOne(Quest::class, "detail_id");
     }
 
     public function treasure(): HasOne
