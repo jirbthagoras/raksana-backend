@@ -23,6 +23,7 @@ class CreateQuest extends CreateRecord
             'name' => $data['detail_name'],
             'description' => $data['detail_description'],
             'point_gain' => $data['detail_point_gain'],
+            'type' => "quest",
         ]);
 
         $data['detail_id'] = $detail->id;
@@ -33,7 +34,7 @@ class CreateQuest extends CreateRecord
 
         $payload = [
             'uuid' => $uuid,
-            'exp' => time() + 3600,
+            'exp'  => time() + (7 * 24 * 60 * 60), // valid for 7 days
         ];
 
         $secretKey = env('JWT_SECRET_KEY', env("JWT_SECRET_KEY"));

@@ -12,8 +12,15 @@ class Treasures extends Model
         return $this->belongsTo(Details::class);
     }
 
-public function code(): BelongsTo
+protected $fillable = [
+        'name',
+        'point_gain',
+        'code_id',
+        'claimed',
+    ];
+
+    public function code(): BelongsTo
     {
-        return $this->belongsTo(Codes::class);
+        return $this->belongsTo(Codes::class, 'code_id', 'id');
     }
 }

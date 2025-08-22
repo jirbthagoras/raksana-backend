@@ -1,10 +1,9 @@
 <?php
 
-namespace App\Filament\Resources\EventResource\Pages;
+namespace App\Filament\Resources\TreasureResource\Pages;
 
-use App\Filament\Resources\EventResource;
+use App\Filament\Resources\TreasureResource;
 use App\Models\Codes;
-use App\Models\Details;
 use Endroid\QrCode\Builder\Builder;
 use Endroid\QrCode\Encoding\Encoding;
 use Endroid\QrCode\Color\Color;
@@ -13,38 +12,20 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Firebase\JWT\JWT;
 
-class CreateEvent extends CreateRecord
+class CreateTreasure extends CreateRecord
 {
-    protected static string $resource = EventResource::class;
+    protected static string $resource = TreasureResource::class;
 
     protected function mutateFormDataBeforeCreate(array $data): array
     {
-        $detail = Details::create([
-            'name' => $data['detail_name'],
-            'description' => $data['detail_description'],
-            'point_gain' => $data['detail_point_gain'],
-        ]);
-
-        $data['detail_id'] = $detail->id;
-
-        unset($data['detail_name'], $data['detail_description'], $data['detail_point_gain']);
-
-
         $uuid = (string) Str::uuid();
 
-        $nbf = strtotime($data['starts_at']);
-        $exp = strtotime($data['ends_at']);
-
-        if ($nbf === $exp) {
-            $exp = $nbf + (3 * 24 * 60 * 60);
-        }
-
         $payload = [
-            'uuid' => $uuid,
-            'nbf'  => $nbf,
-            'exp'  => $exp,
-            'type' => "event",
-        ];
+    'uuid' => $uuid,
+    'type' => "treasure",
+    'exp'  => time() + (365 * 24 * 60 * 60), // 1 year expiration
+];
+
 
         $secretKey = env('JWT_SECRET_KEY', env("JWT_SECRET_KEY"));
         $jwt = JWT::encode($payload, $secretKey, 'HS256');
@@ -53,7 +34,7 @@ class CreateEvent extends CreateRecord
             ->data($jwt)
             ->encoding(new Encoding('UTF-8'))
             ->size(200)
-            ->margin(10)
+            ->margin(5)
             ->foregroundColor(new Color(0, 0, 0))
             ->backgroundColor(new Color(255, 255, 255))
             ->build();
@@ -67,11 +48,11 @@ class CreateEvent extends CreateRecord
         $code = Codes::create([
             'id' => $uuid,
             'image_url' => $url,
+            'jwt' => $jwt,
         ]);
 
         $data['code_id'] = $code->id;
 
-        // cover_path already handled by FileUpload
         return $data;
     }
 }
