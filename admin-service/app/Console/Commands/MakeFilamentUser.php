@@ -13,14 +13,17 @@ class MakeFilamentUser extends Command
 
     public function handle(): int
     {
+        $name = $this->ask('Name');
         $username = $this->ask('Username');
         $email = $this->ask('Email address');
         $password = $this->secret('Password');
 
         User::create([
-            'username' => $username,   // 👈 fixed
+            'name' => $name,
+            'username' => $username,
             'email' => $email,
             'password' => Hash::make($password),
+            'is_admin' => true,
         ]);
 
         $this->info("Filament user `{$username}` created successfully!");
