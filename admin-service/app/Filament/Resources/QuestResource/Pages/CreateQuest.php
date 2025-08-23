@@ -19,12 +19,23 @@ class CreateQuest extends CreateRecord
 
     protected function mutateFormDataBeforeCreate(array $data): array
     {
-        $detail = Details::create([
-            'name' => $data['detail_name'],
-            'description' => $data['detail_description'],
-            'point_gain' => $data['detail_point_gain'],
-            'type' => "quest",
-        ]);
+
+    $detail = Details::create([
+        'name' => $data['detail_name'],
+        'description' => $data['detail_description'],
+        'point_gain' => $data['detail_point_gain'],
+        'type' => "quest",
+    ]);
+    $data['detail_id'] = $detail->id;
+
+    unset($data['detail_name'], $data['detail_description'], $data['detail_point_gain']);
+
+    if (isset($data['map_picker']['lat'], $data['map_picker']['lng'])) {
+        $data['latitude'] = $data['map_picker']['lat'];
+        $data['longitude'] = $data['map_picker']['lng'];
+    }
+
+    unset($data['map_picker']);
 
         $data['detail_id'] = $detail->id;
 

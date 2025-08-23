@@ -65,6 +65,7 @@ func (h *AuthHandler) handlRegister(c *fiber.Ctx) error {
 
 	user, err := h.Repository.CreateUser(ctx, repositories.CreateUserParams{
 		Username: req.Username,
+		Name:     req.Username,
 		Password: hashedPassword,
 		Email:    req.Email,
 	})

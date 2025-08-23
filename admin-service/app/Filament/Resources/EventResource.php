@@ -60,7 +60,6 @@ class EventResource extends Resource
             ->columns([
                 Tables\Columns\TextColumn::make('detail.name')->label('Event Name'),
                 Tables\Columns\TextColumn::make('location'),
-                Tables\Columns\ImageColumn::make('cover_url')->label('Cover'),
                 Tables\Columns\ImageColumn::make('code.image_url')->label('QR Code'),
             ])
             ->actions([

@@ -1,3 +1,39 @@
+
+--
+-- PostgreSQL database dump
+--
+
+
+-- Dumped from database version 17.5
+-- Dumped by pg_dump version 17.6 (Ubuntu 17.6-1.pgdg24.04+1)
+
+SET statement_timeout = 0;
+SET lock_timeout = 0;
+SET idle_in_transaction_session_timeout = 0;
+SET transaction_timeout = 0;
+SET client_encoding = 'UTF8';
+SET standard_conforming_strings = on;
+SELECT pg_catalog.set_config('search_path', '', false);
+SET check_function_bodies = false;
+SET xmloption = content;
+SET client_min_messages = warning;
+SET row_security = off;
+
+--
+-- Name: public; Type: SCHEMA; Schema: -; Owner: -
+--
+
+-- *not* creating schema, since initdb creates it
+
+
+SET default_tablespace = '';
+
+SET default_table_access_method = heap;
+
+--
+-- Name: attendances; Type: TABLE; Schema: public; Owner: -
+--
+
 CREATE TABLE public.attendances (
     id bigint NOT NULL,
     user_id bigint NOT NULL,
@@ -454,6 +490,7 @@ CREATE TABLE public.password_reset_tokens (
 --
 -- Name: profiles; Type: TABLE; Schema: public; Owner: -
 --
+
 CREATE TABLE public.profiles (
     id bigint NOT NULL,
     user_id bigint NOT NULL,
@@ -461,6 +498,7 @@ CREATE TABLE public.profiles (
     exp_needed bigint NOT NULL,
     points bigint DEFAULT '0'::bigint NOT NULL
 );
+
 
 --
 -- Name: profiles_id_seq; Type: SEQUENCE; Schema: public; Owner: -
@@ -514,6 +552,41 @@ ALTER SEQUENCE public.quests_id_seq OWNED BY public.quests.id;
 
 
 --
+-- Name: recaps; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.recaps (
+    id bigint NOT NULL,
+    user_id bigint NOT NULL,
+    description text NOT NULL,
+    task_finished integer NOT NULL,
+    task_assigned integer NOT NULL,
+    growth numeric(5,2) NOT NULL,
+    created_at timestamp(0) without time zone,
+    updated_at timestamp(0) without time zone
+);
+
+
+--
+-- Name: recaps_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.recaps_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: recaps_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.recaps_id_seq OWNED BY public.recaps.id;
+
+
+--
 -- Name: sessions; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -540,6 +613,7 @@ CREATE TABLE public.statistics (
     treasures integer DEFAULT 0 NOT NULL,
     tree_grown integer DEFAULT 0 NOT NULL
 );
+
 
 --
 -- Name: statistics_id_seq; Type: SEQUENCE; Schema: public; Owner: -
@@ -600,11 +674,12 @@ ALTER SEQUENCE public.treasures_id_seq OWNED BY public.treasures.id;
 
 CREATE TABLE public.users (
     id bigint NOT NULL,
-    username  character varying(255) NOT NULL,
+    name character varying(255) NOT NULL,
+    username character varying(255) NOT NULL,
     email character varying(255) NOT NULL,
     email_verified_at timestamp(0) without time zone,
     password character varying(255) NOT NULL,
-    is_admin boolean NOT NULL,
+    is_admin boolean DEFAULT false NOT NULL,
     remember_token character varying(100),
     created_at timestamp(0) without time zone,
     updated_at timestamp(0) without time zone
@@ -726,6 +801,13 @@ ALTER TABLE ONLY public.profiles ALTER COLUMN id SET DEFAULT nextval('public.pro
 --
 
 ALTER TABLE ONLY public.quests ALTER COLUMN id SET DEFAULT nextval('public.quests_id_seq'::regclass);
+
+
+--
+-- Name: recaps id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.recaps ALTER COLUMN id SET DEFAULT nextval('public.recaps_id_seq'::regclass);
 
 
 --
@@ -910,6 +992,14 @@ ALTER TABLE ONLY public.quests
 
 
 --
+-- Name: recaps recaps_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.recaps
+    ADD CONSTRAINT recaps_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: sessions sessions_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -947,6 +1037,14 @@ ALTER TABLE ONLY public.users
 
 ALTER TABLE ONLY public.users
     ADD CONSTRAINT users_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: users users_username_unique; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.users
+    ADD CONSTRAINT users_username_unique UNIQUE (username);
 
 
 --
@@ -1107,6 +1205,14 @@ ALTER TABLE ONLY public.quests
 
 
 --
+-- Name: recaps recaps_user_id_foreign; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.recaps
+    ADD CONSTRAINT recaps_user_id_foreign FOREIGN KEY (user_id) REFERENCES public.users(id);
+
+
+--
 -- Name: statistics statistics_user_id_foreign; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -1121,6 +1227,20 @@ ALTER TABLE ONLY public.statistics
 ALTER TABLE ONLY public.treasures
     ADD CONSTRAINT treasures_code_id_foreign FOREIGN KEY (code_id) REFERENCES public.codes(id);
 
+
+--
+-- PostgreSQL database dump complete
+--
+
+
+--
+-- PostgreSQL database dump
+--
+
+
+-- Dumped from database version 17.5
+-- Dumped by pg_dump version 17.6 (Ubuntu 17.6-1.pgdg24.04+1)
+
 SET statement_timeout = 0;
 SET lock_timeout = 0;
 SET idle_in_transaction_session_timeout = 0;
@@ -1132,3 +1252,23 @@ SET check_function_bodies = false;
 SET xmloption = content;
 SET client_min_messages = warning;
 SET row_security = off;
+
+--
+-- Data for Name: migrations; Type: TABLE DATA; Schema: public; Owner: -
+--
+
+
+
+--
+-- Name: migrations_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+--
+
+SELECT pg_catalog.setval('public.migrations_id_seq', 18, true);
+
+
+--
+-- PostgreSQL database dump complete
+--
+
+
+

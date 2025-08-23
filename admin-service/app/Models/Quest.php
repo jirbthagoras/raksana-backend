@@ -8,11 +8,13 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class Quest extends Model
 {
     protected $fillable = [
-        "location",
-        "max_contributors",
-        "code_id",
-        "detail_id"
-    ];
+            'detail_id',
+            'code_id',
+            'location',
+            'latitude',
+            'longitude',
+            'max_contributors',
+        ];
 
     public $timestamps = false;
 

@@ -166,6 +166,17 @@ type Quest struct {
 	MaxContributors int32
 }
 
+type Recap struct {
+	ID           int64
+	UserID       int64
+	Description  string
+	TaskFinished int32
+	TaskAssigned int32
+	Growth       pgtype.Numeric
+	CreatedAt    pgtype.Timestamp
+	UpdatedAt    pgtype.Timestamp
+}
+
 type Session struct {
 	ID           string
 	UserID       pgtype.Int8
@@ -197,6 +208,7 @@ type Treasure struct {
 
 type User struct {
 	ID              int64
+	Name            string
 	Username        string
 	Email           string
 	EmailVerifiedAt pgtype.Timestamp

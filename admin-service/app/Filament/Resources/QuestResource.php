@@ -47,6 +47,7 @@ class QuestResource extends Resource
                 Forms\Components\Section::make('Quest Info')
                     ->schema([
                         Forms\Components\TextInput::make('location')
+                            ->label('Location Name')
                             ->required(),
 
                         Forms\Components\TextInput::make('max_contributors')
@@ -54,20 +55,28 @@ class QuestResource extends Resource
                             ->required(),
                     ]),
 
-                    
-                // Map::make('location')
-                // ->label('Quest Location')
-                // ->defaultLocation([-6.175392, 106.827153])
-                // ->draggable()
-                // ->required()
-                // ->afterStateUpdated(function ($state, callable $set) {
-                //     // $state is [lat, lng]
-                //     $set('latitude', $state[0]);
-                //     $set('longitude', $state[1]);
-                // }),
-                
-                // Forms\Components\TextInput::make('latitude')->hidden(),
-                // Forms\Components\TextInput::make('longitude')->hidden(),
+                    Map::make('map_picker')
+                        ->label('Quest Location (Pick on Map)')
+                        ->defaultLocation([-6.175392, 106.827153])
+                        ->draggable()
+                        ->clickable()
+                        ->afterStateUpdated(function ($state, callable $set) {
+                            if (is_array($state) && count($state) >= 2) {
+                                $set('latitude', $state["lat"]);
+                                $set('longitude', $state["lng"]);
+                            }
+                        }),
+
+                    Forms\Components\TextInput::make('latitude')
+                        ->hidden()
+                        ->dehydrated()
+                        ->required(),
+
+                    Forms\Components\TextInput::make('longitude')
+                        ->hidden()
+                        ->dehydrated()
+                        ->required(),
+
             ]);
     }
 
