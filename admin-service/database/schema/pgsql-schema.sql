@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict YiSxZ49eHPL4CxSgAuZIZymsugiTpnVhqVsUIc3aSz6cgUwEzFcGoymQPD9qY2s
+\restrict v89qvNhFrciuTPiEmG3QbZZUQkTShG4fJUu0K49iMrcdvZqeaBGU0uUhsf5UB6C
 
 -- Dumped from database version 17.5
 -- Dumped by pg_dump version 17.6 (Ubuntu 17.6-1.pgdg24.04+1)
@@ -677,8 +677,8 @@ ALTER SEQUENCE public.treasures_id_seq OWNED BY public.treasures.id;
 
 CREATE TABLE public.users (
     id bigint NOT NULL,
-    name character varying(255),
-    username character varying(255),
+    name character varying(255) NOT NULL,
+    username character varying(255) NOT NULL,
     email character varying(255) NOT NULL,
     email_verified_at timestamp(0) without time zone,
     password character varying(255) NOT NULL,
@@ -1243,13 +1243,13 @@ ALTER TABLE ONLY public.treasures
 -- PostgreSQL database dump complete
 --
 
-\unrestrict YiSxZ49eHPL4CxSgAuZIZymsugiTpnVhqVsUIc3aSz6cgUwEzFcGoymQPD9qY2s
+\unrestrict v89qvNhFrciuTPiEmG3QbZZUQkTShG4fJUu0K49iMrcdvZqeaBGU0uUhsf5UB6C
 
 --
 -- PostgreSQL database dump
 --
 
-\restrict N6VEK6yrMzZWrsxH0CpEM5roaJ3xHZ7WU0xBdhkOY8OFR8vk5HkFHmdlRdCRGWN
+\restrict 9iEySPVapcnrnptXekjyn5lq0qFjm1ADI1L6Ae6A58f80ngalgN0ToYDdATafCf
 
 -- Dumped from database version 17.5
 -- Dumped by pg_dump version 17.6 (Ubuntu 17.6-1.pgdg24.04+1)
@@ -1303,5 +1303,5 @@ SELECT pg_catalog.setval('public.migrations_id_seq', 18, true);
 -- PostgreSQL database dump complete
 --
 
-\unrestrict N6VEK6yrMzZWrsxH0CpEM5roaJ3xHZ7WU0xBdhkOY8OFR8vk5HkFHmdlRdCRGWN
+\unrestrict 9iEySPVapcnrnptXekjyn5lq0qFjm1ADI1L6Ae6A58f80ngalgN0ToYDdATafCf
 

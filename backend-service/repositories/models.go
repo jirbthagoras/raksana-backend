@@ -74,6 +74,7 @@ type Event struct {
 	Contact  string
 	StartsAt pgtype.Date
 	EndsAt   pgtype.Date
+	CoverUrl pgtype.Text
 }
 
 type FailedJob struct {
@@ -163,6 +164,8 @@ type Quest struct {
 	DetailID        int64
 	CodeID          string
 	Location        string
+	Latitude        pgtype.Numeric
+	Longitude       pgtype.Numeric
 	MaxContributors int32
 }
 

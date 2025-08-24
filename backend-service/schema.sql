@@ -3,7 +3,6 @@
 -- PostgreSQL database dump
 --
 
-
 -- Dumped from database version 17.5
 -- Dumped by pg_dump version 17.6 (Ubuntu 17.6-1.pgdg24.04+1)
 
@@ -235,7 +234,8 @@ CREATE TABLE public.events (
     location text NOT NULL,
     contact character varying(255) NOT NULL,
     starts_at date NOT NULL,
-    ends_at date NOT NULL
+    ends_at date NOT NULL,
+    cover_url character varying(255)
 );
 
 
@@ -528,6 +528,8 @@ CREATE TABLE public.quests (
     detail_id bigint NOT NULL,
     code_id character varying(255) NOT NULL,
     location text NOT NULL,
+    latitude numeric(10,7),
+    longitude numeric(10,7),
     max_contributors integer NOT NULL
 );
 
@@ -1032,6 +1034,14 @@ ALTER TABLE ONLY public.users
 
 
 --
+-- Name: users users_name_unique; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.users
+    ADD CONSTRAINT users_name_unique UNIQUE (name);
+
+
+--
 -- Name: users users_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -1232,7 +1242,6 @@ ALTER TABLE ONLY public.treasures
 -- PostgreSQL database dump complete
 --
 
-
 --
 -- PostgreSQL database dump
 --
@@ -1258,7 +1267,6 @@ SET row_security = off;
 --
 
 
-
 --
 -- Name: migrations_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
 --
@@ -1269,6 +1277,3 @@ SELECT pg_catalog.setval('public.migrations_id_seq', 18, true);
 --
 -- PostgreSQL database dump complete
 --
-
-
-
