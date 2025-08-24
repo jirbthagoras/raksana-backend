@@ -18,6 +18,6 @@ func NewAppRouter(v *validator.Validate, r *repositories.Queries) *AppRouter {
 	}
 }
 
-func (r *AppRouter) registerRoute(router *fiber.Router) {
-	r.AuthHandler.RegisterRoute(*router)
+func (r *AppRouter) RegisterRoute(router fiber.Router) {
+	r.AuthHandler.RegisterRoute(router)
 }

@@ -53,6 +53,5 @@ func main() {
 		slog.Error("Error shutting down fiber server", "err", err.Error())
 	}
 
-	conn.Close()
 	slog.Info("Server stopped successfully.")
 }
