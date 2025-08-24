@@ -29,5 +29,7 @@ func GetConnection() *pgxpool.Pool {
 		slog.Error("Failed to establish connection to Database", "err", err.Error())
 		os.Exit(1)
 	}
+
+	slog.Debug("Established connection to db")
 	return pool
 }

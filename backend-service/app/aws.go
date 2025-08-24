@@ -2,6 +2,7 @@ package app
 
 import (
 	"context"
+	"log/slog"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	awsConfig "github.com/aws/aws-sdk-go-v2/config"
@@ -18,7 +19,7 @@ type AWSClient struct {
 	Uploader          *manager.Uploader
 }
 
-func InitS3Client(cnf *viper.Viper) *AWSClient {
+func InitAWSClient(cnf *viper.Viper) *AWSClient {
 	region := cnf.GetString("AWS_REGION")
 	accessKey := cnf.GetString("AWS_ACCESS_KEY_ID")
 	secretKey := cnf.GetString("AWS_SECRET_ACCESS_KEY")
@@ -42,6 +43,7 @@ func InitS3Client(cnf *viper.Viper) *AWSClient {
 	uploader := manager.NewUploader(s3Client)
 	rekognitionClient := rekognition.NewFromConfig(awsCnf)
 
+	slog.Debug("Established connection to AWS")
 	return &AWSClient{
 		S3Client:          s3Client,
 		RekognitionClient: rekognitionClient,

@@ -19,12 +19,16 @@ func main() {
 	server := fiber.New(fiber.Config{
 		ErrorHandler: exceptions.ErrorHandler,
 	})
-
+	// open connection
 	conn := app.GetConnection()
 	defer conn.Close()
 
+	// init repo
 	repository := repositories.New(conn)
 	validator := validator.New()
+
+	// init fcm
+	_ = app.InitFCMClient()
 
 	api := server.Group("/api")
 
