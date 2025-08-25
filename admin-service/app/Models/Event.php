@@ -19,6 +19,8 @@ class Event extends Model
     'detail_id',
     'code_id',
     'location',
+    'latitude',
+    'longitude',
     'contact',
     'starts_at',
     'ends_at',

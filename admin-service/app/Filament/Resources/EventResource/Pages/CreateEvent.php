@@ -24,11 +24,20 @@ class CreateEvent extends CreateRecord
             'description' => $data['detail_description'],
             'point_gain' => $data['detail_point_gain'],
         ]);
-
         $data['detail_id'] = $detail->id;
 
         unset($data['detail_name'], $data['detail_description'], $data['detail_point_gain']);
 
+        if (isset($data['map_picker']['lat'], $data['map_picker']['lng'])) {
+            $data['latitude'] = $data['map_picker']['lat'];
+            $data['longitude'] = $data['map_picker']['lng'];
+        }
+
+        unset($data['map_picker']);
+
+        $data['detail_id'] = $detail->id;
+
+        unset($data['detail_name'], $data['detail_description'], $data['detail_point_gain']);
 
         $uuid = (string) Str::uuid();
 
@@ -51,9 +60,9 @@ class CreateEvent extends CreateRecord
 
         $result = Builder::create()
             ->data($jwt)
-            ->encoding(new Encoding('UTF-8'))
-            ->size(200)
-            ->margin(10)
+            ->encoding(encoding: new Encoding('UTF-8'))
+            ->size(50)
+            ->margin(5)
             ->foregroundColor(new Color(0, 0, 0))
             ->backgroundColor(new Color(255, 255, 255))
             ->build();

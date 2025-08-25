@@ -2,7 +2,6 @@ package helpers
 
 import (
 	"fmt"
-	"log/slog"
 	"strconv"
 	"time"
 
@@ -15,7 +14,7 @@ var (
 )
 
 type Claims struct {
-	Username string `json:"usernmae"`
+	Username string `json:"username"`
 	Email    string `json:"email"`
 	jwt.RegisteredClaims
 }
@@ -36,8 +35,7 @@ func TokenMiddleware(c *fiber.Ctx) error {
 	// getting the token
 	jwtToken, err := GetTokenFromRequest(c)
 	if err != nil {
-		slog.Error("Error getting token from request", "err", err)
-		return fiber.NewError(fiber.StatusUnauthorized, "Token does not exists")
+		return fiber.NewError(fiber.StatusUnauthorized, "Token is not attached")
 	}
 
 	// validate the token

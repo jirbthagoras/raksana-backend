@@ -5,6 +5,7 @@ namespace App\Filament\Resources;
 use App\Filament\Resources\TreasureResource\Pages;
 use App\Models\Treasure;
 use App\Models\Treasures;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Tables;
@@ -30,6 +31,12 @@ class TreasureResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
+            ->headerActions([
+                Tables\Actions\Action::make('export_recent_pdf')
+                    ->label('Export Unclaimed Treasures')
+                    ->icon('heroicon-o-document-text')
+                    ->action(fn () => static::exportRecentPdf()),
+            ])
             ->columns([
                 Tables\Columns\TextColumn::make('name'),
                 Tables\Columns\TextColumn::make('point_gain'),
@@ -51,5 +58,29 @@ class TreasureResource extends Resource
             'create' => Pages\CreateTreasure::route('/create'),
             'edit' => Pages\EditTreasure::route('/{record}/edit'),
         ];
+    }
+
+    public static function exportRecentPdf()
+        {
+            $treasures = Treasures::with(['code'])
+                ->where("claimed", "=", "false")
+                ->get();
+
+            if ($treasures->isEmpty()) {
+                return redirect()->back()->with('danger', 'No quests created in the last 3 days.');
+            }
+
+            $pdf = Pdf::loadView('pdf.treasure', [
+                'treasures' => $treasures,
+            ])->setPaper('a4', 'portrait');
+            $pdf->setOptions([
+                'isHtml5ParserEnabled' => true,
+                'isRemoteEnabled' => true,
+            ]);
+
+            return response()->streamDownload(
+                fn () => print($pdf->output()),
+                'unclaimed-treasures.pdf'
+            );
     }
 }

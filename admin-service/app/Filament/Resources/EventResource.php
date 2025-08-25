@@ -4,6 +4,9 @@ namespace App\Filament\Resources;
 
 use App\Filament\Resources\EventResource\Pages;
 use App\Models\Event;
+use Barryvdh\DomPDF\Facade\Pdf;
+use Carbon\Carbon;
+use Cheesegrits\FilamentGoogleMaps\Fields\Map;
 use Filament\Forms;
 use Filament\Tables;
 use Filament\Resources\Resource;
@@ -51,12 +54,40 @@ class EventResource extends Resource
                             ->visibility('private')
                             ->required(),
                     ]),
+
+                    Map::make('map_picker')
+                        ->label('Quest Location (Pick on Map)')
+                        ->defaultLocation([-6.175392, 106.827153])
+                        ->draggable()
+                        ->clickable()
+                        ->afterStateUpdated(function ($state, callable $set) {
+                            if (is_array($state) && count($state) >= 2) {
+                                $set('latitude', $state["lat"]);
+                                $set('longitude', $state["lng"]);
+                            }
+                        }),
+
+                    Forms\Components\TextInput::make('latitude')
+                        ->hidden()
+                        ->dehydrated()
+                        ->required(),
+
+                    Forms\Components\TextInput::make('longitude')
+                        ->hidden()
+                        ->dehydrated()
+                        ->required(),
             ]);
     }
 
     public static function table(Tables\Table $table): Tables\Table
     {
         return $table
+            ->headerActions([
+                    Tables\Actions\Action::make('export_recent_pdf')
+                        ->label('Export Last 7 Days')
+                        ->icon('heroicon-o-document-text')
+                        ->action(fn () => static::exportRecentPdf()),
+            ])
             ->columns([
                 Tables\Columns\TextColumn::make('detail.name')->label('Event Name'),
                 Tables\Columns\TextColumn::make('location'),
@@ -78,4 +109,30 @@ class EventResource extends Resource
             'edit' => Pages\EditEvent::route('/{record}/edit'),
         ];
     }
+
+        public static function exportRecentPdf()
+        {
+            $events = Event::with(['detail', 'code'])
+                ->whereHas('detail', function ($query) {
+                    $query->where('created_at', '>=', Carbon::now()->subDays(7));
+                })
+                ->get();
+
+            if ($events->isEmpty()) {
+                return redirect()->back()->with('danger', 'No quests created in the last 3 days.');
+            }
+
+            $pdf = Pdf::loadView('pdf.event', [
+                'events' => $events,
+            ])->setPaper('a4', 'portrait');
+            $pdf->setOptions([
+                'isHtml5ParserEnabled' => true,
+                'isRemoteEnabled' => true,
+            ]);
+
+            return response()->streamDownload(
+                fn () => print($pdf->output()),
+                'event-last-week.pdf'
+            );
+        }
 }

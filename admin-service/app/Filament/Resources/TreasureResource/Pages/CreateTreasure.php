@@ -21,10 +21,10 @@ class CreateTreasure extends CreateRecord
         $uuid = (string) Str::uuid();
 
         $payload = [
-    'uuid' => $uuid,
-    'type' => "treasure",
-    'exp'  => time() + (365 * 24 * 60 * 60), // 1 year expiration
-];
+            'uuid' => $uuid,
+            'type' => "treasure",
+            'exp'  => time() + (365 * 24 * 60 * 60),
+        ];
 
 
         $secretKey = env('JWT_SECRET_KEY', env("JWT_SECRET_KEY"));
@@ -33,7 +33,7 @@ class CreateTreasure extends CreateRecord
         $result = Builder::create()
             ->data($jwt)
             ->encoding(new Encoding('UTF-8'))
-            ->size(200)
+            ->size(70)
             ->margin(5)
             ->foregroundColor(new Color(0, 0, 0))
             ->backgroundColor(new Color(255, 255, 255))

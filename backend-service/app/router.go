@@ -10,14 +10,17 @@ import (
 
 type AppRouter struct {
 	*handlers.AuthHandler
+	*handlers.JournalHandler
 }
 
 func NewAppRouter(v *validator.Validate, r *repositories.Queries) *AppRouter {
 	return &AppRouter{
-		AuthHandler: handlers.NewAuthHandler(v, r),
+		AuthHandler:    handlers.NewAuthHandler(v, r),
+		JournalHandler: handlers.NewJournalHandler(v, r),
 	}
 }
 
 func (r *AppRouter) RegisterRoute(router fiber.Router) {
 	r.AuthHandler.RegisterRoute(router)
+	r.JournalHandler.RegisterRoutes(router)
 }

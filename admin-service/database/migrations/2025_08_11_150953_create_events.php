@@ -16,6 +16,8 @@ return new class extends Migration
             $table->foreignId("detail_id")->references("id")->on("details");
             $table->string("code_id", 255);
             $table->text("location");
+            $table->decimal('latitude', 10, 7)->nullable();
+            $table->decimal('longitude', 10, 7)->nullable();
             $table->string("contact");
             $table->date("starts_at");
             $table->date("ends_at");

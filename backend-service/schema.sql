@@ -38,8 +38,7 @@ CREATE TABLE public.attendances (
     user_id bigint NOT NULL,
     event_id bigint NOT NULL,
     attended boolean DEFAULT false NOT NULL,
-    created_at timestamp(0) without time zone,
-    updated_at timestamp(0) without time zone
+    created_at timestamp(0) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL
 );
 
 
@@ -166,8 +165,7 @@ CREATE TABLE public.contributions (
     id bigint NOT NULL,
     quest_id bigint NOT NULL,
     user_id bigint NOT NULL,
-    created_at timestamp(0) without time zone,
-    updated_at timestamp(0) without time zone
+    created_at timestamp(0) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL
 );
 
 
@@ -232,6 +230,8 @@ CREATE TABLE public.events (
     detail_id bigint NOT NULL,
     code_id character varying(255) NOT NULL,
     location text NOT NULL,
+    latitude numeric(10,7),
+    longitude numeric(10,7),
     contact character varying(255) NOT NULL,
     starts_at date NOT NULL,
     ends_at date NOT NULL,
@@ -355,8 +355,7 @@ CREATE TABLE public.logs (
     is_system boolean DEFAULT false NOT NULL,
     is_marked boolean DEFAULT false NOT NULL,
     is_private boolean NOT NULL,
-    created_at timestamp(0) without time zone,
-    updated_at timestamp(0) without time zone
+    created_at timestamp(0) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL
 );
 
 
@@ -452,8 +451,7 @@ CREATE TABLE public.participations (
     challenge_id bigint NOT NULL,
     user_id bigint NOT NULL,
     memory_id bigint NOT NULL,
-    created_at timestamp(0) without time zone,
-    updated_at timestamp(0) without time zone
+    created_at timestamp(0) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL
 );
 
 
@@ -564,8 +562,7 @@ CREATE TABLE public.recaps (
     task_finished integer NOT NULL,
     task_assigned integer NOT NULL,
     growth numeric(5,2) NOT NULL,
-    created_at timestamp(0) without time zone,
-    updated_at timestamp(0) without time zone
+    created_at timestamp(0) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL
 );
 
 
@@ -1242,10 +1239,10 @@ ALTER TABLE ONLY public.treasures
 -- PostgreSQL database dump complete
 --
 
+
 --
 -- PostgreSQL database dump
 --
-
 
 -- Dumped from database version 17.5
 -- Dumped by pg_dump version 17.6 (Ubuntu 17.6-1.pgdg24.04+1)
@@ -1277,3 +1274,5 @@ SELECT pg_catalog.setval('public.migrations_id_seq', 18, true);
 --
 -- PostgreSQL database dump complete
 --
+
+

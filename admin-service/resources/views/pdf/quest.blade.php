@@ -20,6 +20,8 @@
             <p><strong>Description:</strong> {{ $quest->detail->description }}</p>
             <p><strong>Point Gain:</strong> {{ $quest->detail->point_gain }}</p>
             <p><strong>Location:</strong> {{ $quest->location }}</p>
+            <p><strong>Latitude:</strong> {{ $quest->latitude }}</p>
+            <p><strong>Longitude:</strong> {{ $quest->longitude }}</p>
             <p><strong>Max Contributors:</strong> {{ $quest->max_contributors }}</p>
 
             @if($quest->code?->image_url)

@@ -113,29 +113,29 @@ class QuestResource extends Resource
         ];
     }
 
-public static function exportRecentPdf()
-    {
-        $quests = Quest::with(['detail', 'code'])
-            ->whereHas('detail', function ($query) {
-                $query->where('created_at', '>=', Carbon::now()->subDays(3));
-            })
-            ->get();
+    public static function exportRecentPdf()
+        {
+            $quests = Quest::with(['detail', 'code'])
+                ->whereHas('detail', function ($query) {
+                    $query->where('created_at', '>=', Carbon::now()->subDays(3));
+                })
+                ->get();
 
-        if ($quests->isEmpty()) {
-            return redirect()->back()->with('danger', 'No quests created in the last 3 days.');
+            if ($quests->isEmpty()) {
+                return redirect()->back()->with('danger', 'No quests created in the last 3 days.');
+            }
+
+            $pdf = Pdf::loadView('pdf.quest', [
+                'quests' => $quests,
+            ])->setPaper('a4', 'portrait');
+            $pdf->setOptions([
+                'isHtml5ParserEnabled' => true,
+                'isRemoteEnabled' => true, // 👈 this is required for S3 images
+            ]);
+
+            return response()->streamDownload(
+                fn () => print($pdf->output()),
+                'quests-last-3-days.pdf'
+            );
         }
-
-        $pdf = Pdf::loadView('pdf.quest', [
-            'quests' => $quests,
-        ])->setPaper('a4', 'portrait');
-        $pdf->setOptions([
-            'isHtml5ParserEnabled' => true,
-            'isRemoteEnabled' => true, // 👈 this is required for S3 images
-        ]);
-
-        return response()->streamDownload(
-            fn () => print($pdf->output()),
-            'quests-last-3-days.pdf'
-        );
-    }
 }

@@ -33,7 +33,7 @@ func NewAuthHandler(
 
 func (h *AuthHandler) RegisterRoute(router fiber.Router) {
 	g := router.Group("/auth")
-	g.Post("/register", h.handlRegister)
+	g.Post("/register", h.handleRegister)
 	g.Post("/login", h.handleLogin)
 	g.Get("/me", h.handleMe)
 	g.Get("/test", func(c *fiber.Ctx) error {
@@ -43,7 +43,7 @@ func (h *AuthHandler) RegisterRoute(router fiber.Router) {
 	})
 }
 
-func (h *AuthHandler) handlRegister(c *fiber.Ctx) error {
+func (h *AuthHandler) handleRegister(c *fiber.Ctx) error {
 	req := &models.PostUserRegister{}
 	err := c.BodyParser(req)
 	if err != nil {
@@ -65,7 +65,7 @@ func (h *AuthHandler) handlRegister(c *fiber.Ctx) error {
 
 	user, err := h.Repository.CreateUser(ctx, repositories.CreateUserParams{
 		Username: req.Username,
-		Name:     req.Username,
+		Name:     req.Name,
 		Password: hashedPassword,
 		Email:    req.Email,
 	})
@@ -97,8 +97,12 @@ func (h *AuthHandler) handlRegister(c *fiber.Ctx) error {
 
 	err = h.Repository.CreateStatistics(ctx, user.ID)
 
-	return c.Status(fiber.StatusOK).JSON(fiber.Map{
-		"data": user,
+	return c.Status(fiber.StatusCreated).JSON(fiber.Map{
+		"data": fiber.Map{
+			"username": req.Username,
+			"name":     req.Name,
+			"email":    req.Email,
+		},
 	})
 }
 

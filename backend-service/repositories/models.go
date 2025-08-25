@@ -14,7 +14,6 @@ type Attendance struct {
 	EventID   int64
 	Attended  bool
 	CreatedAt pgtype.Timestamp
-	UpdatedAt pgtype.Timestamp
 }
 
 type Cache struct {
@@ -54,7 +53,6 @@ type Contribution struct {
 	QuestID   int64
 	UserID    int64
 	CreatedAt pgtype.Timestamp
-	UpdatedAt pgtype.Timestamp
 }
 
 type Detail struct {
@@ -67,14 +65,16 @@ type Detail struct {
 }
 
 type Event struct {
-	ID       int64
-	DetailID int64
-	CodeID   string
-	Location string
-	Contact  string
-	StartsAt pgtype.Date
-	EndsAt   pgtype.Date
-	CoverUrl pgtype.Text
+	ID        int64
+	DetailID  int64
+	CodeID    string
+	Location  string
+	Latitude  pgtype.Numeric
+	Longitude pgtype.Numeric
+	Contact   string
+	StartsAt  pgtype.Date
+	EndsAt    pgtype.Date
+	CoverUrl  pgtype.Text
 }
 
 type FailedJob struct {
@@ -118,7 +118,6 @@ type Log struct {
 	IsMarked  bool
 	IsPrivate bool
 	CreatedAt pgtype.Timestamp
-	UpdatedAt pgtype.Timestamp
 }
 
 type Memory struct {
@@ -142,7 +141,6 @@ type Participation struct {
 	UserID      int64
 	MemoryID    int64
 	CreatedAt   pgtype.Timestamp
-	UpdatedAt   pgtype.Timestamp
 }
 
 type PasswordResetToken struct {
@@ -177,7 +175,6 @@ type Recap struct {
 	TaskAssigned int32
 	Growth       pgtype.Numeric
 	CreatedAt    pgtype.Timestamp
-	UpdatedAt    pgtype.Timestamp
 }
 
 type Session struct {

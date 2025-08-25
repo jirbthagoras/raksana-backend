@@ -7,7 +7,50 @@ package repositories
 
 import (
 	"context"
+
+	"github.com/jackc/pgx/v5/pgtype"
 )
+
+const createLog = `-- name: CreateLog :one
+INSERT INTO logs (user_id, text, is_system, is_marked, is_private)
+VALUES ($1, $2, $3, $4, $5)
+RETURNING id, text, is_system, is_marked, is_private
+`
+
+type CreateLogParams struct {
+	UserID    int64
+	Text      string
+	IsSystem  bool
+	IsMarked  bool
+	IsPrivate bool
+}
+
+type CreateLogRow struct {
+	ID        int64
+	Text      string
+	IsSystem  bool
+	IsMarked  bool
+	IsPrivate bool
+}
+
+func (q *Queries) CreateLog(ctx context.Context, arg CreateLogParams) (CreateLogRow, error) {
+	row := q.db.QueryRow(ctx, createLog,
+		arg.UserID,
+		arg.Text,
+		arg.IsSystem,
+		arg.IsMarked,
+		arg.IsPrivate,
+	)
+	var i CreateLogRow
+	err := row.Scan(
+		&i.ID,
+		&i.Text,
+		&i.IsSystem,
+		&i.IsMarked,
+		&i.IsPrivate,
+	)
+	return i, err
+}
 
 const createProfile = `-- name: CreateProfile :exec
 INSERT INTO profiles (user_id, exp_needed)
@@ -63,6 +106,58 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (CreateU
 	var i CreateUserRow
 	err := row.Scan(&i.ID, &i.Username, &i.Email)
 	return i, err
+}
+
+const getLogs = `-- name: GetLogs :many
+SELECT text, created_at, is_marked, is_system, is_private
+FROM logs
+WHERE user_id = $1 AND is_marked = $2 AND is_system = $3 AND is_private = $4
+`
+
+type GetLogsParams struct {
+	UserID    int64
+	IsMarked  bool
+	IsSystem  bool
+	IsPrivate bool
+}
+
+type GetLogsRow struct {
+	Text      string `json:"text"`
+	CreatedAt pgtype.Timestamp `json:"created_at"`
+	IsMarked  bool `json:"is_marked"`
+	IsSystem  bool `json:"is_system"`
+	IsPrivate bool `json:"is_private"`
+}
+
+func (q *Queries) GetLogs(ctx context.Context, arg GetLogsParams) ([]GetLogsRow, error) {
+	rows, err := q.db.Query(ctx, getLogs,
+		arg.UserID,
+		arg.IsMarked,
+		arg.IsSystem,
+		arg.IsPrivate,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GetLogsRow
+	for rows.Next() {
+		var i GetLogsRow
+		if err := rows.Scan(
+			&i.Text,
+			&i.CreatedAt,
+			&i.IsMarked,
+			&i.IsSystem,
+			&i.IsPrivate,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 const getUserByEmail = `-- name: GetUserByEmail :one

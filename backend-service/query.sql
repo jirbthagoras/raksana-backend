@@ -20,3 +20,13 @@ VALUES ($1, $2);
 -- name: CreateStatistics :exec
 INSERT INTO statistics (user_id)
 VALUES ($1);
+
+-- name: CreateLog :one
+INSERT INTO logs (user_id, text, is_system, is_marked, is_private)
+VALUES ($1, $2, $3, $4, $5)
+RETURNING id, text, is_system, is_marked, is_private;
+
+-- name: GetLogs :many
+SELECT text, created_at, is_marked, is_system, is_private
+FROM logs
+WHERE user_id = $1 AND is_marked = $2 AND is_system = $3 AND is_private = $4;
