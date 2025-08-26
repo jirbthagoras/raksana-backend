@@ -53,12 +53,7 @@ func (h *JournalHandler) handleAppendJournal(c *fiber.Ctx) error {
 
 	id, err := helpers.GetSubjectFromToken(c)
 	if err != nil {
-		slog.Error("err", err)
-		return err
-	}
-
-	if err != nil {
-		slog.Error("Failed to convert string into integer", "err", err.Error())
+		slog.Error("Faield to get subject from token", "err", err)
 		return err
 	}
 

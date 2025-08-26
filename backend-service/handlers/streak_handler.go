@@ -19,7 +19,11 @@ type StreakHandler struct {
 	Repository *repositories.Queries
 }
 
-func NewStreakHandler(v *validator.Validate, r *redis.Client, rp *repositories.Queries) *StreakHandler {
+func NewStreakHandler(
+	v *validator.Validate,
+	r *redis.Client,
+	rp *repositories.Queries,
+) *StreakHandler {
 	return &StreakHandler{
 		Validator:  v,
 		Redis:      r,
@@ -29,7 +33,10 @@ func NewStreakHandler(v *validator.Validate, r *redis.Client, rp *repositories.Q
 
 func (h *StreakHandler) RegisterRoute(router fiber.Router) {
 	g := router.Group("/streak")
+	g.Use(helpers.TokenMiddleware)
 	g.Post("/", h.handleUpdateStreak)
+	g.Get("/", h.handleGetStreak)
+
 }
 
 func (h *StreakHandler) handleUpdateStreak(c *fiber.Ctx) error {
@@ -37,12 +44,12 @@ func (h *StreakHandler) handleUpdateStreak(c *fiber.Ctx) error {
 	ttl := helpers.SecondsUntilMidnight()
 	id, err := helpers.GetSubjectFromToken(c)
 	if err != nil {
-		slog.Error("err", err)
+		slog.Error("Faield to get subject from token", "err", err)
 		return err
 	}
 
-	streakKey := fmt.Sprintf("user:%s:streak", id)
-	flagKey := fmt.Sprintf("user:%s:checkin_flag", id)
+	streakKey := fmt.Sprintf("user:%v:streak", id)
+	flagKey := fmt.Sprintf("user:%v:checkin_flag", id)
 
 	exists, err := h.Redis.Exists(ctx, flagKey).Result()
 	if err != nil {
@@ -87,7 +94,28 @@ func (h *StreakHandler) handleUpdateStreak(c *fiber.Ctx) error {
 
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"data": fiber.Map{
-			"streak": newStreak,
+			"message": "success",
+		},
+	})
+}
+
+func (h *StreakHandler) handleGetStreak(c *fiber.Ctx) error {
+	id, err := helpers.GetSubjectFromToken(c)
+	streakKey := fmt.Sprintf("user:%v:streak", id)
+	if err != nil {
+		slog.Error("Failed to get subject from token", "err", err)
+		return err
+	}
+
+	exists, err := h.Redis.Get(context.Background(), streakKey).Result()
+	if err != nil {
+		slog.Error("Failed to get keyval")
+		return err
+	}
+
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"data": fiber.Map{
+			"streak": exists,
 		},
 	})
 }
