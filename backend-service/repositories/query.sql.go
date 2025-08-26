@@ -122,11 +122,11 @@ type GetLogsParams struct {
 }
 
 type GetLogsRow struct {
-	Text      string `json:"text"`
-	CreatedAt pgtype.Timestamp `json:"created_at"`
-	IsMarked  bool `json:"is_marked"`
-	IsSystem  bool `json:"is_system"`
-	IsPrivate bool `json:"is_private"`
+	Text      string
+	CreatedAt pgtype.Timestamp
+	IsMarked  bool
+	IsSystem  bool
+	IsPrivate bool
 }
 
 func (q *Queries) GetLogs(ctx context.Context, arg GetLogsParams) ([]GetLogsRow, error) {
@@ -158,6 +158,26 @@ func (q *Queries) GetLogs(ctx context.Context, arg GetLogsParams) ([]GetLogsRow,
 		return nil, err
 	}
 	return items, nil
+}
+
+const getStatisticByUserID = `-- name: GetStatisticByUserID :one
+SELECT id, user_id, challenges, events, quests, treasures, longest_streak, tree_grown FROM statistics WHERE user_id = $1
+`
+
+func (q *Queries) GetStatisticByUserID(ctx context.Context, userID int64) (Statistic, error) {
+	row := q.db.QueryRow(ctx, getStatisticByUserID, userID)
+	var i Statistic
+	err := row.Scan(
+		&i.ID,
+		&i.UserID,
+		&i.Challenges,
+		&i.Events,
+		&i.Quests,
+		&i.Treasures,
+		&i.LongestStreak,
+		&i.TreeGrown,
+	)
+	return i, err
 }
 
 const getUserByEmail = `-- name: GetUserByEmail :one
@@ -208,4 +228,19 @@ func (q *Queries) GetUserById(ctx context.Context, id int64) (GetUserByIdRow, er
 		&i.Password,
 	)
 	return i, err
+}
+
+const updateLongestStreak = `-- name: UpdateLongestStreak :exec
+UPDATE statistics SET longest_streak = $2
+WHERE user_id = $1
+`
+
+type UpdateLongestStreakParams struct {
+	UserID        int64
+	LongestStreak int32
+}
+
+func (q *Queries) UpdateLongestStreak(ctx context.Context, arg UpdateLongestStreakParams) error {
+	_, err := q.db.Exec(ctx, updateLongestStreak, arg.UserID, arg.LongestStreak)
+	return err
 }

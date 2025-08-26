@@ -87,6 +87,15 @@ type FailedJob struct {
 	FailedAt   pgtype.Timestamp
 }
 
+type Habit struct {
+	ID          int64
+	PacketID    int64
+	Name        string
+	Description string
+	Difficulty  string
+	Locked      bool
+}
+
 type Job struct {
 	ID          int64
 	Queue       string
@@ -135,6 +144,18 @@ type Migration struct {
 	Batch     int32
 }
 
+type Packet struct {
+	ID            int64
+	UserID        int64
+	Name          string
+	Target        string
+	Description   string
+	CompletedTask int32
+	ExpectedTask  int32
+	TaskPerDay    int32
+	CreatedAt     pgtype.Timestamp
+}
+
 type Participation struct {
 	ID          int64
 	ChallengeID int64
@@ -154,6 +175,8 @@ type Profile struct {
 	UserID     int64
 	CurrentExp int64
 	ExpNeeded  int64
+	Level      int32
+	Multiplier int32
 	Points     int64
 }
 
@@ -168,13 +191,15 @@ type Quest struct {
 }
 
 type Recap struct {
-	ID           int64
-	UserID       int64
-	Description  string
-	TaskFinished int32
-	TaskAssigned int32
-	Growth       pgtype.Numeric
-	CreatedAt    pgtype.Timestamp
+	ID            int64
+	UserID        int64
+	Summary       string
+	Tips          string
+	AssignedTask  int32
+	CompletedTask int32
+	LongestStreak int32
+	Type          string
+	CreatedAt     pgtype.Timestamp
 }
 
 type Session struct {
@@ -187,13 +212,25 @@ type Session struct {
 }
 
 type Statistic struct {
-	ID         int64
-	UserID     int64
-	Challenges int32
-	Events     int32
-	Quests     int32
-	Treasures  int32
-	TreeGrown  int32
+	ID            int64
+	UserID        int64
+	Challenges    int32
+	Events        int32
+	Quests        int32
+	Treasures     int32
+	LongestStreak int32
+	TreeGrown     int32
+}
+
+type Task struct {
+	ID          int64
+	HabitID     int64
+	UserID      int64
+	PacketID    int64
+	Name        string
+	Description string
+	Completed   bool
+	CreatedAt   pgtype.Timestamp
 }
 
 type Treasure struct {

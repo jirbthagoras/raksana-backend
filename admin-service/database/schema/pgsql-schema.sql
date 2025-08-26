@@ -292,6 +292,40 @@ ALTER SEQUENCE public.failed_jobs_id_seq OWNED BY public.failed_jobs.id;
 
 
 --
+-- Name: habits; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.habits (
+    id bigint NOT NULL,
+    packet_id bigint NOT NULL,
+    name character varying(255) NOT NULL,
+    description text NOT NULL,
+    difficulty character varying(255) NOT NULL,
+    locked boolean NOT NULL,
+    CONSTRAINT habits_difficulty_check CHECK (((difficulty)::text = ANY ((ARRAY['hard'::character varying, 'normal'::character varying, 'easy'::character varying])::text[])))
+);
+
+
+--
+-- Name: habits_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.habits_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: habits_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.habits_id_seq OWNED BY public.habits.id;
+
+
+--
 -- Name: job_batches; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -442,6 +476,42 @@ ALTER SEQUENCE public.migrations_id_seq OWNED BY public.migrations.id;
 
 
 --
+-- Name: packets; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.packets (
+    id bigint NOT NULL,
+    user_id bigint NOT NULL,
+    name character varying(255) NOT NULL,
+    target character varying(255) NOT NULL,
+    description text NOT NULL,
+    completed_task integer DEFAULT 0 NOT NULL,
+    expected_task integer NOT NULL,
+    task_per_day integer DEFAULT 3 NOT NULL,
+    created_at timestamp(0) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL
+);
+
+
+--
+-- Name: packets_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.packets_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: packets_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.packets_id_seq OWNED BY public.packets.id;
+
+
+--
 -- Name: participations; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -493,6 +563,8 @@ CREATE TABLE public.profiles (
     user_id bigint NOT NULL,
     current_exp bigint DEFAULT '0'::bigint NOT NULL,
     exp_needed bigint NOT NULL,
+    level integer DEFAULT 1 NOT NULL,
+    multiplier integer DEFAULT 0 NOT NULL,
     points bigint DEFAULT '0'::bigint NOT NULL
 );
 
@@ -557,11 +629,14 @@ ALTER SEQUENCE public.quests_id_seq OWNED BY public.quests.id;
 CREATE TABLE public.recaps (
     id bigint NOT NULL,
     user_id bigint NOT NULL,
-    description text NOT NULL,
-    task_finished integer NOT NULL,
-    task_assigned integer NOT NULL,
-    growth numeric(5,2) NOT NULL,
-    created_at timestamp(0) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL
+    summary text NOT NULL,
+    tips text NOT NULL,
+    assigned_task integer NOT NULL,
+    completed_task integer NOT NULL,
+    longest_streak integer NOT NULL,
+    type character varying(255) NOT NULL,
+    created_at timestamp(0) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    CONSTRAINT recaps_type_check CHECK (((type)::text = ANY ((ARRAY['weekly'::character varying, 'monthly'::character varying])::text[])))
 );
 
 
@@ -609,6 +684,7 @@ CREATE TABLE public.statistics (
     events integer DEFAULT 0 NOT NULL,
     quests integer DEFAULT 0 NOT NULL,
     treasures integer DEFAULT 0 NOT NULL,
+    longest_streak integer DEFAULT 0 NOT NULL,
     tree_grown integer DEFAULT 0 NOT NULL
 );
 
@@ -630,6 +706,41 @@ CREATE SEQUENCE public.statistics_id_seq
 --
 
 ALTER SEQUENCE public.statistics_id_seq OWNED BY public.statistics.id;
+
+
+--
+-- Name: tasks; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.tasks (
+    id bigint NOT NULL,
+    habit_id bigint NOT NULL,
+    user_id bigint NOT NULL,
+    packet_id bigint NOT NULL,
+    name character varying(255) NOT NULL,
+    description text NOT NULL,
+    completed boolean DEFAULT false NOT NULL,
+    created_at timestamp(0) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL
+);
+
+
+--
+-- Name: tasks_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.tasks_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: tasks_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.tasks_id_seq OWNED BY public.tasks.id;
 
 
 --
@@ -753,6 +864,13 @@ ALTER TABLE ONLY public.failed_jobs ALTER COLUMN id SET DEFAULT nextval('public.
 
 
 --
+-- Name: habits id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.habits ALTER COLUMN id SET DEFAULT nextval('public.habits_id_seq'::regclass);
+
+
+--
 -- Name: jobs id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -778,6 +896,13 @@ ALTER TABLE ONLY public.memories ALTER COLUMN id SET DEFAULT nextval('public.mem
 --
 
 ALTER TABLE ONLY public.migrations ALTER COLUMN id SET DEFAULT nextval('public.migrations_id_seq'::regclass);
+
+
+--
+-- Name: packets id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.packets ALTER COLUMN id SET DEFAULT nextval('public.packets_id_seq'::regclass);
 
 
 --
@@ -813,6 +938,13 @@ ALTER TABLE ONLY public.recaps ALTER COLUMN id SET DEFAULT nextval('public.recap
 --
 
 ALTER TABLE ONLY public.statistics ALTER COLUMN id SET DEFAULT nextval('public.statistics_id_seq'::regclass);
+
+
+--
+-- Name: tasks id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.tasks ALTER COLUMN id SET DEFAULT nextval('public.tasks_id_seq'::regclass);
 
 
 --
@@ -918,6 +1050,14 @@ ALTER TABLE ONLY public.failed_jobs
 
 
 --
+-- Name: habits habits_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.habits
+    ADD CONSTRAINT habits_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: job_batches job_batches_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -955,6 +1095,14 @@ ALTER TABLE ONLY public.memories
 
 ALTER TABLE ONLY public.migrations
     ADD CONSTRAINT migrations_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: packets packets_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.packets
+    ADD CONSTRAINT packets_pkey PRIMARY KEY (id);
 
 
 --
@@ -1014,6 +1162,14 @@ ALTER TABLE ONLY public.statistics
 
 
 --
+-- Name: tasks tasks_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.tasks
+    ADD CONSTRAINT tasks_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: treasures treasures_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -1027,14 +1183,6 @@ ALTER TABLE ONLY public.treasures
 
 ALTER TABLE ONLY public.users
     ADD CONSTRAINT users_email_unique UNIQUE (email);
-
-
---
--- Name: users users_name_unique; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.users
-    ADD CONSTRAINT users_name_unique UNIQUE (name);
 
 
 --
@@ -1147,6 +1295,14 @@ ALTER TABLE ONLY public.events
 
 
 --
+-- Name: habits habits_packet_id_foreign; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.habits
+    ADD CONSTRAINT habits_packet_id_foreign FOREIGN KEY (packet_id) REFERENCES public.packets(id);
+
+
+--
 -- Name: logs logs_user_id_foreign; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -1160,6 +1316,14 @@ ALTER TABLE ONLY public.logs
 
 ALTER TABLE ONLY public.memories
     ADD CONSTRAINT memories_user_id_foreign FOREIGN KEY (user_id) REFERENCES public.users(id);
+
+
+--
+-- Name: packets packets_user_id_foreign; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.packets
+    ADD CONSTRAINT packets_user_id_foreign FOREIGN KEY (user_id) REFERENCES public.users(id);
 
 
 --
@@ -1227,6 +1391,30 @@ ALTER TABLE ONLY public.statistics
 
 
 --
+-- Name: tasks tasks_habit_id_foreign; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.tasks
+    ADD CONSTRAINT tasks_habit_id_foreign FOREIGN KEY (habit_id) REFERENCES public.habits(id);
+
+
+--
+-- Name: tasks tasks_packet_id_foreign; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.tasks
+    ADD CONSTRAINT tasks_packet_id_foreign FOREIGN KEY (packet_id) REFERENCES public.packets(id);
+
+
+--
+-- Name: tasks tasks_user_id_foreign; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.tasks
+    ADD CONSTRAINT tasks_user_id_foreign FOREIGN KEY (user_id) REFERENCES public.users(id);
+
+
+--
 -- Name: treasures treasures_code_id_foreign; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -1242,6 +1430,7 @@ ALTER TABLE ONLY public.treasures
 --
 -- PostgreSQL database dump
 --
+
 
 -- Dumped from database version 17.5
 -- Dumped by pg_dump version 17.6 (Ubuntu 17.6-1.pgdg24.04+1)
@@ -1267,10 +1456,9 @@ SET row_security = off;
 -- Name: migrations_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
 --
 
-SELECT pg_catalog.setval('public.migrations_id_seq', 18, true);
+SELECT pg_catalog.setval('public.migrations_id_seq', 21, true);
 
 
 --
 -- PostgreSQL database dump complete
 --
-

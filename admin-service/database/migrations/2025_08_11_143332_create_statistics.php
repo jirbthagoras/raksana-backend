@@ -18,6 +18,7 @@ return new class extends Migration
             $table->integer("events")->default(0);
             $table->integer("quests")->default(0);
             $table->integer("treasures")->default(0);
+            $table->integer("longest_streak")->default(0);
             $table->integer("tree_grown")->default(0);
         });
     }

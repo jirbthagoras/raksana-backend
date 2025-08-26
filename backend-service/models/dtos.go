@@ -1,5 +1,7 @@
 package models
 
+import "github.com/jackc/pgx/v5/pgtype"
+
 type PostUserRegister struct {
 	Name                 string `json:"name" validate:"required"`
 	Username             string `json:"username" validate:"required,min=3,max=20"`
@@ -20,4 +22,9 @@ type PostLogAppend struct {
 }
 
 type ResponseGetLogs struct {
+	Text      string           `json:"text"`
+	IsMarked  bool             `json:"is_marked"`
+	IsSystem  bool             `json:"is_system"`
+	IsPrivate bool             `json:"is_private"`
+	CreatedAt pgtype.Timestamp `json:"created_at"`
 }

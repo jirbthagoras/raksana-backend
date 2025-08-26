@@ -53,6 +53,7 @@ func (h *JournalHandler) handleAppendJournal(c *fiber.Ctx) error {
 
 	id, err := helpers.GetSubjectFromToken(c)
 	if err != nil {
+		slog.Error("err", err)
 		return err
 	}
 
@@ -107,12 +108,23 @@ func (h *JournalHandler) handleGetLogs(c *fiber.Ctx) error {
 		return err
 	}
 
-	logs, err := h.Repository.GetLogs(context.Background(), repositories.GetLogsParams{
+	result, err := h.Repository.GetLogs(context.Background(), repositories.GetLogsParams{
 		UserID:    int64(id),
 		IsMarked:  isMarked,
 		IsSystem:  isSystem,
 		IsPrivate: isPrivate,
 	})
+
+	logs := []models.ResponseGetLogs{}
+	for _, log := range result {
+		logs = append(logs, models.ResponseGetLogs{
+			Text:      log.Text,
+			IsMarked:  log.IsMarked,
+			IsSystem:  log.IsSystem,
+			IsPrivate: log.IsPrivate,
+			CreatedAt: log.CreatedAt,
+		})
+	}
 
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"data": fiber.Map{

@@ -12,15 +12,15 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('recaps', function (Blueprint $table) {
+        Schema::create('packets', function (Blueprint $table) {
             $table->id();
             $table->foreignId("user_id")->references("id")->on("users");
-            $table->text("summary");
-            $table->text("tips");
-            $table->integer("assigned_task");
-            $table->integer("completed_task");
-            $table->integer("longest_streak");
-            $table->enum("type", ["weekly", "monthly"]);
+            $table->string("name");
+            $table->string("target");
+            $table->text("description");
+            $table->integer("completed_task")->default(0);
+            $table->integer("expected_task");
+            $table->integer("task_per_day")->default(3);
             $table->timestamp('created_at')->default(DB::raw('CURRENT_TIMESTAMP'));
         });
     }
@@ -30,6 +30,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('recaps');
+        Schema::dropIfExists('packets');
     }
 };

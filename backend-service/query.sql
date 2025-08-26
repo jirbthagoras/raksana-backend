@@ -30,3 +30,10 @@ RETURNING id, text, is_system, is_marked, is_private;
 SELECT text, created_at, is_marked, is_system, is_private
 FROM logs
 WHERE user_id = $1 AND is_marked = $2 AND is_system = $3 AND is_private = $4;
+
+-- name: GetStatisticByUserID :one
+SELECT * FROM statistics WHERE user_id = $1;
+
+-- name: UpdateLongestStreak :exec
+UPDATE statistics SET longest_streak = $2
+WHERE user_id = $1;

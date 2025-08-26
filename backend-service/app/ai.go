@@ -10,7 +10,7 @@ import (
 
 const (
 	TrashScanner       int8 = 0
-	HabitGenerator     int8 = 1
+	Ecoach             int8 = 1
 	Recap              int8 = 2
 	ChallengeGenerator int8 = 3
 )
@@ -46,9 +46,9 @@ func initModel(client *genai.Client, cnf *viper.Viper, modelType int8) (*genai.G
 	case Recap:
 		systemInstruction = cnf.GetString("RECAP_SYSTEM_INSTRUCTION")
 		recapConfig(generativeModel)
-	case HabitGenerator:
+	case Ecoach:
 		systemInstruction = cnf.GetString("HABIT_GENERATOR_SYSTEM_INSTRUCTION")
-		habitGeneratorConfig(generativeModel)
+		ecoachConfig(generativeModel)
 	case ChallengeGenerator:
 		systemInstruction = cnf.GetString("CHALLENGE_GENERATOR_SYSTEM_INSTRUCTION")
 		challengeGeneratorConfig(generativeModel)
@@ -105,30 +105,42 @@ func trashScannerConfig(generativeModel *genai.GenerativeModel) {
 		Required: []string{"title", "description", "recycling_ideas"},
 	}
 }
-func habitGeneratorConfig(generativeModel *genai.GenerativeModel) {
+func ecoachConfig(generativeModel *genai.GenerativeModel) {
 	generativeModel.SetTemperature(1.6)
 	generativeModel.SetTopK(40)
 	generativeModel.SetTopP(0.95)
 	generativeModel.SetMaxOutputTokens(8192)
 	generativeModel.ResponseMIMEType = "application/json"
 	generativeModel.ResponseSchema = &genai.Schema{
-		Type: genai.TypeArray,
-		Items: &genai.Schema{
-			Type: genai.TypeObject,
-			Properties: map[string]*genai.Schema{
-				"name": {
-					Type: genai.TypeString,
-				},
-				"difficulty": {
-					Type: genai.TypeString,
-					Enum: []string{"easy", "normal", "hard"},
-				},
-				"description": {
-					Type: genai.TypeString,
+		Type: genai.TypeObject,
+		Properties: map[string]*genai.Schema{
+			"habits_generated": {
+				Type: genai.TypeInteger,
+			},
+			"task_per_day": {
+				Type: genai.TypeInteger,
+			},
+			"habits": {
+				Type: genai.TypeArray,
+				Items: &genai.Schema{
+					Type: genai.TypeObject,
+					Properties: map[string]*genai.Schema{
+						"name": {
+							Type: genai.TypeString,
+						},
+						"description": {
+							Type: genai.TypeString,
+						},
+						"difficulty": {
+							Type: genai.TypeString,
+							Enum: []string{"hard", "normal", "easy"},
+						},
+					},
+					Required: []string{"name", "description", "difficulty"},
 				},
 			},
-			Required: []string{"name", "difficulty", "description"},
 		},
+		Required: []string{"habits_generated", "task_per_day"},
 	}
 }
 func recapConfig(generativeModel *genai.GenerativeModel) {
