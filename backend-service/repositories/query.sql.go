@@ -160,6 +160,31 @@ func (q *Queries) GetLogs(ctx context.Context, arg GetLogsParams) ([]GetLogsRow,
 	return items, nil
 }
 
+const getProfileByUserId = `-- name: GetProfileByUserId :one
+SELECT current_exp, exp_needed, level, points
+FROM profiles
+WHERE user_id = $1
+`
+
+type GetProfileByUserIdRow struct {
+	CurrentExp int64
+	ExpNeeded  int64
+	Level      int32
+	Points     int64
+}
+
+func (q *Queries) GetProfileByUserId(ctx context.Context, userID int64) (GetProfileByUserIdRow, error) {
+	row := q.db.QueryRow(ctx, getProfileByUserId, userID)
+	var i GetProfileByUserIdRow
+	err := row.Scan(
+		&i.CurrentExp,
+		&i.ExpNeeded,
+		&i.Level,
+		&i.Points,
+	)
+	return i, err
+}
+
 const getStatisticByUserID = `-- name: GetStatisticByUserID :one
 SELECT id, user_id, challenges, events, quests, treasures, longest_streak, tree_grown FROM statistics WHERE user_id = $1
 `
@@ -230,17 +255,61 @@ func (q *Queries) GetUserById(ctx context.Context, id int64) (GetUserByIdRow, er
 	return i, err
 }
 
+const increaseExp = `-- name: IncreaseExp :one
+UPDATE profiles 
+SET current_exp = current_exp + $1::int
+WHERE user_id = $2::int
+RETURNING current_exp, exp_needed, level
+`
+
+type IncreaseExpParams struct {
+	ExpGain int32
+	UserID  int32
+}
+
+type IncreaseExpRow struct {
+	CurrentExp int64
+	ExpNeeded  int64
+	Level      int32
+}
+
+func (q *Queries) IncreaseExp(ctx context.Context, arg IncreaseExpParams) (IncreaseExpRow, error) {
+	row := q.db.QueryRow(ctx, increaseExp, arg.ExpGain, arg.UserID)
+	var i IncreaseExpRow
+	err := row.Scan(&i.CurrentExp, &i.ExpNeeded, &i.Level)
+	return i, err
+}
+
+const updateLevelAndExpNeeded = `-- name: UpdateLevelAndExpNeeded :one
+UPDATE profiles
+SET exp_needed = $1, level = level + 1
+WHERE user_id = $2
+RETURNING level
+`
+
+type UpdateLevelAndExpNeededParams struct {
+	ExpNeeded int64
+	UserID    int64
+}
+
+func (q *Queries) UpdateLevelAndExpNeeded(ctx context.Context, arg UpdateLevelAndExpNeededParams) (int32, error) {
+	row := q.db.QueryRow(ctx, updateLevelAndExpNeeded, arg.ExpNeeded, arg.UserID)
+	var level int32
+	err := row.Scan(&level)
+	return level, err
+}
+
 const updateLongestStreak = `-- name: UpdateLongestStreak :exec
-UPDATE statistics SET longest_streak = $2
-WHERE user_id = $1
+UPDATE statistics SET longest_streak = $1
+WHERE user_id = $2
 `
 
 type UpdateLongestStreakParams struct {
-	UserID        int64
 	LongestStreak int32
+	UserID        int64
 }
 
 func (q *Queries) UpdateLongestStreak(ctx context.Context, arg UpdateLongestStreakParams) error {
-	_, err := q.db.Exec(ctx, updateLongestStreak, arg.UserID, arg.LongestStreak)
+	_, err := q.db.Exec(ctx, updateLongestStreak, arg.LongestStreak, arg.UserID)
 	return err
 }

@@ -35,5 +35,22 @@ WHERE user_id = $1 AND is_marked = $2 AND is_system = $3 AND is_private = $4;
 SELECT * FROM statistics WHERE user_id = $1;
 
 -- name: UpdateLongestStreak :exec
-UPDATE statistics SET longest_streak = $2
+UPDATE statistics SET longest_streak = $1
+WHERE user_id = $2;
+
+-- name: GetProfileByUserId :one
+SELECT current_exp, exp_needed, level, points
+FROM profiles
 WHERE user_id = $1;
+
+-- name: IncreaseExp :one
+UPDATE profiles 
+SET current_exp = current_exp + @exp_gain::int
+WHERE user_id = @user_id::int
+RETURNING current_exp, exp_needed, level;
+
+-- name: UpdateLevelAndExpNeeded :one
+UPDATE profiles
+SET exp_needed = $1, level = level + 1
+WHERE user_id = $2
+RETURNING level;

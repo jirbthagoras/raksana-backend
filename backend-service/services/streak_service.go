@@ -6,6 +6,7 @@ import (
 	"jirbthagoras/raksana-backend/helpers"
 	"jirbthagoras/raksana-backend/repositories"
 	"log/slog"
+	"strconv"
 	"time"
 
 	"github.com/gofiber/fiber/v2"
@@ -24,7 +25,7 @@ func NewStreakService(r *redis.Client, rp *repositories.Queries) *StreakService 
 	}
 }
 
-func (s *StreakService) UpdateStreak(id int) (int, error) {
+func (s *StreakService) UpdateStreak(id int) error {
 	ctx := context.Background()
 	ttl := helpers.SecondsUntilMidnight()
 
@@ -34,36 +35,36 @@ func (s *StreakService) UpdateStreak(id int) (int, error) {
 	exists, err := s.Redis.Exists(ctx, flagKey).Result()
 	if err != nil {
 		slog.Error("Failed to check keyval existence")
-		return 0, err
+		return err
 	}
 
 	if exists > 0 {
 		slog.Error("User already checked in today")
-		return 0, fiber.NewError(fiber.StatusBadRequest, "You've already checked in today")
+		return fiber.NewError(fiber.StatusBadRequest, "You've already checked in today")
 	}
 
 	newStreak, err := s.Redis.Incr(ctx, streakKey).Result()
 	if err != nil {
 		slog.Error("Failed to incr keyval", "err", err)
-		return 0, err
+		return err
 	}
 
 	_, err = s.Redis.Set(ctx, flagKey, 1, time.Duration(ttl)*time.Second).Result()
 	if err != nil {
 		slog.Error("Failed to set new keyval", "err", err)
-		return 0, err
+		return err
 	}
 
 	_, err = s.Redis.Expire(ctx, streakKey, time.Duration(ttl)*time.Second).Result()
 	if err != nil {
 		slog.Error("Failed to set expire to a keyval", "err", err)
-		return 0, err
+		return err
 	}
 
 	stat, err := s.Repository.GetStatisticByUserID(ctx, int64(id))
 	if err != nil {
 		slog.Error("Failed to get statistics data")
-		return 0, err
+		return err
 	}
 
 	if newStreak > int64(stat.LongestStreak) {
@@ -73,5 +74,23 @@ func (s *StreakService) UpdateStreak(id int) (int, error) {
 		})
 	}
 
-	return int(newStreak), nil
+	return nil
+}
+
+func (s *StreakService) GetCurrentStreak(id int) (int, error) {
+	streakKey := fmt.Sprintf("user:%v:streak", id)
+
+	result, err := s.Redis.Get(context.Background(), streakKey).Result()
+	if err != nil {
+		slog.Error("Failed to get keyval")
+		return 0, err
+	}
+
+	streak, err := strconv.Atoi(result)
+	if err != nil {
+		slog.Error("Failed to convert value")
+		return 0, err
+	}
+
+	return streak, nil
 }

@@ -16,13 +16,13 @@ type LeaderboardHandler struct {
 
 func NewLeaderboardHandler(
 	v *validator.Validate,
-	r *redis.Client,
-	rp *repositories.Queries,
+	rd *redis.Client,
+	r *repositories.Queries,
 ) *LeaderboardHandler {
 	return &LeaderboardHandler{
 		Validator:  v,
-		Redis:      r,
-		Repository: rp,
+		Redis:      rd,
+		Repository: r,
 	}
 }
 

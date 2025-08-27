@@ -1,10 +1,8 @@
 package handlers
 
 import (
-	"context"
-	"fmt"
 	"jirbthagoras/raksana-backend/helpers"
-	"jirbthagoras/raksana-backend/repositories"
+	"jirbthagoras/raksana-backend/services"
 	"log/slog"
 
 	"github.com/go-playground/validator/v10"
@@ -13,20 +11,18 @@ import (
 )
 
 type StreakHandler struct {
-	Validator  *validator.Validate
-	Redis      *redis.Client
-	Repository *repositories.Queries
+	Validator     *validator.Validate
+	StreakService *services.StreakService
 }
 
 func NewStreakHandler(
 	v *validator.Validate,
 	r *redis.Client,
-	rp *repositories.Queries,
+	s *services.StreakService,
 ) *StreakHandler {
 	return &StreakHandler{
-		Validator:  v,
-		Redis:      r,
-		Repository: rp,
+		Validator:     v,
+		StreakService: s,
 	}
 }
 
@@ -100,21 +96,19 @@ func (h *StreakHandler) RegisterRoute(router fiber.Router) {
 
 func (h *StreakHandler) handleGetStreak(c *fiber.Ctx) error {
 	id, err := helpers.GetSubjectFromToken(c)
-	streakKey := fmt.Sprintf("user:%v:streak", id)
 	if err != nil {
 		slog.Error("Failed to get subject from token", "err", err)
 		return err
 	}
 
-	exists, err := h.Redis.Get(context.Background(), streakKey).Result()
+	streak, err := h.StreakService.GetCurrentStreak(id)
 	if err != nil {
-		slog.Error("Failed to get keyval")
 		return err
 	}
 
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"data": fiber.Map{
-			"streak": exists,
+			"streak": streak,
 		},
 	})
 }

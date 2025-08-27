@@ -5,7 +5,6 @@ import (
 
 	"github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v2"
-	"github.com/redis/go-redis/v9"
 )
 
 type PacketHandler struct {
@@ -15,12 +14,11 @@ type PacketHandler struct {
 
 func NewPacketHandler(
 	v *validator.Validate,
-	r *redis.Client,
-	rp *repositories.Queries,
+	r *repositories.Queries,
 ) *PacketHandler {
 	return &PacketHandler{
 		Validator:  v,
-		Repository: rp,
+		Repository: r,
 	}
 }
 

@@ -3,6 +3,7 @@ package app
 import (
 	"jirbthagoras/raksana-backend/handlers"
 	"jirbthagoras/raksana-backend/repositories"
+	"jirbthagoras/raksana-backend/services"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v2"
@@ -21,11 +22,13 @@ func NewAppRouter(
 	r *repositories.Queries,
 	rd *redis.Client,
 ) *AppRouter {
+	journalService := services.NewJournalService(r)
+	streakService := services.NewStreakService(rd, r)
 	return &AppRouter{
 		AuthHandler:        handlers.NewAuthHandler(v, r),
-		JournalHandler:     handlers.NewJournalHandler(v, r),
+		JournalHandler:     handlers.NewJournalHandler(v, journalService),
 		LeaderboardHandler: handlers.NewLeaderboardHandler(v, rd, r),
-		StreakHandler:      handlers.NewStreakHandler(v, rd, r),
+		StreakHandler:      handlers.NewStreakHandler(v, rd, streakService),
 	}
 }
 

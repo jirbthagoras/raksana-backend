@@ -7,6 +7,7 @@ import (
 	"jirbthagoras/raksana-backend/helpers"
 	"jirbthagoras/raksana-backend/models"
 	"jirbthagoras/raksana-backend/repositories"
+	"jirbthagoras/raksana-backend/services"
 	"log/slog"
 	"strconv"
 
@@ -15,17 +16,17 @@ import (
 )
 
 type JournalHandler struct {
-	Validator  *validator.Validate
-	Repository *repositories.Queries
+	Validator *validator.Validate
+	*services.JournalService
 }
 
 func NewJournalHandler(
 	v *validator.Validate,
-	r *repositories.Queries,
+	s *services.JournalService,
 ) *JournalHandler {
 	return &JournalHandler{
-		Validator:  v,
-		Repository: r,
+		Validator:      v,
+		JournalService: s,
 	}
 }
 
@@ -57,15 +58,8 @@ func (h *JournalHandler) handleAppendJournal(c *fiber.Ctx) error {
 		return err
 	}
 
-	_, err = h.Repository.CreateLog(context.Background(), repositories.CreateLogParams{
-		UserID:    int64(id),
-		Text:      req.Text,
-		IsMarked:  false,
-		IsSystem:  req.IsSystem,
-		IsPrivate: req.IsPrivate,
-	})
+	err = h.JournalService.AppendLog(req, id)
 	if err != nil {
-		slog.Error("Failed to append log", "err", err.Error())
 		return err
 	}
 
@@ -77,12 +71,10 @@ func (h *JournalHandler) handleAppendJournal(c *fiber.Ctx) error {
 }
 
 func (h *JournalHandler) handleGetLogs(c *fiber.Ctx) error {
-	// Get as string with default
 	isPrivateParam := c.Query("is_private", "false") // default false
 	isSystemParam := c.Query("is_system", "false")   // default false
 	isMarkedParam := c.Query("is_marked", "false")
 
-	// Convert string -> bool
 	isPrivate, err := strconv.ParseBool(isPrivateParam)
 	if err != nil {
 		isPrivate = false
