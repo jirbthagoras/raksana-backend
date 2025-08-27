@@ -47,7 +47,7 @@ func initModel(client *genai.Client, cnf *viper.Viper, modelType int8) (*genai.G
 		systemInstruction = cnf.GetString("RECAP_SYSTEM_INSTRUCTION")
 		recapConfig(generativeModel)
 	case Ecoach:
-		systemInstruction = cnf.GetString("HABIT_GENERATOR_SYSTEM_INSTRUCTION")
+		systemInstruction = cnf.GetString("ECOACH_SYSTEM_INSTRUCTION")
 		ecoachConfig(generativeModel)
 	case ChallengeGenerator:
 		systemInstruction = cnf.GetString("CHALLENGE_GENERATOR_SYSTEM_INSTRUCTION")

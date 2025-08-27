@@ -54,7 +54,7 @@ class CreateQuest extends CreateRecord
         $result = Builder::create()
             ->data($jwt)
             ->encoding(new Encoding('UTF-8'))
-            ->size(50)
+            ->size(200)
             ->margin(5)
             ->foregroundColor(new Color(0, 0, 0))
             ->backgroundColor(new Color(255, 255, 255))

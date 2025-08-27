@@ -23,6 +23,8 @@ func main() {
 	conn := app.GetConnection()
 	defer conn.Close()
 
+	redisConn := app.NewRedisClient()
+
 	// init repo
 	repository := repositories.New(conn)
 	validator := validator.New()
@@ -32,7 +34,7 @@ func main() {
 
 	api := server.Group("/api")
 
-	router := app.NewAppRouter(validator, repository)
+	router := app.NewAppRouter(validator, repository, redisConn)
 	router.RegisterRoute(api)
 
 	go func() {
