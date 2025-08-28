@@ -20,7 +20,8 @@ return new class extends Migration
             $table->text("description");
             $table->integer("completed_task")->default(0);
             $table->integer("expected_task");
-            $table->integer("task_per_day")->default(3);
+            $table->integer("task_per_day");
+            $table->boolean("completed")->default(false);
             $table->timestamp('created_at')->default(DB::raw('CURRENT_TIMESTAMP'));
         });
     }

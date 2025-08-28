@@ -11,6 +11,33 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+const createHabit = `-- name: CreateHabit :one
+INSERT INTO habits (packet_id, name, description, difficulty, locked)
+VALUES ($1, $2, $3, $4, $5)
+RETURNING id
+`
+
+type CreateHabitParams struct {
+	PacketID    int64
+	Name        string
+	Description string
+	Difficulty  string
+	Locked      bool
+}
+
+func (q *Queries) CreateHabit(ctx context.Context, arg CreateHabitParams) (int64, error) {
+	row := q.db.QueryRow(ctx, createHabit,
+		arg.PacketID,
+		arg.Name,
+		arg.Description,
+		arg.Difficulty,
+		arg.Locked,
+	)
+	var id int64
+	err := row.Scan(&id)
+	return id, err
+}
+
 const createLog = `-- name: CreateLog :one
 INSERT INTO logs (user_id, text, is_system, is_marked, is_private)
 VALUES ($1, $2, $3, $4, $5)
@@ -50,6 +77,35 @@ func (q *Queries) CreateLog(ctx context.Context, arg CreateLogParams) (CreateLog
 		&i.IsPrivate,
 	)
 	return i, err
+}
+
+const createPacket = `-- name: CreatePacket :one
+INSERT INTO packets  (user_id, name, target, description, expected_task, task_per_day)
+VALUES ($1, $2, $3, $4, $5, $6)
+RETURNING id
+`
+
+type CreatePacketParams struct {
+	UserID       int64
+	Name         string
+	Target       string
+	Description  string
+	ExpectedTask int32
+	TaskPerDay   int32
+}
+
+func (q *Queries) CreatePacket(ctx context.Context, arg CreatePacketParams) (int64, error) {
+	row := q.db.QueryRow(ctx, createPacket,
+		arg.UserID,
+		arg.Name,
+		arg.Target,
+		arg.Description,
+		arg.ExpectedTask,
+		arg.TaskPerDay,
+	)
+	var id int64
+	err := row.Scan(&id)
+	return id, err
 }
 
 const createProfile = `-- name: CreateProfile :exec

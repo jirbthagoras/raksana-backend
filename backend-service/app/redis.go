@@ -2,14 +2,23 @@ package app
 
 import (
 	"context"
-	"github.com/redis/go-redis/v9"
+	"jirbthagoras/raksana-backend/helpers"
 	"log/slog"
+
+	"github.com/redis/go-redis/v9"
 )
 
 func NewRedisClient() *redis.Client {
+	cnf := helpers.NewConfig()
+	addr := cnf.GetString("REDIS_ADDR")
+	username := cnf.GetString("REDIS_USERNAME")
+	password := cnf.GetString("REDIS_PASSWORD")
+
 	client := redis.NewClient(&redis.Options{
-		Addr: "localhost:6379",
-		DB:   0,
+		Addr:     addr,
+		Username: username,
+		Password: password,
+		DB:       0,
 	})
 
 	err := client.Ping(context.Background()).Err()

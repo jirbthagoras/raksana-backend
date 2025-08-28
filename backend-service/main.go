@@ -19,10 +19,12 @@ func main() {
 	server := fiber.New(fiber.Config{
 		ErrorHandler: exceptions.ErrorHandler,
 	})
+
 	// open connection
 	conn := app.GetConnection()
 	defer conn.Close()
 
+	// redis
 	redisConn := app.NewRedisClient()
 
 	// init repo
@@ -30,7 +32,7 @@ func main() {
 	validator := validator.New()
 
 	// init fcm
-	_ = app.InitFCMClient()
+	// _ = app.InitFCMClient()
 
 	api := server.Group("/api")
 

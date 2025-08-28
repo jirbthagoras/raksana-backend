@@ -54,3 +54,13 @@ UPDATE profiles
 SET exp_needed = $1, level = level + 1
 WHERE user_id = $2
 RETURNING level;
+
+-- name: CreatePacket :one
+INSERT INTO packets  (user_id, name, target, description, expected_task, task_per_day)
+VALUES ($1, $2, $3, $4, $5, $6)
+RETURNING id;
+
+-- name: CreateHabit :one
+INSERT INTO habits (packet_id, name, description, difficulty, locked)
+VALUES ($1, $2, $3, $4, $5)
+RETURNING id;

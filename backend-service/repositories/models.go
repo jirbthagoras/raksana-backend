@@ -153,6 +153,7 @@ type Packet struct {
 	CompletedTask int32
 	ExpectedTask  int32
 	TaskPerDay    int32
+	Completed     bool
 	CreatedAt     pgtype.Timestamp
 }
 
@@ -176,7 +177,6 @@ type Profile struct {
 	CurrentExp int64
 	ExpNeeded  int64
 	Level      int32
-	Multiplier int32
 	Points     int64
 }
 

@@ -44,9 +44,7 @@ func TokenMiddleware(c *fiber.Ctx) error {
 		return fiber.NewError(fiber.StatusUnauthorized, "Token Invalid")
 	}
 
-	c.Next()
-
-	return nil
+	return c.Next()
 }
 
 func GenerateToken(id int, username string, email string, expiry time.Time) (string, error) {

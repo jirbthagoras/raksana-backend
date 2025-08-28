@@ -16,7 +16,7 @@ return new class extends Migration
             $table->foreignId("packet_id")->references("id")->on("packets");
             $table->string("name");
             $table->text("description");
-            $table->enum("difficulty", ["hard", "normal", "easy"]);
+            $table->text("difficulty");
             $table->boolean("locked");
         });
     }

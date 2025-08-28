@@ -26,7 +26,7 @@ func NewStreakHandler(
 	}
 }
 
-func (h *StreakHandler) RegisterRoute(router fiber.Router) {
+func (h *StreakHandler) RegisterRoutes(router fiber.Router) {
 	g := router.Group("/streak")
 	g.Use(helpers.TokenMiddleware)
 	// g.Post("/", h.handleUpdateStreak)

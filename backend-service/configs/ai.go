@@ -1,8 +1,9 @@
-package app
+package configs
 
 import (
 	"context"
 
+	"github.com/gofiber/fiber/v2"
 	"github.com/google/generative-ai-go/genai"
 	"github.com/spf13/viper"
 	"google.golang.org/api/option"
@@ -34,7 +35,7 @@ func InitAiClient(cnf *viper.Viper) *AIClient {
 	}
 }
 
-func initModel(client *genai.Client, cnf *viper.Viper, modelType int8) (*genai.GenerativeModel, error) {
+func InitModel(client *genai.Client, cnf *viper.Viper, modelType int8) (*genai.GenerativeModel, error) {
 	model := cnf.GetString("MODEL")
 	generativeModel := client.GenerativeModel(model)
 
@@ -52,6 +53,8 @@ func initModel(client *genai.Client, cnf *viper.Viper, modelType int8) (*genai.G
 	case ChallengeGenerator:
 		systemInstruction = cnf.GetString("CHALLENGE_GENERATOR_SYSTEM_INSTRUCTION")
 		challengeGeneratorConfig(generativeModel)
+	default:
+		return nil, fiber.NewError(fiber.StatusInternalServerError, "Internal server error")
 	}
 
 	generativeModel.SystemInstruction = &genai.Content{
@@ -76,8 +79,7 @@ func trashScannerConfig(generativeModel *genai.GenerativeModel) {
 				Type: genai.TypeString,
 			},
 			"description": {
-				Type: genai.TypeString,
-			},
+				Type: genai.TypeString},
 			"recycling_ideas": {
 				Type: genai.TypeArray,
 				Items: &genai.Schema{
@@ -114,7 +116,10 @@ func ecoachConfig(generativeModel *genai.GenerativeModel) {
 	generativeModel.ResponseSchema = &genai.Schema{
 		Type: genai.TypeObject,
 		Properties: map[string]*genai.Schema{
-			"habits_generated": {
+			"name": {
+				Type: genai.TypeString,
+			},
+			"expected_task": {
 				Type: genai.TypeInteger,
 			},
 			"task_per_day": {
@@ -140,7 +145,7 @@ func ecoachConfig(generativeModel *genai.GenerativeModel) {
 				},
 			},
 		},
-		Required: []string{"habits_generated", "task_per_day"},
+		Required: []string{"expected_task", "task_per_day"},
 	}
 }
 func recapConfig(generativeModel *genai.GenerativeModel) {

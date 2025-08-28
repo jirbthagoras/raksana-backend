@@ -1,7 +1,9 @@
 package app
 
 import (
+	"jirbthagoras/raksana-backend/configs"
 	"jirbthagoras/raksana-backend/handlers"
+	"jirbthagoras/raksana-backend/helpers"
 	"jirbthagoras/raksana-backend/repositories"
 	"jirbthagoras/raksana-backend/services"
 
@@ -15,6 +17,7 @@ type AppRouter struct {
 	*handlers.JournalHandler
 	*handlers.LeaderboardHandler
 	*handlers.StreakHandler
+	*handlers.PacketHandler
 }
 
 func NewAppRouter(
@@ -24,17 +27,23 @@ func NewAppRouter(
 ) *AppRouter {
 	journalService := services.NewJournalService(r)
 	streakService := services.NewStreakService(rd, r)
+
+	cnf := helpers.NewConfig()
+	aiClient := configs.InitAiClient(cnf)
+
 	return &AppRouter{
 		AuthHandler:        handlers.NewAuthHandler(v, r),
 		JournalHandler:     handlers.NewJournalHandler(v, journalService),
 		LeaderboardHandler: handlers.NewLeaderboardHandler(v, rd, r),
 		StreakHandler:      handlers.NewStreakHandler(v, rd, streakService),
+		PacketHandler:      handlers.NewPacketHandler(v, r, aiClient),
 	}
 }
 
 func (r *AppRouter) RegisterRoute(router fiber.Router) {
-	r.AuthHandler.RegisterRoute(router)
+	r.AuthHandler.RegisterRoutes(router)
 	r.JournalHandler.RegisterRoutes(router)
 	r.LeaderboardHandler.RegisterRoutes(router)
-	r.StreakHandler.RegisterRoute(router)
+	r.StreakHandler.RegisterRoutes(router)
+	r.PacketHandler.RegisterRoutes(router)
 }

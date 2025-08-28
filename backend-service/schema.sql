@@ -1,3 +1,4 @@
+
 --
 -- PostgreSQL database dump
 --
@@ -300,9 +301,8 @@ CREATE TABLE public.habits (
     packet_id bigint NOT NULL,
     name character varying(255) NOT NULL,
     description text NOT NULL,
-    difficulty character varying(255) NOT NULL,
-    locked boolean NOT NULL,
-    CONSTRAINT habits_difficulty_check CHECK (((difficulty)::text = ANY ((ARRAY['hard'::character varying, 'normal'::character varying, 'easy'::character varying])::text[])))
+    difficulty text NOT NULL,
+    locked boolean NOT NULL
 );
 
 
@@ -487,7 +487,8 @@ CREATE TABLE public.packets (
     description text NOT NULL,
     completed_task integer DEFAULT 0 NOT NULL,
     expected_task integer NOT NULL,
-    task_per_day integer DEFAULT 3 NOT NULL,
+    task_per_day integer NOT NULL,
+    completed boolean DEFAULT false NOT NULL,
     created_at timestamp(0) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL
 );
 
@@ -562,9 +563,8 @@ CREATE TABLE public.profiles (
     id bigint NOT NULL,
     user_id bigint NOT NULL,
     current_exp bigint DEFAULT '0'::bigint NOT NULL,
-    exp_needed bigint NOT NULL,
+    exp_needed bigint DEFAULT '100'::bigint NOT NULL,
     level integer DEFAULT 1 NOT NULL,
-    multiplier integer DEFAULT 0 NOT NULL,
     points bigint DEFAULT '0'::bigint NOT NULL
 );
 
@@ -1426,11 +1426,9 @@ ALTER TABLE ONLY public.treasures
 -- PostgreSQL database dump complete
 --
 
-
 --
 -- PostgreSQL database dump
 --
-
 
 -- Dumped from database version 17.5
 -- Dumped by pg_dump version 17.6 (Ubuntu 17.6-1.pgdg24.04+1)
@@ -1462,3 +1460,4 @@ SELECT pg_catalog.setval('public.migrations_id_seq', 21, true);
 --
 -- PostgreSQL database dump complete
 --
+
