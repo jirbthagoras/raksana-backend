@@ -23,7 +23,6 @@ func (s *JournalService) AppendLog(req *models.PostLogAppend, userId int) error 
 	_, err := s.Repository.CreateLog(context.Background(), repositories.CreateLogParams{
 		UserID:    int64(userId),
 		Text:      req.Text,
-		IsMarked:  false,
 		IsSystem:  req.IsSystem,
 		IsPrivate: req.IsPrivate,
 	})

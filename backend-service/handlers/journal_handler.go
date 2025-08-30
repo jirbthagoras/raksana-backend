@@ -70,23 +70,11 @@ func (h *JournalHandler) handleAppendJournal(c *fiber.Ctx) error {
 }
 
 func (h *JournalHandler) handleGetLogs(c *fiber.Ctx) error {
-	isPrivateParam := c.Query("is_private", "false") // default false
-	isSystemParam := c.Query("is_system", "false")   // default false
-	isMarkedParam := c.Query("is_marked", "false")
+	isPrivateParam := c.Query("is_private", "false")
 
 	isPrivate, err := strconv.ParseBool(isPrivateParam)
 	if err != nil {
 		isPrivate = false
-	}
-
-	isSystem, err := strconv.ParseBool(isSystemParam)
-	if err != nil {
-		isSystem = false
-	}
-
-	isMarked, err := strconv.ParseBool(isMarkedParam)
-	if err != nil {
-		isMarked = false
 	}
 
 	id, err := helpers.GetSubjectFromToken(c)
@@ -96,8 +84,6 @@ func (h *JournalHandler) handleGetLogs(c *fiber.Ctx) error {
 
 	result, err := h.Repository.GetLogs(context.Background(), repositories.GetLogsParams{
 		UserID:    int64(id),
-		IsMarked:  isMarked,
-		IsSystem:  isSystem,
 		IsPrivate: isPrivate,
 	})
 
@@ -105,7 +91,6 @@ func (h *JournalHandler) handleGetLogs(c *fiber.Ctx) error {
 	for _, log := range result {
 		logs = append(logs, models.ResponseGetLogs{
 			Text:      log.Text,
-			IsMarked:  log.IsMarked,
 			IsSystem:  log.IsSystem,
 			IsPrivate: log.IsPrivate,
 			CreatedAt: log.CreatedAt,

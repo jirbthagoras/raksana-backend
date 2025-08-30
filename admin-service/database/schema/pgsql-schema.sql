@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
--- Dumped from database version 17.5
+-- Dumped from database version 17.6 (Debian 17.6-1.pgdg13+1)
 -- Dumped by pg_dump version 17.6 (Ubuntu 17.6-1.pgdg24.04+1)
 
 SET statement_timeout = 0;
@@ -16,13 +16,6 @@ SET check_function_bodies = false;
 SET xmloption = content;
 SET client_min_messages = warning;
 SET row_security = off;
-
---
--- Name: public; Type: SCHEMA; Schema: -; Owner: -
---
-
--- *not* creating schema, since initdb creates it
-
 
 SET default_tablespace = '';
 
@@ -122,8 +115,7 @@ CREATE TABLE public.claimed (
     id bigint NOT NULL,
     user_id bigint NOT NULL,
     treasure_id bigint NOT NULL,
-    created_at timestamp(0) without time zone,
-    updated_at timestamp(0) without time zone
+    created_at timestamp(0) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL
 );
 
 
@@ -387,7 +379,6 @@ CREATE TABLE public.logs (
     user_id bigint NOT NULL,
     text text NOT NULL,
     is_system boolean DEFAULT false NOT NULL,
-    is_marked boolean DEFAULT false NOT NULL,
     is_private boolean NOT NULL,
     created_at timestamp(0) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL
 );
@@ -421,8 +412,7 @@ CREATE TABLE public.memories (
     user_id bigint NOT NULL,
     image_url character varying(255) NOT NULL,
     description text NOT NULL,
-    created_at timestamp(0) without time zone,
-    updated_at timestamp(0) without time zone
+    created_at timestamp(0) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL
 );
 
 
@@ -724,6 +714,7 @@ CREATE TABLE public.tasks (
     difficulty character varying(255) NOT NULL,
     completed boolean DEFAULT false NOT NULL,
     created_at timestamp(0) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    updated_at timestamp(0) without time zone,
     CONSTRAINT tasks_difficulty_check CHECK (((difficulty)::text = ANY ((ARRAY['hard'::character varying, 'normal'::character varying, 'easy'::character varying])::text[])))
 );
 
@@ -1430,11 +1421,7 @@ ALTER TABLE ONLY public.treasures
 -- PostgreSQL database dump complete
 --
 
---
--- PostgreSQL database dump
---
-
--- Dumped from database version 17.5
+-- Dumped from database version 17.6 (Debian 17.6-1.pgdg13+1)
 -- Dumped by pg_dump version 17.6 (Ubuntu 17.6-1.pgdg24.04+1)
 
 SET statement_timeout = 0;
@@ -1449,19 +1436,9 @@ SET xmloption = content;
 SET client_min_messages = warning;
 SET row_security = off;
 
---
--- Data for Name: migrations; Type: TABLE DATA; Schema: public; Owner: -
---
-
-
 
 --
 -- Name: migrations_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
 --
 
 SELECT pg_catalog.setval('public.migrations_id_seq', 21, true);
-
-
---
--- PostgreSQL database dump complete
---

@@ -22,14 +22,15 @@ INSERT INTO statistics (user_id)
 VALUES ($1);
 
 -- name: CreateLog :one
-INSERT INTO logs (user_id, text, is_system, is_marked, is_private)
-VALUES ($1, $2, $3, $4, $5)
-RETURNING id, text, is_system, is_marked, is_private;
+INSERT INTO logs (user_id, text, is_system, is_private)
+VALUES ($1, $2, $3, $4)
+RETURNING id, text, is_system, is_private;
 
 -- name: GetLogs :many
-SELECT text, created_at, is_marked, is_system, is_private
+SELECT text, created_at, is_system, is_private
 FROM logs
-WHERE user_id = $1 AND is_marked = $2 AND is_system = $3 AND is_private = $4;
+WHERE user_id = $1 AND is_private = $2
+ORDER BY created_at DESC;
 
 -- name: GetStatisticByUserID :one
 SELECT * FROM statistics WHERE user_id = $1;
@@ -73,6 +74,10 @@ WHERE user_id = $1 AND completed = false;
 SELECT * FROM packets
 WHERE user_id = $1 AND completed = false;
 
+-- name: GetAllPackets :many
+SELECT * FROM packets
+WHERE user_id = $1;
+
 -- name: GetHabitsByPacketId :many
 SELECT * FROM habits
 WHERE packet_id = $1;
@@ -86,7 +91,7 @@ UPDATE habits
 SET locked = false
 WHERE id = $1;
 
--- name: CountAssignedTask :one
+-- name: CountAssignedTasksByPacketId :one
 SELECT
   COUNT(*) FILTER (WHERE completed = true) AS completed_task
 FROM tasks
@@ -101,4 +106,26 @@ RETURNING *;
 SELECT *
 FROM tasks
 WHERE user_id = $1
-  AND DATE(created_at) = CURRENT_DATE;
+  AND DATE(created_at) = CURRENT_DATE
+ORDER BY id;
+
+-- name: GetTaskById :one
+SELECT * FROM tasks
+WHERE id = $1;
+
+-- name: CompleteTask :one
+UPDATE tasks
+SET completed = true, updated_at = CURRENT_TIMESTAMP
+WHERE id = $1 AND user_id = $2
+  AND DATE(created_at) = CURRENT_DATE
+RETURNING *;
+
+-- name: IncreasePacketCompletedTask :exec
+UPDATE packets
+SET completed_task = completed_task + 1
+WHERE id = $1;
+
+-- name: CompletePacket :exec
+UPDATE packets
+SET completed = true
+WHERE id = $1;

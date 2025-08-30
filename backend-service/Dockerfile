@@ -1,33 +1,31 @@
-# Utilize Docker's Multi Staged building to minimalize image size
+
+# Build stage
 FROM golang:alpine AS builder
 
-# Workdir to make it more easy to transfer file
 WORKDIR /build
-# Transfer the package file
-COPY hon-producer/go.mod hon-producer/go.sum ./
 
-# Transfer the entire source code of jhon-producer
-COPY hon-producer/ .
-# Transfer the shared folder
-COPY shared ./shared
-
-# Make the /shared can be accessed via replacing dependency
-RUN go mod edit -replace=github.com/jirbthagoras/hon/shared=/build/shared
-
-# Download the dependencies
+# Copy module files and download dependencies
+COPY go.mod go.sum ./
 RUN go mod download
-# Build the output binary file
-RUN go build -o /out .
 
-# The last stage of multi staged building
-FROM alpine
+# Copy the rest of the source code
+COPY . .
 
-WORKDIR /out
+# Build the Go binary
+RUN go build -o ./out .
 
-# Copy the executable from builder
-COPY --from=builder /out /out
+# Final stage
+FROM alpine:latest
+
+WORKDIR /main
+
+# Copy the binary from builder
+COPY --from=builder /build/out ./out
+
+# Make it executable
+RUN chmod +x ./out
 
 EXPOSE 3000
 
-# Run the executable
-CMD ["/build"]
+# Run the binary
+CMD ["./out"]

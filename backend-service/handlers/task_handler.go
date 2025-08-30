@@ -3,11 +3,13 @@ package handlers
 import (
 	"context"
 	"errors"
+	"fmt"
 	"jirbthagoras/raksana-backend/helpers"
 	"jirbthagoras/raksana-backend/models"
 	"jirbthagoras/raksana-backend/repositories"
 	"jirbthagoras/raksana-backend/services"
 	"log/slog"
+	"sync"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v2"
@@ -19,6 +21,9 @@ type TaskHandler struct {
 	Repository *repositories.Queries
 	*services.StreakService
 	*services.HabitService
+	*services.JournalService
+	*services.ExpService
+	Mu sync.Mutex
 }
 
 func NewTaskHandler(
@@ -26,12 +31,16 @@ func NewTaskHandler(
 	r *repositories.Queries,
 	ss *services.StreakService,
 	sh *services.HabitService,
+	js *services.JournalService,
+	es *services.ExpService,
 ) *TaskHandler {
 	return &TaskHandler{
-		Validator:     v,
-		Repository:    r,
-		StreakService: ss,
-		HabitService:  sh,
+		Validator:      v,
+		Repository:     r,
+		StreakService:  ss,
+		HabitService:   sh,
+		JournalService: js,
+		ExpService:     es,
 	}
 }
 
@@ -39,6 +48,7 @@ func (h *TaskHandler) RegisterRoutes(router fiber.Router) {
 	g := router.Group("/task")
 	g.Use(helpers.TokenMiddleware)
 	g.Get("/", h.handleGetTodayTask)
+	g.Put("/:id", h.handleCompleteTask)
 }
 
 func (h *TaskHandler) handleGetTodayTask(c *fiber.Ctx) error {
@@ -54,9 +64,23 @@ func (h *TaskHandler) handleGetTodayTask(c *fiber.Ctx) error {
 		return err
 	}
 
+	var tasks []models.ResponseGetTask
+
 	if len(todayTasks) != 0 {
+		for _, task := range todayTasks {
+			tasks = append(tasks, models.ResponseGetTask{
+				Id:          int(task.ID),
+				Name:        task.Name,
+				Description: task.Description,
+				Difficulty:  task.Difficulty,
+				Completed:   task.Completed,
+				CreatedAt:   task.CreatedAt.Time,
+			})
+		}
 		return c.Status(fiber.StatusOK).JSON(fiber.Map{
-			"data": todayTasks,
+			"data": fiber.Map{
+				"tasks": tasks,
+			},
 		})
 	}
 
@@ -83,8 +107,6 @@ func (h *TaskHandler) handleGetTodayTask(c *fiber.Ctx) error {
 
 	randomizedHabits := helpers.PickMultiple(unlockedHabits, taskPerDay)
 
-	var tasks []models.ResponseGetTask
-
 	for _, habit := range randomizedHabits {
 		task, err := h.Repository.CreateTask(ctx, repositories.CreateTaskParams{
 			HabitID:     habit.ID,
@@ -100,6 +122,7 @@ func (h *TaskHandler) handleGetTodayTask(c *fiber.Ctx) error {
 		}
 
 		tasks = append(tasks, models.ResponseGetTask{
+			Id:          int(task.ID),
 			Name:        task.Name,
 			Description: task.Description,
 			Difficulty:  task.Difficulty,
@@ -111,6 +134,137 @@ func (h *TaskHandler) handleGetTodayTask(c *fiber.Ctx) error {
 	return c.Status(fiber.StatusCreated).JSON(fiber.Map{
 		"data": fiber.Map{
 			"tasks": tasks,
+		},
+	})
+}
+
+func (h *TaskHandler) handleCompleteTask(c *fiber.Ctx) error {
+	// Lock the process because ts can happens so multiple times at the same time hehe
+	h.Mu.Lock()
+	defer h.Mu.Unlock()
+
+	taskId, err := c.ParamsInt("id")
+	if err != nil {
+		slog.Error("Failed to parse id from route parameters")
+		return err
+	}
+
+	ctx := context.Background()
+
+	res, err := h.Repository.GetTaskById(ctx, int64(taskId))
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return fiber.NewError(fiber.StatusBadRequest, "Task id is not valid")
+		}
+		slog.Error("Failed to get specific task", "err", err)
+		return err
+	}
+
+	if res.Completed {
+		return fiber.NewError(fiber.StatusBadRequest, "Task already completed")
+	}
+
+	userId, err := helpers.GetSubjectFromToken(c)
+	if err != nil {
+		return err
+	}
+
+	activePacket, err := h.Repository.GetActivePacketsByUserId(ctx, int64(userId))
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return fiber.NewError(fiber.StatusBadRequest, "You have no active packet, please create a packet first")
+		}
+		slog.Error("Failed to get active packets", "err", err)
+		return err
+	}
+
+	task, err := h.Repository.CompleteTask(ctx, repositories.CompleteTaskParams{
+		UserID: int64(userId),
+		ID:     int64(taskId),
+	})
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return fiber.NewError(fiber.StatusBadRequest, "Task is not valid")
+		}
+		slog.Error("Failed to update task status")
+		return err
+	}
+
+	err = h.Repository.IncreasePacketCompletedTask(ctx, activePacket.ID)
+	if err != nil {
+		slog.Error("Failed to update packet")
+		return err
+	}
+
+	activePacket.CompletedTask++
+	if activePacket.CompletedTask >= activePacket.ExpectedTask {
+		err = h.Repository.CompletePacket(ctx, activePacket.ID)
+		if err != nil {
+			slog.Error("Failed to complete packet", "err", err)
+			return err
+		}
+
+		assignedTask, err := h.Repository.CountAssignedTasksByPacketId(ctx,
+			repositories.CountAssignedTasksByPacketIdParams{
+				UserID:   int64(userId),
+				PacketID: activePacket.ID,
+			},
+		)
+		if err != nil {
+			slog.Error("Failed to count assigned task", "err", err)
+			return err
+		}
+
+		completionRate := float64(activePacket.CompletedTask) * 100.0 / float64(assignedTask)
+		logMsg := fmt.Sprintf("Aku baru saja menyelesaikan packet %s! Dengan completion rate: %v", activePacket.Name, completionRate)
+		err = h.JournalService.AppendLog(&models.PostLogAppend{
+			Text:      logMsg,
+			IsSystem:  true,
+			IsPrivate: false,
+		}, userId)
+	}
+
+	err = h.HabitService.CheckHabitState(ctx, activePacket, userId)
+	if err != nil {
+		return err
+	}
+
+	err = h.StreakService.UpdateStreak(ctx, int64(userId))
+	if err != nil {
+		return err
+	}
+
+	expGain, err := helpers.CheckExpGain(task)
+	if err != nil {
+		slog.Error("Failed to get exp gain", "err", err)
+		return err
+	}
+
+	todayTask, err := h.Repository.GetTodayTasks(ctx, int64(userId))
+	if err != nil {
+		slog.Error("Failed to get today tasks", "err", err)
+		return err
+	}
+
+	if len(todayTask) <= 0 {
+		err := h.JournalService.AppendLog(&models.PostLogAppend{
+			Text:      "Aku baru saja menyelesaikan semua task hari ini!",
+			IsSystem:  true,
+			IsPrivate: false,
+		}, userId)
+		if err != nil {
+			return err
+		}
+	}
+
+	err = h.ExpService.IncreaseExp(userId, expGain)
+	if err != nil {
+		return err
+	}
+
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"data": fiber.Map{
+			"message": "sucessfully completed task",
 		},
 	})
 }

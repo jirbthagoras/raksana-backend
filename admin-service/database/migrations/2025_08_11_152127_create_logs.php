@@ -17,7 +17,6 @@ return new class extends Migration
             $table->foreignId("user_id")->references("id")->on("users");
             $table->text("text")->nullable(false);
             $table->boolean("is_system")->default(false);
-            $table->boolean("is_marked")->default(false);
             $table->boolean("is_private")->nullable(false);
             $table->timestamp('created_at')->default(DB::raw('CURRENT_TIMESTAMP'));
         });

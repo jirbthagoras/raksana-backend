@@ -53,7 +53,7 @@ func (s *ExpService) IncreaseExp(userId int, expGain int) error {
 		}
 
 		// append log as system log
-		logMsg := fmt.Sprintf("Baru saja naik level! Sekarang level %v", level)
+		logMsg := fmt.Sprintf("Aku baru saja naik level! Sekarang level %v", level)
 		err = s.JournalService.AppendLog(&models.PostLogAppend{
 			IsSystem:  true,
 			IsPrivate: false,
@@ -63,7 +63,7 @@ func (s *ExpService) IncreaseExp(userId int, expGain int) error {
 			return err
 		}
 
-		profile.Level = level
+		profile.Level++
 	}
 
 	return nil

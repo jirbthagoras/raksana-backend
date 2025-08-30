@@ -43,6 +43,39 @@ func (h *PacketHandler) RegisterRoutes(router fiber.Router) {
 	g := router.Group("/packet")
 	g.Use(helpers.TokenMiddleware)
 	g.Post("/", h.handleGeneratePacket)
+	g.Get("/", h.handleGetAllPackets)
+}
+
+func (h *PacketHandler) handleGetAllPackets(c *fiber.Ctx) error {
+	userId, err := helpers.GetSubjectFromToken(c)
+	if err != nil {
+		return err
+	}
+
+	res, err := h.Repository.GetAllPackets(context.Background(), int64(userId))
+	if err != nil {
+		slog.Error("Failed to get all packets", "err", err)
+		return err
+	}
+
+	var packets []models.ResponseGetPacket
+	for _, packet := range res {
+		packets = append(packets, models.ResponseGetPacket{
+			Name:          packet.Name,
+			Description:   packet.Description,
+			Target:        packet.Target,
+			ExpectedTask:  packet.ExpectedTask,
+			CompletedTask: packet.CompletedTask,
+			TaskPerDay:    packet.TaskPerDay,
+			CreatedAt:     packet.CreatedAt,
+		})
+	}
+
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"data": fiber.Map{
+			"packets": packets,
+		},
+	})
 }
 
 func (h *PacketHandler) handleGeneratePacket(c *fiber.Ctx) error {
@@ -144,7 +177,7 @@ func (h *PacketHandler) handleGeneratePacket(c *fiber.Ctx) error {
 		}
 	}
 
-	logMsg := fmt.Sprintf("Baru saja membuat packet baru dengan target %v", req.Target)
+	logMsg := fmt.Sprintf("Baru saja membuat packet baru dengan nama: %s ayo dicek!", ecoachResponse.Name)
 	err = h.JournalService.AppendLog(&models.PostLogAppend{
 		IsSystem:  true,
 		IsPrivate: false,

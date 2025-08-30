@@ -32,7 +32,6 @@ type PostPacketCreate struct {
 
 type ResponseGetLogs struct {
 	Text      string           `json:"text"`
-	IsMarked  bool             `json:"is_marked"`
 	IsSystem  bool             `json:"is_system"`
 	IsPrivate bool             `json:"is_private"`
 	CreatedAt pgtype.Timestamp `json:"created_at"`
@@ -52,9 +51,22 @@ type EcoachCreatePacketResponse struct {
 }
 
 type ResponseGetTask struct {
+	Id          int       `json:"id"`
 	Name        string    `json:"name"`
 	Description string    `json:"description"`
 	Difficulty  string    `json:"difficulty"`
 	Completed   bool      `json:"completed"`
 	CreatedAt   time.Time `json:"created_at"`
+	UpdatedAt   time.Time `json:"updated_at"`
+}
+
+type ResponseGetPacket struct {
+	Name          string           `json:"name"`
+	Target        string           `json:"target"`
+	Description   string           `json:"description"`
+	CompletedTask int32            `json:"completed_task"`
+	ExpectedTask  int32            `json:"expected_task"`
+	TaskPerDay    int32            `json:"task_per_day"`
+	Completed     bool             `json:"completed"`
+	CreatedAt     pgtype.Timestamp `json:"created_at"`
 }

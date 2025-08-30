@@ -40,7 +40,6 @@ type Claimed struct {
 	UserID     int64
 	TreasureID int64
 	CreatedAt  pgtype.Timestamp
-	UpdatedAt  pgtype.Timestamp
 }
 
 type Code struct {
@@ -125,7 +124,6 @@ type Log struct {
 	UserID    int64
 	Text      string
 	IsSystem  bool
-	IsMarked  bool
 	IsPrivate bool
 	CreatedAt pgtype.Timestamp
 }
@@ -136,7 +134,6 @@ type Memory struct {
 	ImageUrl    string
 	Description string
 	CreatedAt   pgtype.Timestamp
-	UpdatedAt   pgtype.Timestamp
 }
 
 type Migration struct {
@@ -234,6 +231,7 @@ type Task struct {
 	Difficulty  string
 	Completed   bool
 	CreatedAt   pgtype.Timestamp
+	UpdatedAt   pgtype.Timestamp
 }
 
 type Treasure struct {

@@ -11,6 +11,48 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+const completePacket = `-- name: CompletePacket :exec
+UPDATE packets
+SET completed = true
+WHERE id = $1
+`
+
+func (q *Queries) CompletePacket(ctx context.Context, id int64) error {
+	_, err := q.db.Exec(ctx, completePacket, id)
+	return err
+}
+
+const completeTask = `-- name: CompleteTask :one
+UPDATE tasks
+SET completed = true, updated_at = CURRENT_TIMESTAMP
+WHERE id = $1 AND user_id = $2
+  AND DATE(created_at) = CURRENT_DATE
+RETURNING id, habit_id, user_id, packet_id, name, description, difficulty, completed, created_at, updated_at
+`
+
+type CompleteTaskParams struct {
+	ID     int64
+	UserID int64
+}
+
+func (q *Queries) CompleteTask(ctx context.Context, arg CompleteTaskParams) (Task, error) {
+	row := q.db.QueryRow(ctx, completeTask, arg.ID, arg.UserID)
+	var i Task
+	err := row.Scan(
+		&i.ID,
+		&i.HabitID,
+		&i.UserID,
+		&i.PacketID,
+		&i.Name,
+		&i.Description,
+		&i.Difficulty,
+		&i.Completed,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
 const countActivePacketsByUserId = `-- name: CountActivePacketsByUserId :one
 SELECT COUNT(*) FROM packets 
 WHERE user_id = $1 AND completed = false
@@ -23,20 +65,20 @@ func (q *Queries) CountActivePacketsByUserId(ctx context.Context, userID int64) 
 	return count, err
 }
 
-const countAssignedTask = `-- name: CountAssignedTask :one
+const countAssignedTasksByPacketId = `-- name: CountAssignedTasksByPacketId :one
 SELECT
   COUNT(*) FILTER (WHERE completed = true) AS completed_task
 FROM tasks
 WHERE packet_id = $1 AND user_id = $2
 `
 
-type CountAssignedTaskParams struct {
+type CountAssignedTasksByPacketIdParams struct {
 	PacketID int64
 	UserID   int64
 }
 
-func (q *Queries) CountAssignedTask(ctx context.Context, arg CountAssignedTaskParams) (int64, error) {
-	row := q.db.QueryRow(ctx, countAssignedTask, arg.PacketID, arg.UserID)
+func (q *Queries) CountAssignedTasksByPacketId(ctx context.Context, arg CountAssignedTasksByPacketIdParams) (int64, error) {
+	row := q.db.QueryRow(ctx, countAssignedTasksByPacketId, arg.PacketID, arg.UserID)
 	var completed_task int64
 	err := row.Scan(&completed_task)
 	return completed_task, err
@@ -72,16 +114,15 @@ func (q *Queries) CreateHabit(ctx context.Context, arg CreateHabitParams) (int64
 }
 
 const createLog = `-- name: CreateLog :one
-INSERT INTO logs (user_id, text, is_system, is_marked, is_private)
-VALUES ($1, $2, $3, $4, $5)
-RETURNING id, text, is_system, is_marked, is_private
+INSERT INTO logs (user_id, text, is_system, is_private)
+VALUES ($1, $2, $3, $4)
+RETURNING id, text, is_system, is_private
 `
 
 type CreateLogParams struct {
 	UserID    int64
 	Text      string
 	IsSystem  bool
-	IsMarked  bool
 	IsPrivate bool
 }
 
@@ -89,7 +130,6 @@ type CreateLogRow struct {
 	ID        int64
 	Text      string
 	IsSystem  bool
-	IsMarked  bool
 	IsPrivate bool
 }
 
@@ -98,7 +138,6 @@ func (q *Queries) CreateLog(ctx context.Context, arg CreateLogParams) (CreateLog
 		arg.UserID,
 		arg.Text,
 		arg.IsSystem,
-		arg.IsMarked,
 		arg.IsPrivate,
 	)
 	var i CreateLogRow
@@ -106,7 +145,6 @@ func (q *Queries) CreateLog(ctx context.Context, arg CreateLogParams) (CreateLog
 		&i.ID,
 		&i.Text,
 		&i.IsSystem,
-		&i.IsMarked,
 		&i.IsPrivate,
 	)
 	return i, err
@@ -169,7 +207,7 @@ func (q *Queries) CreateStatistics(ctx context.Context, userID int64) error {
 const createTask = `-- name: CreateTask :one
 INSERT INTO tasks(habit_id, user_id, packet_id, name, description, difficulty)
 VALUES ($1, $2, $3, $4, $5, $6)
-RETURNING id, habit_id, user_id, packet_id, name, description, difficulty, completed, created_at
+RETURNING id, habit_id, user_id, packet_id, name, description, difficulty, completed, created_at, updated_at
 `
 
 type CreateTaskParams struct {
@@ -201,6 +239,7 @@ func (q *Queries) CreateTask(ctx context.Context, arg CreateTaskParams) (Task, e
 		&i.Difficulty,
 		&i.Completed,
 		&i.CreatedAt,
+		&i.UpdatedAt,
 	)
 	return i, err
 }
@@ -259,6 +298,42 @@ func (q *Queries) GetActivePacketsByUserId(ctx context.Context, userID int64) (P
 	return i, err
 }
 
+const getAllPackets = `-- name: GetAllPackets :many
+SELECT id, user_id, name, target, description, completed_task, expected_task, task_per_day, completed, created_at FROM packets
+WHERE user_id = $1
+`
+
+func (q *Queries) GetAllPackets(ctx context.Context, userID int64) ([]Packet, error) {
+	rows, err := q.db.Query(ctx, getAllPackets, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Packet
+	for rows.Next() {
+		var i Packet
+		if err := rows.Scan(
+			&i.ID,
+			&i.UserID,
+			&i.Name,
+			&i.Target,
+			&i.Description,
+			&i.CompletedTask,
+			&i.ExpectedTask,
+			&i.TaskPerDay,
+			&i.Completed,
+			&i.CreatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const getHabitsByPacketId = `-- name: GetHabitsByPacketId :many
 SELECT id, packet_id, name, description, difficulty, locked, weight FROM habits
 WHERE packet_id = $1
@@ -293,33 +368,26 @@ func (q *Queries) GetHabitsByPacketId(ctx context.Context, packetID int64) ([]Ha
 }
 
 const getLogs = `-- name: GetLogs :many
-SELECT text, created_at, is_marked, is_system, is_private
+SELECT text, created_at, is_system, is_private
 FROM logs
-WHERE user_id = $1 AND is_marked = $2 AND is_system = $3 AND is_private = $4
+WHERE user_id = $1 AND is_private = $2
+ORDER BY created_at DESC
 `
 
 type GetLogsParams struct {
 	UserID    int64
-	IsMarked  bool
-	IsSystem  bool
 	IsPrivate bool
 }
 
 type GetLogsRow struct {
 	Text      string
 	CreatedAt pgtype.Timestamp
-	IsMarked  bool
 	IsSystem  bool
 	IsPrivate bool
 }
 
 func (q *Queries) GetLogs(ctx context.Context, arg GetLogsParams) ([]GetLogsRow, error) {
-	rows, err := q.db.Query(ctx, getLogs,
-		arg.UserID,
-		arg.IsMarked,
-		arg.IsSystem,
-		arg.IsPrivate,
-	)
+	rows, err := q.db.Query(ctx, getLogs, arg.UserID, arg.IsPrivate)
 	if err != nil {
 		return nil, err
 	}
@@ -330,7 +398,6 @@ func (q *Queries) GetLogs(ctx context.Context, arg GetLogsParams) ([]GetLogsRow,
 		if err := rows.Scan(
 			&i.Text,
 			&i.CreatedAt,
-			&i.IsMarked,
 			&i.IsSystem,
 			&i.IsPrivate,
 		); err != nil {
@@ -389,11 +456,35 @@ func (q *Queries) GetStatisticByUserID(ctx context.Context, userID int64) (Stati
 	return i, err
 }
 
+const getTaskById = `-- name: GetTaskById :one
+SELECT id, habit_id, user_id, packet_id, name, description, difficulty, completed, created_at, updated_at FROM tasks
+WHERE id = $1
+`
+
+func (q *Queries) GetTaskById(ctx context.Context, id int64) (Task, error) {
+	row := q.db.QueryRow(ctx, getTaskById, id)
+	var i Task
+	err := row.Scan(
+		&i.ID,
+		&i.HabitID,
+		&i.UserID,
+		&i.PacketID,
+		&i.Name,
+		&i.Description,
+		&i.Difficulty,
+		&i.Completed,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
 const getTodayTasks = `-- name: GetTodayTasks :many
-SELECT id, habit_id, user_id, packet_id, name, description, difficulty, completed, created_at
+SELECT id, habit_id, user_id, packet_id, name, description, difficulty, completed, created_at, updated_at
 FROM tasks
 WHERE user_id = $1
   AND DATE(created_at) = CURRENT_DATE
+ORDER BY id
 `
 
 func (q *Queries) GetTodayTasks(ctx context.Context, userID int64) ([]Task, error) {
@@ -415,6 +506,7 @@ func (q *Queries) GetTodayTasks(ctx context.Context, userID int64) ([]Task, erro
 			&i.Difficulty,
 			&i.Completed,
 			&i.CreatedAt,
+			&i.UpdatedAt,
 		); err != nil {
 			return nil, err
 		}
@@ -532,6 +624,17 @@ func (q *Queries) IncreaseExp(ctx context.Context, arg IncreaseExpParams) (Incre
 	var i IncreaseExpRow
 	err := row.Scan(&i.CurrentExp, &i.ExpNeeded, &i.Level)
 	return i, err
+}
+
+const increasePacketCompletedTask = `-- name: IncreasePacketCompletedTask :exec
+UPDATE packets
+SET completed_task = completed_task + 1
+WHERE id = $1
+`
+
+func (q *Queries) IncreasePacketCompletedTask(ctx context.Context, id int64) error {
+	_, err := q.db.Exec(ctx, increasePacketCompletedTask, id)
+	return err
 }
 
 const unlockHabit = `-- name: UnlockHabit :exec

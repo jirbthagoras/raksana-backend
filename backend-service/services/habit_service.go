@@ -4,12 +4,10 @@ import (
 	"context"
 	"jirbthagoras/raksana-backend/repositories"
 	"log/slog"
-	"sync"
 )
 
 type HabitService struct {
 	Repository *repositories.Queries
-	Lock       sync.Mutex
 	*StreakService
 }
 
@@ -28,17 +26,17 @@ func (s *HabitService) CheckHabitState(
 	packet repositories.Packet,
 	userId int,
 ) error {
-	// Lock the process so that no race con potention
-	s.Lock.Lock()
-	defer s.Lock.Unlock()
-
-	assignedTask, err := s.Repository.CountAssignedTask(
+	assignedTask, err := s.Repository.CountAssignedTasksByPacketId(
 		ctx,
-		repositories.CountAssignedTaskParams{
+		repositories.CountAssignedTasksByPacketIdParams{
 			UserID:   int64(userId),
 			PacketID: packet.ID,
 		},
 	)
+	if err != nil {
+		slog.Error("Failed sum assigned task", "err", err)
+		return err
+	}
 
 	if assignedTask == 0 {
 		return nil
@@ -64,7 +62,7 @@ func (s *HabitService) CheckHabitState(
 				s.Repository.UnlockHabit(ctx, habit.ID)
 			}
 		case "hard":
-			if completionRate >= 70 && currentStreak >= 7 {
+			if completionRate >= 70 && currentStreak >= 5 {
 				s.Repository.UnlockHabit(ctx, habit.ID)
 			}
 		}
@@ -74,9 +72,6 @@ func (s *HabitService) CheckHabitState(
 }
 
 func (s *HabitService) GetAllHabits(packetId int64) ([]repositories.Habit, error) {
-	s.Lock.Lock()
-	defer s.Lock.Unlock()
-
 	habits, err := s.Repository.GetHabitsByPacketId(context.Background(), packetId)
 	if err != nil {
 		slog.Error("Failed to get habits", "err", err)
@@ -87,9 +82,6 @@ func (s *HabitService) GetAllHabits(packetId int64) ([]repositories.Habit, error
 }
 
 func (s *HabitService) GetUnlockedHabits(packetId int64) ([]repositories.Habit, error) {
-	s.Lock.Lock()
-	defer s.Lock.Unlock()
-
 	unlockedHabits, err := s.Repository.GetUnlockedHabitsByPacketId(
 		context.Background(),
 		packetId,

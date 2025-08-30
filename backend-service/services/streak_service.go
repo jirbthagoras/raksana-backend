@@ -9,7 +9,6 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/gofiber/fiber/v2"
 	"github.com/redis/go-redis/v9"
 )
 
@@ -25,53 +24,70 @@ func NewStreakService(r *redis.Client, rp *repositories.Queries) *StreakService 
 	}
 }
 
-func (s *StreakService) UpdateStreak(id int) error {
-	ctx := context.Background()
-	ttl := helpers.SecondsUntilMidnight()
+func (s *StreakService) UpdateStreak(ctx context.Context, id int64) error {
+	today := time.Now().Format("2006-01-02")
+	yesterday := time.Now().Add(-24 * time.Hour).Format("2006-01-02")
 
-	streakKey := fmt.Sprintf("user:%v:streak", id)
-	flagKey := fmt.Sprintf("user:%v:checkin_flag", id)
+	streakKey := fmt.Sprintf("user:%d:streak", id)
+	lastCheckinKey := fmt.Sprintf("user:%d:last_checkin", id)
+	flagKey := fmt.Sprintf("user:%d:checkin_flag", id)
 
 	exists, err := s.Redis.Exists(ctx, flagKey).Result()
 	if err != nil {
-		slog.Error("Failed to check keyval existence")
-		return err
+		return fmt.Errorf("redis check failed: %w", err)
 	}
-
 	if exists > 0 {
-		slog.Error("User already checked in today")
-		return fiber.NewError(fiber.StatusBadRequest, "You've already checked in today")
+		return nil
 	}
 
-	newStreak, err := s.Redis.Incr(ctx, streakKey).Result()
-	if err != nil {
-		slog.Error("Failed to incr keyval", "err", err)
-		return err
+	lastCheckin, err := s.Redis.Get(ctx, lastCheckinKey).Result()
+	if err == redis.Nil {
+		lastCheckin = ""
+	} else if err != nil {
+		return fmt.Errorf("redis get failed: %w", err)
 	}
 
-	_, err = s.Redis.Set(ctx, flagKey, 1, time.Duration(ttl)*time.Second).Result()
-	if err != nil {
-		slog.Error("Failed to set new keyval", "err", err)
-		return err
+	var newStreak int64
+
+	switch {
+	case lastCheckin == today:
+		return nil
+
+	case lastCheckin == yesterday:
+		newStreak, err = s.Redis.Incr(ctx, streakKey).Result()
+		if err != nil {
+			return fmt.Errorf("redis incr failed: %w", err)
+		}
+
+	default:
+		err = s.Redis.Set(ctx, streakKey, 1, 0).Err()
+		if err != nil {
+			return fmt.Errorf("redis reset streak failed: %w", err)
+		}
+		newStreak = 1
 	}
 
-	_, err = s.Redis.Expire(ctx, streakKey, time.Duration(ttl)*time.Second).Result()
-	if err != nil {
-		slog.Error("Failed to set expire to a keyval", "err", err)
-		return err
+	if err := s.Redis.Set(ctx, lastCheckinKey, today, 0).Err(); err != nil {
+		return fmt.Errorf("redis set last_checkin failed: %w", err)
 	}
 
-	stat, err := s.Repository.GetStatisticByUserID(ctx, int64(id))
+	ttl := helpers.SecondsUntilMidnight()
+	if err := s.Redis.Set(ctx, flagKey, 1, time.Duration(ttl)*time.Second).Err(); err != nil {
+		return fmt.Errorf("redis set flag failed: %w", err)
+	}
+
+	stat, err := s.Repository.GetStatisticByUserID(ctx, id)
 	if err != nil {
-		slog.Error("Failed to get statistics data")
-		return err
+		return fmt.Errorf("db get statistic failed: %w", err)
 	}
 
 	if newStreak > int64(stat.LongestStreak) {
-		s.Repository.UpdateLongestStreak(ctx, repositories.UpdateLongestStreakParams{
-			UserID:        int64(id),
+		if err := s.Repository.UpdateLongestStreak(ctx, repositories.UpdateLongestStreakParams{
+			UserID:        id,
 			LongestStreak: int32(newStreak),
-		})
+		}); err != nil {
+			return fmt.Errorf("db update longest streak failed: %w", err)
+		}
 	}
 
 	return nil
@@ -81,14 +97,17 @@ func (s *StreakService) GetCurrentStreak(id int) (int, error) {
 	streakKey := fmt.Sprintf("user:%v:streak", id)
 
 	result, err := s.Redis.Get(context.Background(), streakKey).Result()
+	if err == redis.Nil {
+		return 0, nil
+	}
 	if err != nil {
-		slog.Error("Failed to get keyval")
+		slog.Error("Failed to get keyval", "err", err)
 		return 0, err
 	}
 
 	streak, err := strconv.Atoi(result)
 	if err != nil {
-		slog.Error("Failed to convert value")
+		slog.Error("Failed to convert value", "err", err)
 		return 0, err
 	}
 
