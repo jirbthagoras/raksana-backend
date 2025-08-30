@@ -54,7 +54,6 @@ func (h *JournalHandler) handleAppendJournal(c *fiber.Ctx) error {
 
 	id, err := helpers.GetSubjectFromToken(c)
 	if err != nil {
-		slog.Error("Faield to get subject from token", "err", err)
 		return err
 	}
 

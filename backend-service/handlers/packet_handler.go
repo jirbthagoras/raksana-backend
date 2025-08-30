@@ -10,9 +10,8 @@ import (
 	"jirbthagoras/raksana-backend/helpers"
 	"jirbthagoras/raksana-backend/models"
 	"jirbthagoras/raksana-backend/repositories"
-	"log"
+	"jirbthagoras/raksana-backend/services"
 	"log/slog"
-	"strings"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v2"
@@ -23,17 +22,20 @@ type PacketHandler struct {
 	Validator  *validator.Validate
 	Repository *repositories.Queries
 	*configs.AIClient
+	*services.JournalService
 }
 
 func NewPacketHandler(
 	v *validator.Validate,
 	r *repositories.Queries,
 	ai *configs.AIClient,
+	s *services.JournalService,
 ) *PacketHandler {
 	return &PacketHandler{
-		Validator:  v,
-		Repository: r,
-		AIClient:   ai,
+		Validator:      v,
+		Repository:     r,
+		AIClient:       ai,
+		JournalService: s,
 	}
 }
 
@@ -59,7 +61,17 @@ func (h *PacketHandler) handleGeneratePacket(c *fiber.Ctx) error {
 
 	userId, err := helpers.GetSubjectFromToken(c)
 	if err != nil {
-		return fiber.NewError(fiber.StatusUnauthorized, "Token is not attached")
+		return err
+	}
+
+	result, err := h.Repository.CountActivePacketsByUserId(ctx, int64(userId))
+	if err != nil {
+		slog.Error("Failed to count active packets", "err", err)
+		return err
+	}
+
+	if result != 0 {
+		return fiber.NewError(fiber.StatusBadRequest, "You already have some active packet, please complete the packet first")
 	}
 
 	msg := fmt.Sprintf("Deskripsi: %s, target: %s", req.Description, req.Target)
@@ -105,27 +117,41 @@ func (h *PacketHandler) handleGeneratePacket(c *fiber.Ctx) error {
 	}
 
 	for _, habit := range ecoachResponse.Habits {
+		var locked bool = true
+		var weight int
 
-		var locked bool = false
-
-		if habit.Difficulty == "easy" {
-			locked = true
+		switch habit.Difficulty {
+		case "easy":
+			locked = false
+			weight = 70
+		case "normal":
+			weight = 25
+		case "hard":
+			weight = 5
 		}
-
-		habit.Difficulty = strings.ToLower(strings.TrimSpace(habit.Difficulty))
 
 		_, err = h.Repository.CreateHabit(ctx, repositories.CreateHabitParams{
 			PacketID:    packetId,
 			Name:        habit.Name,
 			Description: habit.Description,
-			Difficulty:  habit.Description,
+			Difficulty:  habit.Difficulty,
 			Locked:      locked,
+			Weight:      int32(weight),
 		})
 		if err != nil {
 			slog.Error("Failed to insert row into habits", "err", err)
 			return err
 		}
+	}
 
+	logMsg := fmt.Sprintf("Baru saja membuat packet baru dengan target %v", req.Target)
+	err = h.JournalService.AppendLog(&models.PostLogAppend{
+		IsSystem:  true,
+		IsPrivate: false,
+		Text:      logMsg,
+	}, userId)
+	if err != nil {
+		return err
 	}
 
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{

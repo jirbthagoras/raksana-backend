@@ -3,7 +3,6 @@ package handlers
 import (
 	"jirbthagoras/raksana-backend/helpers"
 	"jirbthagoras/raksana-backend/services"
-	"log/slog"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v2"
@@ -97,7 +96,6 @@ func (h *StreakHandler) RegisterRoutes(router fiber.Router) {
 func (h *StreakHandler) handleGetStreak(c *fiber.Ctx) error {
 	id, err := helpers.GetSubjectFromToken(c)
 	if err != nil {
-		slog.Error("Failed to get subject from token", "err", err)
 		return err
 	}
 

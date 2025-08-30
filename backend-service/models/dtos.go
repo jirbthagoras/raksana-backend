@@ -1,6 +1,10 @@
 package models
 
-import "github.com/jackc/pgx/v5/pgtype"
+import (
+	"time"
+
+	"github.com/jackc/pgx/v5/pgtype"
+)
 
 type PostUserRegister struct {
 	Name                 string `json:"name" validate:"required"`
@@ -45,4 +49,12 @@ type EcoachCreatePacketResponse struct {
 	ExpectedTask int    `json:"expected_task"`
 	TaskPerDay   int    `json:"task_per_day"`
 	Habits       []EcoachHabitResponse
+}
+
+type ResponseGetTask struct {
+	Name        string    `json:"name"`
+	Description string    `json:"description"`
+	Difficulty  string    `json:"difficulty"`
+	Completed   bool      `json:"completed"`
+	CreatedAt   time.Time `json:"created_at"`
 }

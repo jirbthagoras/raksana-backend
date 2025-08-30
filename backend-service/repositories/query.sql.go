@@ -11,9 +11,40 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+const countActivePacketsByUserId = `-- name: CountActivePacketsByUserId :one
+SELECT COUNT(*) FROM packets 
+WHERE user_id = $1 AND completed = false
+`
+
+func (q *Queries) CountActivePacketsByUserId(ctx context.Context, userID int64) (int64, error) {
+	row := q.db.QueryRow(ctx, countActivePacketsByUserId, userID)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
+const countAssignedTask = `-- name: CountAssignedTask :one
+SELECT
+  COUNT(*) FILTER (WHERE completed = true) AS completed_task
+FROM tasks
+WHERE packet_id = $1 AND user_id = $2
+`
+
+type CountAssignedTaskParams struct {
+	PacketID int64
+	UserID   int64
+}
+
+func (q *Queries) CountAssignedTask(ctx context.Context, arg CountAssignedTaskParams) (int64, error) {
+	row := q.db.QueryRow(ctx, countAssignedTask, arg.PacketID, arg.UserID)
+	var completed_task int64
+	err := row.Scan(&completed_task)
+	return completed_task, err
+}
+
 const createHabit = `-- name: CreateHabit :one
-INSERT INTO habits (packet_id, name, description, difficulty, locked)
-VALUES ($1, $2, $3, $4, $5)
+INSERT INTO habits (packet_id, name, description, difficulty, locked, weight)
+VALUES ($1, $2, $3, $4, $5, $6)
 RETURNING id
 `
 
@@ -23,6 +54,7 @@ type CreateHabitParams struct {
 	Description string
 	Difficulty  string
 	Locked      bool
+	Weight      int32
 }
 
 func (q *Queries) CreateHabit(ctx context.Context, arg CreateHabitParams) (int64, error) {
@@ -32,6 +64,7 @@ func (q *Queries) CreateHabit(ctx context.Context, arg CreateHabitParams) (int64
 		arg.Description,
 		arg.Difficulty,
 		arg.Locked,
+		arg.Weight,
 	)
 	var id int64
 	err := row.Scan(&id)
@@ -133,6 +166,45 @@ func (q *Queries) CreateStatistics(ctx context.Context, userID int64) error {
 	return err
 }
 
+const createTask = `-- name: CreateTask :one
+INSERT INTO tasks(habit_id, user_id, packet_id, name, description, difficulty)
+VALUES ($1, $2, $3, $4, $5, $6)
+RETURNING id, habit_id, user_id, packet_id, name, description, difficulty, completed, created_at
+`
+
+type CreateTaskParams struct {
+	HabitID     int64
+	UserID      int64
+	PacketID    int64
+	Name        string
+	Description string
+	Difficulty  string
+}
+
+func (q *Queries) CreateTask(ctx context.Context, arg CreateTaskParams) (Task, error) {
+	row := q.db.QueryRow(ctx, createTask,
+		arg.HabitID,
+		arg.UserID,
+		arg.PacketID,
+		arg.Name,
+		arg.Description,
+		arg.Difficulty,
+	)
+	var i Task
+	err := row.Scan(
+		&i.ID,
+		&i.HabitID,
+		&i.UserID,
+		&i.PacketID,
+		&i.Name,
+		&i.Description,
+		&i.Difficulty,
+		&i.Completed,
+		&i.CreatedAt,
+	)
+	return i, err
+}
+
 const createUser = `-- name: CreateUser :one
 INSERT INTO users (name, username, email, password)
 VALUES ($1, $2, $3, $4)
@@ -162,6 +234,62 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (CreateU
 	var i CreateUserRow
 	err := row.Scan(&i.ID, &i.Username, &i.Email)
 	return i, err
+}
+
+const getActivePacketsByUserId = `-- name: GetActivePacketsByUserId :one
+SELECT id, user_id, name, target, description, completed_task, expected_task, task_per_day, completed, created_at FROM packets
+WHERE user_id = $1 AND completed = false
+`
+
+func (q *Queries) GetActivePacketsByUserId(ctx context.Context, userID int64) (Packet, error) {
+	row := q.db.QueryRow(ctx, getActivePacketsByUserId, userID)
+	var i Packet
+	err := row.Scan(
+		&i.ID,
+		&i.UserID,
+		&i.Name,
+		&i.Target,
+		&i.Description,
+		&i.CompletedTask,
+		&i.ExpectedTask,
+		&i.TaskPerDay,
+		&i.Completed,
+		&i.CreatedAt,
+	)
+	return i, err
+}
+
+const getHabitsByPacketId = `-- name: GetHabitsByPacketId :many
+SELECT id, packet_id, name, description, difficulty, locked, weight FROM habits
+WHERE packet_id = $1
+`
+
+func (q *Queries) GetHabitsByPacketId(ctx context.Context, packetID int64) ([]Habit, error) {
+	rows, err := q.db.Query(ctx, getHabitsByPacketId, packetID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Habit
+	for rows.Next() {
+		var i Habit
+		if err := rows.Scan(
+			&i.ID,
+			&i.PacketID,
+			&i.Name,
+			&i.Description,
+			&i.Difficulty,
+			&i.Locked,
+			&i.Weight,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 const getLogs = `-- name: GetLogs :many
@@ -261,6 +389,76 @@ func (q *Queries) GetStatisticByUserID(ctx context.Context, userID int64) (Stati
 	return i, err
 }
 
+const getTodayTasks = `-- name: GetTodayTasks :many
+SELECT id, habit_id, user_id, packet_id, name, description, difficulty, completed, created_at
+FROM tasks
+WHERE user_id = $1
+  AND DATE(created_at) = CURRENT_DATE
+`
+
+func (q *Queries) GetTodayTasks(ctx context.Context, userID int64) ([]Task, error) {
+	rows, err := q.db.Query(ctx, getTodayTasks, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Task
+	for rows.Next() {
+		var i Task
+		if err := rows.Scan(
+			&i.ID,
+			&i.HabitID,
+			&i.UserID,
+			&i.PacketID,
+			&i.Name,
+			&i.Description,
+			&i.Difficulty,
+			&i.Completed,
+			&i.CreatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getUnlockedHabitsByPacketId = `-- name: GetUnlockedHabitsByPacketId :many
+SELECT id, packet_id, name, description, difficulty, locked, weight FROM habits
+WHERE packet_id = $1 AND locked = false
+`
+
+func (q *Queries) GetUnlockedHabitsByPacketId(ctx context.Context, packetID int64) ([]Habit, error) {
+	rows, err := q.db.Query(ctx, getUnlockedHabitsByPacketId, packetID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Habit
+	for rows.Next() {
+		var i Habit
+		if err := rows.Scan(
+			&i.ID,
+			&i.PacketID,
+			&i.Name,
+			&i.Description,
+			&i.Difficulty,
+			&i.Locked,
+			&i.Weight,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const getUserByEmail = `-- name: GetUserByEmail :one
 SELECT id, username, email, password
 FROM users
@@ -336,8 +534,19 @@ func (q *Queries) IncreaseExp(ctx context.Context, arg IncreaseExpParams) (Incre
 	return i, err
 }
 
+const unlockHabit = `-- name: UnlockHabit :exec
+UPDATE habits
+SET locked = false
+WHERE id = $1
+`
+
+func (q *Queries) UnlockHabit(ctx context.Context, id int64) error {
+	_, err := q.db.Exec(ctx, unlockHabit, id)
+	return err
+}
+
 const updateLevelAndExpNeeded = `-- name: UpdateLevelAndExpNeeded :one
-UPDATE profiles
+UPDATE profiles                                  m
 SET exp_needed = $1, level = level + 1
 WHERE user_id = $2
 RETURNING level

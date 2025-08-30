@@ -300,8 +300,10 @@ CREATE TABLE public.habits (
     packet_id bigint NOT NULL,
     name character varying(255) NOT NULL,
     description text NOT NULL,
-    difficulty text NOT NULL,
-    locked boolean NOT NULL
+    difficulty character varying(255) NOT NULL,
+    locked boolean NOT NULL,
+    weight integer NOT NULL,
+    CONSTRAINT habits_difficulty_check CHECK (((difficulty)::text = ANY ((ARRAY['hard'::character varying, 'normal'::character varying, 'easy'::character varying])::text[])))
 );
 
 
@@ -564,7 +566,8 @@ CREATE TABLE public.profiles (
     current_exp bigint DEFAULT '0'::bigint NOT NULL,
     exp_needed bigint DEFAULT '100'::bigint NOT NULL,
     level integer DEFAULT 1 NOT NULL,
-    points bigint DEFAULT '0'::bigint NOT NULL
+    points bigint DEFAULT '0'::bigint NOT NULL,
+    profile_url character varying(255)
 );
 
 
@@ -718,8 +721,10 @@ CREATE TABLE public.tasks (
     packet_id bigint NOT NULL,
     name character varying(255) NOT NULL,
     description text NOT NULL,
+    difficulty character varying(255) NOT NULL,
     completed boolean DEFAULT false NOT NULL,
-    created_at timestamp(0) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL
+    created_at timestamp(0) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    CONSTRAINT tasks_difficulty_check CHECK (((difficulty)::text = ANY ((ARRAY['hard'::character varying, 'normal'::character varying, 'easy'::character varying])::text[])))
 );
 
 
@@ -1447,6 +1452,7 @@ SET row_security = off;
 --
 -- Data for Name: migrations; Type: TABLE DATA; Schema: public; Owner: -
 --
+
 
 
 --

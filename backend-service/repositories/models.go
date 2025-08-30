@@ -94,6 +94,7 @@ type Habit struct {
 	Description string
 	Difficulty  string
 	Locked      bool
+	Weight      int32
 }
 
 type Job struct {
@@ -178,6 +179,7 @@ type Profile struct {
 	ExpNeeded  int64
 	Level      int32
 	Points     int64
+	ProfileUrl pgtype.Text
 }
 
 type Quest struct {
@@ -229,6 +231,7 @@ type Task struct {
 	PacketID    int64
 	Name        string
 	Description string
+	Difficulty  string
 	Completed   bool
 	CreatedAt   pgtype.Timestamp
 }

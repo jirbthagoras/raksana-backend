@@ -50,7 +50,7 @@ WHERE user_id = @user_id::int
 RETURNING current_exp, exp_needed, level;
 
 -- name: UpdateLevelAndExpNeeded :one
-UPDATE profiles
+UPDATE profiles                                  m
 SET exp_needed = $1, level = level + 1
 WHERE user_id = $2
 RETURNING level;
@@ -61,6 +61,44 @@ VALUES ($1, $2, $3, $4, $5, $6)
 RETURNING id;
 
 -- name: CreateHabit :one
-INSERT INTO habits (packet_id, name, description, difficulty, locked)
-VALUES ($1, $2, $3, $4, $5)
+INSERT INTO habits (packet_id, name, description, difficulty, locked, weight)
+VALUES ($1, $2, $3, $4, $5, $6)
 RETURNING id;
+
+-- name: CountActivePacketsByUserId :one
+SELECT COUNT(*) FROM packets 
+WHERE user_id = $1 AND completed = false;
+
+-- name: GetActivePacketsByUserId :one
+SELECT * FROM packets
+WHERE user_id = $1 AND completed = false;
+
+-- name: GetHabitsByPacketId :many
+SELECT * FROM habits
+WHERE packet_id = $1;
+
+-- name: GetUnlockedHabitsByPacketId :many
+SELECT * FROM habits
+WHERE packet_id = $1 AND locked = false;
+
+-- name: UnlockHabit :exec
+UPDATE habits
+SET locked = false
+WHERE id = $1;
+
+-- name: CountAssignedTask :one
+SELECT
+  COUNT(*) FILTER (WHERE completed = true) AS completed_task
+FROM tasks
+WHERE packet_id = $1 AND user_id = $2;
+
+-- name: CreateTask :one
+INSERT INTO tasks(habit_id, user_id, packet_id, name, description, difficulty)
+VALUES ($1, $2, $3, $4, $5, $6)
+RETURNING *;
+
+-- name: GetTodayTasks :many
+SELECT *
+FROM tasks
+WHERE user_id = $1
+  AND DATE(created_at) = CURRENT_DATE;

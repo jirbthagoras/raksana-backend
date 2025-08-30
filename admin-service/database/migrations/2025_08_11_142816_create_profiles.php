@@ -18,6 +18,7 @@ return new class extends Migration
             $table->bigInteger("exp_needed")->default(100);
             $table->integer("level")->default(1);
             $table->bigInteger("points")->default(0);
+            $table->string("profile_url")->nullable(true);
         });
     }
 
