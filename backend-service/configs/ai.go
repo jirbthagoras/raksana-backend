@@ -10,10 +10,10 @@ import (
 )
 
 const (
-	TrashScanner       int8 = 0
-	Ecoach             int8 = 1
-	Recap              int8 = 2
-	ChallengeGenerator int8 = 3
+	TrashScanner int8 = 0
+	Ecoach       int8 = 1
+	RecapMonthly int8 = 2
+	RecapWeekly  int8 = 3
 )
 
 type AIClient struct {
@@ -44,15 +44,15 @@ func InitModel(client *genai.Client, cnf *viper.Viper, modelType int8) (*genai.G
 	case TrashScanner:
 		systemInstruction = cnf.GetString("TRASH_SCANNER_SYSTEM_INSTRUCTION")
 		trashScannerConfig(generativeModel)
-	case Recap:
-		systemInstruction = cnf.GetString("RECAP_SYSTEM_INSTRUCTION")
+	case RecapMonthly:
+		systemInstruction = cnf.GetString("MONTHLY_RECAP_SYSTEM_INSTRUCTION")
+		recapConfig(generativeModel)
+	case RecapWeekly:
+		systemInstruction = cnf.GetString("WEEKLY_RECAP_SYSTEM_INSTRUCTION")
 		recapConfig(generativeModel)
 	case Ecoach:
 		systemInstruction = cnf.GetString("ECOACH_SYSTEM_INSTRUCTION")
 		ecoachConfig(generativeModel)
-	case ChallengeGenerator:
-		systemInstruction = cnf.GetString("CHALLENGE_GENERATOR_SYSTEM_INSTRUCTION")
-		challengeGeneratorConfig(generativeModel)
 	default:
 		return nil, fiber.NewError(fiber.StatusInternalServerError, "Internal server error")
 	}
@@ -148,6 +148,7 @@ func ecoachConfig(generativeModel *genai.GenerativeModel) {
 		Required: []string{"expected_task", "task_per_day"},
 	}
 }
+
 func recapConfig(generativeModel *genai.GenerativeModel) {
 	generativeModel.SetTemperature(1.6)
 	generativeModel.SetTopK(40)
@@ -159,9 +160,9 @@ func recapConfig(generativeModel *genai.GenerativeModel) {
 		Properties: map[string]*genai.Schema{
 			"growth_rating": {
 				Type: genai.TypeString,
-				Enum: []string{"bad", "decent", "good", "excellent"},
+				Enum: []string{"1", "2", "3", "4", "5"},
 			},
-			"description": {
+			"summary": {
 				Type: genai.TypeString,
 			},
 			"tips": {
@@ -170,21 +171,22 @@ func recapConfig(generativeModel *genai.GenerativeModel) {
 		},
 	}
 }
-func challengeGeneratorConfig(generativeModel *genai.GenerativeModel) {
-	generativeModel.SetTemperature(1.6)
-	generativeModel.SetTopK(40)
-	generativeModel.SetTopP(0.95)
-	generativeModel.SetMaxOutputTokens(8192)
-	generativeModel.ResponseMIMEType = "application/json"
-	generativeModel.ResponseSchema = &genai.Schema{
-		Type: genai.TypeObject,
-		Properties: map[string]*genai.Schema{
-			"name": {
-				Type: genai.TypeString,
-			},
-			"description": {
-				Type: genai.TypeString,
-			},
-		},
-	}
-}
+
+// func challengeGeneratorConfig(generativeModel *genai.GenerativeModel) {
+// 	generativeModel.SetTemperature(1.6)
+// 	generativeModel.SetTopK(40)
+// 	generativeModel.SetTopP(0.95)
+// 	generativeModel.SetMaxOutputTokens(8192)
+// 	generativeModel.ResponseMIMEType = "application/json"
+// 	generativeModel.ResponseSchema = &genai.Schema{
+// 		Type: genai.TypeObject,
+// 		Properties: map[string]*genai.Schema{
+// 			"name": {
+// 				Type: genai.TypeString,
+// 			},
+// 			"description": {
+// 				Type: genai.TypeString,
+// 			},
+// 		},
+// 	}
+// }
