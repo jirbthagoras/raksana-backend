@@ -32,6 +32,7 @@ func NewAppRouter(
 	habitService := services.NewHabitService(r, streakService)
 	expService := services.NewExpService(r, journalService)
 	packetService := services.NewPacketService(r)
+	userService := services.NewUserService(r)
 
 	cnf := helpers.NewConfig()
 	aiClient := configs.InitAiClient(cnf)
@@ -39,11 +40,11 @@ func NewAppRouter(
 	return &AppRouter{
 		AuthHandler:        handlers.NewAuthHandler(v, r),
 		JournalHandler:     handlers.NewJournalHandler(v, journalService),
-		LeaderboardHandler: handlers.NewLeaderboardHandler(v, rd, r),
-		StreakHandler:      handlers.NewStreakHandler(v, rd, streakService),
+		LeaderboardHandler: handlers.NewLeaderboardHandler(rd, r),
+		StreakHandler:      handlers.NewStreakHandler(rd, streakService),
 		PacketHandler:      handlers.NewPacketHandler(v, r, aiClient, journalService, packetService),
-		TaskHandler:        handlers.NewTaskHandler(v, r, streakService, habitService, journalService, expService),
-		UserHandler:        handlers.NewUserHandler(v, r),
+		TaskHandler:        handlers.NewTaskHandler(r, streakService, habitService, journalService, expService),
+		UserHandler:        handlers.NewUserHandler(r, userService),
 	}
 }
 

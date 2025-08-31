@@ -11,13 +11,11 @@ import (
 	"log/slog"
 	"sync"
 
-	"github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v2"
 	"github.com/jackc/pgx/v5"
 )
 
 type TaskHandler struct {
-	Validator  *validator.Validate
 	Repository *repositories.Queries
 	*services.StreakService
 	*services.HabitService
@@ -27,7 +25,6 @@ type TaskHandler struct {
 }
 
 func NewTaskHandler(
-	v *validator.Validate,
 	r *repositories.Queries,
 	ss *services.StreakService,
 	sh *services.HabitService,
@@ -35,7 +32,6 @@ func NewTaskHandler(
 	es *services.ExpService,
 ) *TaskHandler {
 	return &TaskHandler{
-		Validator:      v,
 		Repository:     r,
 		StreakService:  ss,
 		HabitService:   sh,
@@ -154,7 +150,7 @@ func (h *TaskHandler) handleCompleteTask(c *fiber.Ctx) error {
 	res, err := h.Repository.GetTaskById(ctx, int64(taskId))
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return fiber.NewError(fiber.StatusBadRequest, "Task id is not valid")
+			return fiber.NewError(fiber.StatusBadRequest, "Task not found")
 		}
 		slog.Error("Failed to get specific task", "err", err)
 		return err
@@ -221,7 +217,7 @@ func (h *TaskHandler) handleCompleteTask(c *fiber.Ctx) error {
 			completionRate = float64(activePacket.CompletedTask) * 100.0 / float64(packetTask.AssignedTask)
 		}
 
-		logMsg := fmt.Sprintf("Aku baru saja menyelesaikan packet %s! Dengan completion rate: %v %", activePacket.Name, completionRate)
+		logMsg := fmt.Sprintf("Aku baru saja menyelesaikan packet %s! Dengan completion rate: %v", activePacket.Name, completionRate) + "%"
 		err = h.JournalService.AppendLog(&models.PostLogAppend{
 			Text:      logMsg,
 			IsSystem:  true,

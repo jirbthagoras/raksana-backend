@@ -4,23 +4,19 @@ import (
 	"jirbthagoras/raksana-backend/helpers"
 	"jirbthagoras/raksana-backend/services"
 
-	"github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v2"
 	"github.com/redis/go-redis/v9"
 )
 
 type StreakHandler struct {
-	Validator     *validator.Validate
 	StreakService *services.StreakService
 }
 
 func NewStreakHandler(
-	v *validator.Validate,
 	r *redis.Client,
 	s *services.StreakService,
 ) *StreakHandler {
 	return &StreakHandler{
-		Validator:     v,
 		StreakService: s,
 	}
 }
