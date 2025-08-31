@@ -2,7 +2,6 @@ package helpers
 
 import (
 	"fmt"
-	"jirbthagoras/raksana-backend/repositories"
 	"math"
 )
 
@@ -13,8 +12,8 @@ func CalculateExpNeeded(level int) int {
 	return int(base * math.Pow(float64(level), factor))
 }
 
-func CheckExpGain(task repositories.Task) (int, error) {
-	switch task.Difficulty {
+func CheckExpGain(difficulty string) (int, error) {
+	switch difficulty {
 	case "easy":
 		return 50, nil
 	case "normal":

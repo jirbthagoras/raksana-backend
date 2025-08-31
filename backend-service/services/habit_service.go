@@ -26,9 +26,9 @@ func (s *HabitService) CheckHabitState(
 	packet repositories.Packet,
 	userId int,
 ) error {
-	assignedTask, err := s.Repository.CountAssignedTasksByPacketId(
+	packetTask, err := s.Repository.CountPacketTasks(
 		ctx,
-		repositories.CountAssignedTasksByPacketIdParams{
+		repositories.CountPacketTasksParams{
 			UserID:   int64(userId),
 			PacketID: packet.ID,
 		},
@@ -38,13 +38,13 @@ func (s *HabitService) CheckHabitState(
 		return err
 	}
 
-	if assignedTask == 0 {
+	if packetTask.AssignedTask == 0 {
 		return nil
 	}
 
-	completionRate := float64(packet.CompletedTask) * 100.0 / float64(assignedTask)
+	completionRate := float64(packet.CompletedTask) * 100.0 / float64(packetTask.AssignedTask)
 
-	habits, err := s.Repository.GetHabitsByPacketId(ctx, packet.ID)
+	habits, err := s.Repository.GetPacketHabits(ctx, packet.ID)
 	if err != nil {
 		slog.Error("Failed to get all habits")
 		return nil
@@ -72,7 +72,7 @@ func (s *HabitService) CheckHabitState(
 }
 
 func (s *HabitService) GetAllHabits(packetId int64) ([]repositories.Habit, error) {
-	habits, err := s.Repository.GetHabitsByPacketId(context.Background(), packetId)
+	habits, err := s.Repository.GetPacketHabits(context.Background(), packetId)
 	if err != nil {
 		slog.Error("Failed to get habits", "err", err)
 		return nil, err
@@ -82,7 +82,7 @@ func (s *HabitService) GetAllHabits(packetId int64) ([]repositories.Habit, error
 }
 
 func (s *HabitService) GetUnlockedHabits(packetId int64) ([]repositories.Habit, error) {
-	unlockedHabits, err := s.Repository.GetUnlockedHabitsByPacketId(
+	unlockedHabits, err := s.Repository.GetPacketUnlockedHabits(
 		context.Background(),
 		packetId,
 	)

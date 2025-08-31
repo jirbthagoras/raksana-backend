@@ -23,19 +23,22 @@ type PacketHandler struct {
 	Repository *repositories.Queries
 	*configs.AIClient
 	*services.JournalService
+	*services.PacketService
 }
 
 func NewPacketHandler(
 	v *validator.Validate,
 	r *repositories.Queries,
 	ai *configs.AIClient,
-	s *services.JournalService,
+	js *services.JournalService,
+	ps *services.PacketService,
 ) *PacketHandler {
 	return &PacketHandler{
 		Validator:      v,
 		Repository:     r,
 		AIClient:       ai,
-		JournalService: s,
+		JournalService: js,
+		PacketService:  ps,
 	}
 }
 
@@ -44,6 +47,7 @@ func (h *PacketHandler) RegisterRoutes(router fiber.Router) {
 	g.Use(helpers.TokenMiddleware)
 	g.Post("/", h.handleGeneratePacket)
 	g.Get("/", h.handleGetAllPackets)
+	g.Get("/:id", h.handleGetPacketDetail)
 }
 
 func (h *PacketHandler) handleGetAllPackets(c *fiber.Ctx) error {
@@ -52,24 +56,7 @@ func (h *PacketHandler) handleGetAllPackets(c *fiber.Ctx) error {
 		return err
 	}
 
-	res, err := h.Repository.GetAllPackets(context.Background(), int64(userId))
-	if err != nil {
-		slog.Error("Failed to get all packets", "err", err)
-		return err
-	}
-
-	var packets []models.ResponseGetPacket
-	for _, packet := range res {
-		packets = append(packets, models.ResponseGetPacket{
-			Name:          packet.Name,
-			Description:   packet.Description,
-			Target:        packet.Target,
-			ExpectedTask:  packet.ExpectedTask,
-			CompletedTask: packet.CompletedTask,
-			TaskPerDay:    packet.TaskPerDay,
-			CreatedAt:     packet.CreatedAt,
-		})
-	}
+	packets, err := h.PacketService.GetALlPackets(int64(userId))
 
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"data": fiber.Map{
@@ -97,7 +84,7 @@ func (h *PacketHandler) handleGeneratePacket(c *fiber.Ctx) error {
 		return err
 	}
 
-	result, err := h.Repository.CountActivePacketsByUserId(ctx, int64(userId))
+	result, err := h.Repository.CountUserActivePackets(ctx, int64(userId))
 	if err != nil {
 		slog.Error("Failed to count active packets", "err", err)
 		return err
@@ -191,5 +178,21 @@ func (h *PacketHandler) handleGeneratePacket(c *fiber.Ctx) error {
 		"data": fiber.Map{
 			"packet": ecoachResponse,
 		},
+	})
+}
+
+func (h *PacketHandler) handleGetPacketDetail(c *fiber.Ctx) error {
+	packetId, err := c.ParamsInt("id")
+	if err != nil {
+		slog.Error("Failed to get packet id", "err", err)
+	}
+
+	packetDetail, err := h.PacketService.GetPacketDetail(packetId)
+	if err != nil {
+		return err
+	}
+
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"data": packetDetail,
 	})
 }

@@ -84,7 +84,7 @@ func (h *TaskHandler) handleGetTodayTask(c *fiber.Ctx) error {
 		})
 	}
 
-	activePacket, err := h.Repository.GetActivePacketsByUserId(ctx, int64(userId))
+	activePacket, err := h.Repository.GetUserActivePackets(ctx, int64(userId))
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return fiber.NewError(fiber.StatusBadRequest, "You have no active packet, please create a packet first")
@@ -169,7 +169,7 @@ func (h *TaskHandler) handleCompleteTask(c *fiber.Ctx) error {
 		return err
 	}
 
-	activePacket, err := h.Repository.GetActivePacketsByUserId(ctx, int64(userId))
+	activePacket, err := h.Repository.GetUserActivePackets(ctx, int64(userId))
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return fiber.NewError(fiber.StatusBadRequest, "You have no active packet, please create a packet first")
@@ -204,8 +204,8 @@ func (h *TaskHandler) handleCompleteTask(c *fiber.Ctx) error {
 			return err
 		}
 
-		assignedTask, err := h.Repository.CountAssignedTasksByPacketId(ctx,
-			repositories.CountAssignedTasksByPacketIdParams{
+		packetTask, err := h.Repository.CountPacketTasks(ctx,
+			repositories.CountPacketTasksParams{
 				UserID:   int64(userId),
 				PacketID: activePacket.ID,
 			},
@@ -215,8 +215,13 @@ func (h *TaskHandler) handleCompleteTask(c *fiber.Ctx) error {
 			return err
 		}
 
-		completionRate := float64(activePacket.CompletedTask) * 100.0 / float64(assignedTask)
-		logMsg := fmt.Sprintf("Aku baru saja menyelesaikan packet %s! Dengan completion rate: %v", activePacket.Name, completionRate)
+		var completionRate float64 = 0.0
+
+		if packetTask.AssignedTask != 0 {
+			completionRate = float64(activePacket.CompletedTask) * 100.0 / float64(packetTask.AssignedTask)
+		}
+
+		logMsg := fmt.Sprintf("Aku baru saja menyelesaikan packet %s! Dengan completion rate: %v %", activePacket.Name, completionRate)
 		err = h.JournalService.AppendLog(&models.PostLogAppend{
 			Text:      logMsg,
 			IsSystem:  true,
@@ -234,7 +239,7 @@ func (h *TaskHandler) handleCompleteTask(c *fiber.Ctx) error {
 		return err
 	}
 
-	expGain, err := helpers.CheckExpGain(task)
+	expGain, err := helpers.CheckExpGain(task.Difficulty)
 	if err != nil {
 		slog.Error("Failed to get exp gain", "err", err)
 		return err
@@ -257,14 +262,16 @@ func (h *TaskHandler) handleCompleteTask(c *fiber.Ctx) error {
 		}
 	}
 
-	err = h.ExpService.IncreaseExp(userId, expGain)
+	levelUp, level, err := h.ExpService.IncreaseExp(userId, expGain)
 	if err != nil {
 		return err
 	}
 
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"data": fiber.Map{
-			"message": "sucessfully completed task",
+			"message":       "sucessfully completed task",
+			"leveled_up":    levelUp,
+			"current_level": level,
 		},
 	})
 }

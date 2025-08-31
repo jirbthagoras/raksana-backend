@@ -176,7 +176,7 @@ type Profile struct {
 	ExpNeeded  int64
 	Level      int32
 	Points     int64
-	ProfileUrl pgtype.Text
+	ProfileUrl string
 }
 
 type Quest struct {

@@ -61,12 +61,57 @@ type ResponseGetTask struct {
 }
 
 type ResponseGetPacket struct {
-	Name          string           `json:"name"`
-	Target        string           `json:"target"`
-	Description   string           `json:"description"`
-	CompletedTask int32            `json:"completed_task"`
-	ExpectedTask  int32            `json:"expected_task"`
-	TaskPerDay    int32            `json:"task_per_day"`
-	Completed     bool             `json:"completed"`
-	CreatedAt     pgtype.Timestamp `json:"created_at"`
+	Id             int32            `json:"id"`
+	Name           string           `json:"name"`
+	Target         string           `json:"target"`
+	Description    string           `json:"description"`
+	CompletedTask  int32            `json:"completed_task"`
+	ExpectedTask   int32            `json:"expected_task"`
+	CompletionRate string           `json:"completion_rate"`
+	TaskPerDay     int32            `json:"task_per_day"`
+	Completed      bool             `json:"completed"`
+	CreatedAt      pgtype.Timestamp `json:"created_at"`
+}
+
+type ResponseGetUserProfileStatistic struct {
+	Name               string `json:"name"`
+	Username           string `json:"username"`
+	Email              string `json:"email"`
+	CurrentExp         int64  `json:"current_exp"`
+	ExpNeeded          int64  `json:"exp_needed"`
+	Level              int32  `json:"level"`
+	Points             int64  `json:"points"`
+	ProfileUrl         string `json:"profile_url"`
+	Challenges         int32  `json:"challenges"`
+	Events             int32  `json:"events"`
+	Quests             int32  `json:"quests"`
+	Treasures          int32  `json:"treasures"`
+	LongestStreak      int32  `json:"longest_streak"`
+	TreeGrown          int32  `json:"tree_grown"`
+	CompletedTask      int32  `json:"completed_task"`
+	AssignedTask       int32  `json:"assigend_task"`
+	TaskCompletionRate string `json:"task_completion_rate"`
+}
+
+type ResponsePacketDetail struct {
+	PacketID           int64                       `json:"packet_id"`
+	Username           string                      `json:"username"`
+	PacketName         string                      `json:"packet_name"`
+	Target             string                      `json:"target"`
+	Description        string                      `json:"description"`
+	CompletedTask      int32                       `json:"completed_task"`
+	ExpectedTask       int32                       `json:"expected_task"`
+	TaskCompletionRate string                      `json:"task_completion_rate"`
+	TaskPerDay         int32                       `json:"task_per_day"`
+	Completed          bool                        `json:"completed"`
+	CreatedAt          time.Time                   `json:"created_at"`
+	Habits             []ResponsePacketDetailHabit `json:"habits"`
+}
+
+type ResponsePacketDetailHabit struct {
+	Name        string `json:"name"`
+	Description string `json:"description"`
+	Difficulty  string `json:"difficulty"`
+	Locked      bool   `json:"locked"`
+	ExpGain     int32  `json:"point_gain"`
 }

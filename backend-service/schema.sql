@@ -558,7 +558,7 @@ CREATE TABLE public.profiles (
     exp_needed bigint DEFAULT '100'::bigint NOT NULL,
     level integer DEFAULT 1 NOT NULL,
     points bigint DEFAULT '0'::bigint NOT NULL,
-    profile_url character varying(255)
+    profile_url character varying(255) DEFAULT 'https://raksana-content.s3.ap-southeast-2.amazonaws.com/profiles/Portrait_Placeholder.png'::character varying NOT NULL
 );
 
 
@@ -1422,6 +1422,12 @@ ALTER TABLE ONLY public.treasures
 -- PostgreSQL database dump complete
 --
 
+
+--
+-- PostgreSQL database dump
+--
+
+
 -- Dumped from database version 17.6 (Debian 17.6-1.pgdg13+1)
 -- Dumped by pg_dump version 17.6 (Ubuntu 17.6-1.pgdg24.04+1)
 
@@ -1437,10 +1443,20 @@ SET xmloption = content;
 SET client_min_messages = warning;
 SET row_security = off;
 
+--
+-- Data for Name: migrations; Type: TABLE DATA; Schema: public; Owner: -
+--
+
+
 
 --
 -- Name: migrations_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
 --
 
 SELECT pg_catalog.setval('public.migrations_id_seq', 21, true);
+
+
+--
+-- PostgreSQL database dump complete
+--
 

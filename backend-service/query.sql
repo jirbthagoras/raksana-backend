@@ -32,14 +32,14 @@ FROM logs
 WHERE user_id = $1 AND is_private = $2
 ORDER BY created_at DESC;
 
--- name: GetStatisticByUserID :one
+-- name: GetUserStatistic :one
 SELECT * FROM statistics WHERE user_id = $1;
 
 -- name: UpdateLongestStreak :exec
 UPDATE statistics SET longest_streak = $1
 WHERE user_id = $2;
 
--- name: GetProfileByUserId :one
+-- name: GetUserProfile :one
 SELECT current_exp, exp_needed, level, points
 FROM profiles
 WHERE user_id = $1;
@@ -66,11 +66,11 @@ INSERT INTO habits (packet_id, name, description, difficulty, locked, weight)
 VALUES ($1, $2, $3, $4, $5, $6)
 RETURNING id;
 
--- name: CountActivePacketsByUserId :one
+-- name: CountUserActivePackets :one
 SELECT COUNT(*) FROM packets 
 WHERE user_id = $1 AND completed = false;
 
--- name: GetActivePacketsByUserId :one
+-- name: GetUserActivePackets :one
 SELECT * FROM packets
 WHERE user_id = $1 AND completed = false;
 
@@ -78,11 +78,13 @@ WHERE user_id = $1 AND completed = false;
 SELECT * FROM packets
 WHERE user_id = $1;
 
--- name: GetHabitsByPacketId :many
-SELECT * FROM habits
+-- name: GetPacketHabits :many
+SELECT 
+  *
+FROM habits
 WHERE packet_id = $1;
 
--- name: GetUnlockedHabitsByPacketId :many
+-- name: GetPacketUnlockedHabits :many
 SELECT * FROM habits
 WHERE packet_id = $1 AND locked = false;
 
@@ -91,11 +93,19 @@ UPDATE habits
 SET locked = false
 WHERE id = $1;
 
--- name: CountAssignedTasksByPacketId :one
+-- name: CountPacketTasks :one
 SELECT
-  COUNT(*) FILTER (WHERE completed = true) AS completed_task
+  COUNT(*) FILTER (WHERE completed = true) AS completed_task,
+  COUNT(*) as assigned_task
 FROM tasks
 WHERE packet_id = $1 AND user_id = $2;
+
+-- name: CountUserTask :one
+SELECT 
+  COUNT (*) as assigned_task,
+  COUNT (*) FILTER (WHERE completed = true) as completed_task
+FROM tasks
+WHERE user_id = $1;
 
 -- name: CreateTask :one
 INSERT INTO tasks(habit_id, user_id, packet_id, name, description, difficulty)
@@ -129,3 +139,45 @@ WHERE id = $1;
 UPDATE packets
 SET completed = true
 WHERE id = $1;
+
+-- name: GetUserProfileStatistic :one
+SELECT 
+    u.id AS user_id,
+    u.name,
+    u.username,
+    u.email,
+    p.current_exp,
+    p.exp_needed,
+    p.level,
+    p.points,
+    p.profile_url,
+    s.challenges,
+    s.events,
+    s.quests,
+    s.treasures,
+    s.longest_streak,
+    s.tree_grown
+FROM users u
+JOIN profiles p ON u.id = p.user_id
+JOIN statistics s ON u.id = s.user_id
+WHERE u.id = $1;
+
+-- name: GetPacketDetail :one
+SELECT 
+    p.id AS packet_id,
+    p.user_id,
+    u.name AS user_name,
+    u.username,
+    p.name AS packet_name,
+    p.target,
+    p.description,
+    p.completed_task,
+    p.expected_task,
+    p.task_per_day,
+    p.completed,
+    p.created_at
+FROM packets p
+JOIN users u ON u.id = p.user_id
+WHERE p.id = $1;
+
+

@@ -24,18 +24,21 @@ func NewExpService(
 	}
 }
 
-func (s *ExpService) IncreaseExp(userId int, expGain int) error {
+func (s *ExpService) IncreaseExp(userId int, expGain int) (bool, int, error) {
 	profile, err := s.Repository.IncreaseExp(context.Background(), repositories.IncreaseExpParams{
 		ExpGain: int32(expGain),
 		UserID:  int32(userId),
 	})
 	if err != nil {
 		slog.Error("Failed to update profile", "err", err)
-		return err
+		return false, 0, err
 	}
+
+	var leveledUp bool = false
 
 	// i think it will repeatedly increase level based on gained exp
 	for profile.CurrentExp >= profile.ExpNeeded {
+		leveledUp = true
 		profile.CurrentExp -= profile.ExpNeeded
 
 		profile.ExpNeeded = int64(helpers.CalculateExpNeeded(int(profile.Level)))
@@ -49,7 +52,7 @@ func (s *ExpService) IncreaseExp(userId int, expGain int) error {
 		)
 		if err != nil {
 			slog.Error("Failed to update profiles exp_needed and level", "err", err)
-			return err
+			return false, 0, err
 		}
 
 		// append log as system log
@@ -60,11 +63,11 @@ func (s *ExpService) IncreaseExp(userId int, expGain int) error {
 			Text:      logMsg,
 		}, userId)
 		if err != nil {
-			return err
+			return false, 0, err
 		}
 
 		profile.Level++
 	}
 
-	return nil
+	return leveledUp, int(profile.Level), nil
 }

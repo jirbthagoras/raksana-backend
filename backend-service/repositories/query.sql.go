@@ -53,35 +53,61 @@ func (q *Queries) CompleteTask(ctx context.Context, arg CompleteTaskParams) (Tas
 	return i, err
 }
 
-const countActivePacketsByUserId = `-- name: CountActivePacketsByUserId :one
+const countPacketTasks = `-- name: CountPacketTasks :one
+SELECT
+  COUNT(*) FILTER (WHERE completed = true) AS completed_task,
+  COUNT(*) as assigned_task
+FROM tasks
+WHERE packet_id = $1 AND user_id = $2
+`
+
+type CountPacketTasksParams struct {
+	PacketID int64
+	UserID   int64
+}
+
+type CountPacketTasksRow struct {
+	CompletedTask int64
+	AssignedTask  int64
+}
+
+func (q *Queries) CountPacketTasks(ctx context.Context, arg CountPacketTasksParams) (CountPacketTasksRow, error) {
+	row := q.db.QueryRow(ctx, countPacketTasks, arg.PacketID, arg.UserID)
+	var i CountPacketTasksRow
+	err := row.Scan(&i.CompletedTask, &i.AssignedTask)
+	return i, err
+}
+
+const countUserActivePackets = `-- name: CountUserActivePackets :one
 SELECT COUNT(*) FROM packets 
 WHERE user_id = $1 AND completed = false
 `
 
-func (q *Queries) CountActivePacketsByUserId(ctx context.Context, userID int64) (int64, error) {
-	row := q.db.QueryRow(ctx, countActivePacketsByUserId, userID)
+func (q *Queries) CountUserActivePackets(ctx context.Context, userID int64) (int64, error) {
+	row := q.db.QueryRow(ctx, countUserActivePackets, userID)
 	var count int64
 	err := row.Scan(&count)
 	return count, err
 }
 
-const countAssignedTasksByPacketId = `-- name: CountAssignedTasksByPacketId :one
-SELECT
-  COUNT(*) FILTER (WHERE completed = true) AS completed_task
+const countUserTask = `-- name: CountUserTask :one
+SELECT 
+  COUNT (*) as assigned_task,
+  COUNT (*) FILTER (WHERE completed = true) as completed_task
 FROM tasks
-WHERE packet_id = $1 AND user_id = $2
+WHERE user_id = $1
 `
 
-type CountAssignedTasksByPacketIdParams struct {
-	PacketID int64
-	UserID   int64
+type CountUserTaskRow struct {
+	AssignedTask  int64
+	CompletedTask int64
 }
 
-func (q *Queries) CountAssignedTasksByPacketId(ctx context.Context, arg CountAssignedTasksByPacketIdParams) (int64, error) {
-	row := q.db.QueryRow(ctx, countAssignedTasksByPacketId, arg.PacketID, arg.UserID)
-	var completed_task int64
-	err := row.Scan(&completed_task)
-	return completed_task, err
+func (q *Queries) CountUserTask(ctx context.Context, userID int64) (CountUserTaskRow, error) {
+	row := q.db.QueryRow(ctx, countUserTask, userID)
+	var i CountUserTaskRow
+	err := row.Scan(&i.AssignedTask, &i.CompletedTask)
+	return i, err
 }
 
 const createHabit = `-- name: CreateHabit :one
@@ -275,29 +301,6 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (CreateU
 	return i, err
 }
 
-const getActivePacketsByUserId = `-- name: GetActivePacketsByUserId :one
-SELECT id, user_id, name, target, description, completed_task, expected_task, task_per_day, completed, created_at FROM packets
-WHERE user_id = $1 AND completed = false
-`
-
-func (q *Queries) GetActivePacketsByUserId(ctx context.Context, userID int64) (Packet, error) {
-	row := q.db.QueryRow(ctx, getActivePacketsByUserId, userID)
-	var i Packet
-	err := row.Scan(
-		&i.ID,
-		&i.UserID,
-		&i.Name,
-		&i.Target,
-		&i.Description,
-		&i.CompletedTask,
-		&i.ExpectedTask,
-		&i.TaskPerDay,
-		&i.Completed,
-		&i.CreatedAt,
-	)
-	return i, err
-}
-
 const getAllPackets = `-- name: GetAllPackets :many
 SELECT id, user_id, name, target, description, completed_task, expected_task, task_per_day, completed, created_at FROM packets
 WHERE user_id = $1
@@ -323,39 +326,6 @@ func (q *Queries) GetAllPackets(ctx context.Context, userID int64) ([]Packet, er
 			&i.TaskPerDay,
 			&i.Completed,
 			&i.CreatedAt,
-		); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
-const getHabitsByPacketId = `-- name: GetHabitsByPacketId :many
-SELECT id, packet_id, name, description, difficulty, locked, weight FROM habits
-WHERE packet_id = $1
-`
-
-func (q *Queries) GetHabitsByPacketId(ctx context.Context, packetID int64) ([]Habit, error) {
-	rows, err := q.db.Query(ctx, getHabitsByPacketId, packetID)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	var items []Habit
-	for rows.Next() {
-		var i Habit
-		if err := rows.Scan(
-			&i.ID,
-			&i.PacketID,
-			&i.Name,
-			&i.Description,
-			&i.Difficulty,
-			&i.Locked,
-			&i.Weight,
 		); err != nil {
 			return nil, err
 		}
@@ -411,49 +381,126 @@ func (q *Queries) GetLogs(ctx context.Context, arg GetLogsParams) ([]GetLogsRow,
 	return items, nil
 }
 
-const getProfileByUserId = `-- name: GetProfileByUserId :one
-SELECT current_exp, exp_needed, level, points
-FROM profiles
-WHERE user_id = $1
+const getPacketDetail = `-- name: GetPacketDetail :one
+SELECT 
+    p.id AS packet_id,
+    p.user_id,
+    u.name AS user_name,
+    u.username,
+    p.name AS packet_name,
+    p.target,
+    p.description,
+    p.completed_task,
+    p.expected_task,
+    p.task_per_day,
+    p.completed,
+    p.created_at
+FROM packets p
+JOIN users u ON u.id = p.user_id
+WHERE p.id = $1
 `
 
-type GetProfileByUserIdRow struct {
-	CurrentExp int64
-	ExpNeeded  int64
-	Level      int32
-	Points     int64
+type GetPacketDetailRow struct {
+	PacketID      int64
+	UserID        int64
+	UserName      string
+	Username      string
+	PacketName    string
+	Target        string
+	Description   string
+	CompletedTask int32
+	ExpectedTask  int32
+	TaskPerDay    int32
+	Completed     bool
+	CreatedAt     pgtype.Timestamp
 }
 
-func (q *Queries) GetProfileByUserId(ctx context.Context, userID int64) (GetProfileByUserIdRow, error) {
-	row := q.db.QueryRow(ctx, getProfileByUserId, userID)
-	var i GetProfileByUserIdRow
+func (q *Queries) GetPacketDetail(ctx context.Context, id int64) (GetPacketDetailRow, error) {
+	row := q.db.QueryRow(ctx, getPacketDetail, id)
+	var i GetPacketDetailRow
 	err := row.Scan(
-		&i.CurrentExp,
-		&i.ExpNeeded,
-		&i.Level,
-		&i.Points,
-	)
-	return i, err
-}
-
-const getStatisticByUserID = `-- name: GetStatisticByUserID :one
-SELECT id, user_id, challenges, events, quests, treasures, longest_streak, tree_grown FROM statistics WHERE user_id = $1
-`
-
-func (q *Queries) GetStatisticByUserID(ctx context.Context, userID int64) (Statistic, error) {
-	row := q.db.QueryRow(ctx, getStatisticByUserID, userID)
-	var i Statistic
-	err := row.Scan(
-		&i.ID,
+		&i.PacketID,
 		&i.UserID,
-		&i.Challenges,
-		&i.Events,
-		&i.Quests,
-		&i.Treasures,
-		&i.LongestStreak,
-		&i.TreeGrown,
+		&i.UserName,
+		&i.Username,
+		&i.PacketName,
+		&i.Target,
+		&i.Description,
+		&i.CompletedTask,
+		&i.ExpectedTask,
+		&i.TaskPerDay,
+		&i.Completed,
+		&i.CreatedAt,
 	)
 	return i, err
+}
+
+const getPacketHabits = `-- name: GetPacketHabits :many
+SELECT 
+  id, packet_id, name, description, difficulty, locked, weight
+FROM habits
+WHERE packet_id = $1
+`
+
+func (q *Queries) GetPacketHabits(ctx context.Context, packetID int64) ([]Habit, error) {
+	rows, err := q.db.Query(ctx, getPacketHabits, packetID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Habit
+	for rows.Next() {
+		var i Habit
+		if err := rows.Scan(
+			&i.ID,
+			&i.PacketID,
+			&i.Name,
+			&i.Description,
+			&i.Difficulty,
+			&i.Locked,
+			&i.Weight,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getPacketUnlockedHabits = `-- name: GetPacketUnlockedHabits :many
+SELECT id, packet_id, name, description, difficulty, locked, weight FROM habits
+WHERE packet_id = $1 AND locked = false
+`
+
+func (q *Queries) GetPacketUnlockedHabits(ctx context.Context, packetID int64) ([]Habit, error) {
+	rows, err := q.db.Query(ctx, getPacketUnlockedHabits, packetID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Habit
+	for rows.Next() {
+		var i Habit
+		if err := rows.Scan(
+			&i.ID,
+			&i.PacketID,
+			&i.Name,
+			&i.Description,
+			&i.Difficulty,
+			&i.Locked,
+			&i.Weight,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 const getTaskById = `-- name: GetTaskById :one
@@ -518,37 +565,27 @@ func (q *Queries) GetTodayTasks(ctx context.Context, userID int64) ([]Task, erro
 	return items, nil
 }
 
-const getUnlockedHabitsByPacketId = `-- name: GetUnlockedHabitsByPacketId :many
-SELECT id, packet_id, name, description, difficulty, locked, weight FROM habits
-WHERE packet_id = $1 AND locked = false
+const getUserActivePackets = `-- name: GetUserActivePackets :one
+SELECT id, user_id, name, target, description, completed_task, expected_task, task_per_day, completed, created_at FROM packets
+WHERE user_id = $1 AND completed = false
 `
 
-func (q *Queries) GetUnlockedHabitsByPacketId(ctx context.Context, packetID int64) ([]Habit, error) {
-	rows, err := q.db.Query(ctx, getUnlockedHabitsByPacketId, packetID)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	var items []Habit
-	for rows.Next() {
-		var i Habit
-		if err := rows.Scan(
-			&i.ID,
-			&i.PacketID,
-			&i.Name,
-			&i.Description,
-			&i.Difficulty,
-			&i.Locked,
-			&i.Weight,
-		); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
+func (q *Queries) GetUserActivePackets(ctx context.Context, userID int64) (Packet, error) {
+	row := q.db.QueryRow(ctx, getUserActivePackets, userID)
+	var i Packet
+	err := row.Scan(
+		&i.ID,
+		&i.UserID,
+		&i.Name,
+		&i.Target,
+		&i.Description,
+		&i.CompletedTask,
+		&i.ExpectedTask,
+		&i.TaskPerDay,
+		&i.Completed,
+		&i.CreatedAt,
+	)
+	return i, err
 }
 
 const getUserByEmail = `-- name: GetUserByEmail :one
@@ -597,6 +634,115 @@ func (q *Queries) GetUserById(ctx context.Context, id int64) (GetUserByIdRow, er
 		&i.Username,
 		&i.Email,
 		&i.Password,
+	)
+	return i, err
+}
+
+const getUserProfile = `-- name: GetUserProfile :one
+SELECT current_exp, exp_needed, level, points
+FROM profiles
+WHERE user_id = $1
+`
+
+type GetUserProfileRow struct {
+	CurrentExp int64
+	ExpNeeded  int64
+	Level      int32
+	Points     int64
+}
+
+func (q *Queries) GetUserProfile(ctx context.Context, userID int64) (GetUserProfileRow, error) {
+	row := q.db.QueryRow(ctx, getUserProfile, userID)
+	var i GetUserProfileRow
+	err := row.Scan(
+		&i.CurrentExp,
+		&i.ExpNeeded,
+		&i.Level,
+		&i.Points,
+	)
+	return i, err
+}
+
+const getUserProfileStatistic = `-- name: GetUserProfileStatistic :one
+SELECT 
+    u.id AS user_id,
+    u.name,
+    u.username,
+    u.email,
+    p.current_exp,
+    p.exp_needed,
+    p.level,
+    p.points,
+    p.profile_url,
+    s.challenges,
+    s.events,
+    s.quests,
+    s.treasures,
+    s.longest_streak,
+    s.tree_grown
+FROM users u
+JOIN profiles p ON u.id = p.user_id
+JOIN statistics s ON u.id = s.user_id
+WHERE u.id = $1
+`
+
+type GetUserProfileStatisticRow struct {
+	UserID        int64
+	Name          string
+	Username      string
+	Email         string
+	CurrentExp    int64
+	ExpNeeded     int64
+	Level         int32
+	Points        int64
+	ProfileUrl    string
+	Challenges    int32
+	Events        int32
+	Quests        int32
+	Treasures     int32
+	LongestStreak int32
+	TreeGrown     int32
+}
+
+func (q *Queries) GetUserProfileStatistic(ctx context.Context, id int64) (GetUserProfileStatisticRow, error) {
+	row := q.db.QueryRow(ctx, getUserProfileStatistic, id)
+	var i GetUserProfileStatisticRow
+	err := row.Scan(
+		&i.UserID,
+		&i.Name,
+		&i.Username,
+		&i.Email,
+		&i.CurrentExp,
+		&i.ExpNeeded,
+		&i.Level,
+		&i.Points,
+		&i.ProfileUrl,
+		&i.Challenges,
+		&i.Events,
+		&i.Quests,
+		&i.Treasures,
+		&i.LongestStreak,
+		&i.TreeGrown,
+	)
+	return i, err
+}
+
+const getUserStatistic = `-- name: GetUserStatistic :one
+SELECT id, user_id, challenges, events, quests, treasures, longest_streak, tree_grown FROM statistics WHERE user_id = $1
+`
+
+func (q *Queries) GetUserStatistic(ctx context.Context, userID int64) (Statistic, error) {
+	row := q.db.QueryRow(ctx, getUserStatistic, userID)
+	var i Statistic
+	err := row.Scan(
+		&i.ID,
+		&i.UserID,
+		&i.Challenges,
+		&i.Events,
+		&i.Quests,
+		&i.Treasures,
+		&i.LongestStreak,
+		&i.TreeGrown,
 	)
 	return i, err
 }

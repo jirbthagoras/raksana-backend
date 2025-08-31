@@ -25,10 +25,15 @@ func NewStreakService(r *redis.Client, rp *repositories.Queries) *StreakService 
 }
 
 func (s *StreakService) UpdateStreak(ctx context.Context, id int64) error {
-	today := time.Now().Format("2006-01-02")
-	yesterday := time.Now().Add(-24 * time.Hour).Format("2006-01-02")
+	loc, err := time.LoadLocation("Asia/Jakarta")
+	if err != nil {
+		return fmt.Errorf("failed to load timezone: %w", err)
+	}
 
+	today := time.Now().In(loc).Format("2006-01-02")
+	yesterday := time.Now().In(loc).Add(-24 * time.Hour).Format("2006-01-02")
 	streakKey := fmt.Sprintf("user:%d:streak", id)
+
 	lastCheckinKey := fmt.Sprintf("user:%d:last_checkin", id)
 	flagKey := fmt.Sprintf("user:%d:checkin_flag", id)
 
@@ -76,7 +81,7 @@ func (s *StreakService) UpdateStreak(ctx context.Context, id int64) error {
 		return fmt.Errorf("redis set flag failed: %w", err)
 	}
 
-	stat, err := s.Repository.GetStatisticByUserID(ctx, id)
+	stat, err := s.Repository.GetUserStatistic(ctx, id)
 	if err != nil {
 		return fmt.Errorf("db get statistic failed: %w", err)
 	}

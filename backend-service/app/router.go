@@ -19,6 +19,7 @@ type AppRouter struct {
 	*handlers.StreakHandler
 	*handlers.PacketHandler
 	*handlers.TaskHandler
+	*handlers.UserHandler
 }
 
 func NewAppRouter(
@@ -30,6 +31,7 @@ func NewAppRouter(
 	streakService := services.NewStreakService(rd, r)
 	habitService := services.NewHabitService(r, streakService)
 	expService := services.NewExpService(r, journalService)
+	packetService := services.NewPacketService(r)
 
 	cnf := helpers.NewConfig()
 	aiClient := configs.InitAiClient(cnf)
@@ -39,8 +41,9 @@ func NewAppRouter(
 		JournalHandler:     handlers.NewJournalHandler(v, journalService),
 		LeaderboardHandler: handlers.NewLeaderboardHandler(v, rd, r),
 		StreakHandler:      handlers.NewStreakHandler(v, rd, streakService),
-		PacketHandler:      handlers.NewPacketHandler(v, r, aiClient, journalService),
+		PacketHandler:      handlers.NewPacketHandler(v, r, aiClient, journalService, packetService),
 		TaskHandler:        handlers.NewTaskHandler(v, r, streakService, habitService, journalService, expService),
+		UserHandler:        handlers.NewUserHandler(v, r),
 	}
 }
 
@@ -51,4 +54,5 @@ func (r *AppRouter) RegisterRoute(router fiber.Router) {
 	r.StreakHandler.RegisterRoutes(router)
 	r.PacketHandler.RegisterRoutes(router)
 	r.TaskHandler.RegisterRoutes(router)
+	r.UserHandler.RegisterRoutes(router)
 }
