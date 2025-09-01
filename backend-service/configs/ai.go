@@ -107,6 +107,7 @@ func trashScannerConfig(generativeModel *genai.GenerativeModel) {
 		Required: []string{"title", "description", "recycling_ideas"},
 	}
 }
+
 func ecoachConfig(generativeModel *genai.GenerativeModel) {
 	generativeModel.SetTemperature(1.6)
 	generativeModel.SetTopK(40)

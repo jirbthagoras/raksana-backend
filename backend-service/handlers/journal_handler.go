@@ -35,6 +35,7 @@ func (h *JournalHandler) RegisterRoutes(router fiber.Router) {
 	g.Use(helpers.TokenMiddleware)
 	g.Post("/", h.handleAppendJournal)
 	g.Get("/", h.handleGetLogs)
+	g.Get("/:id", h.handleGetLogsByUserId)
 }
 
 func (h *JournalHandler) handleAppendJournal(c *fiber.Ctx) error {
@@ -82,19 +83,27 @@ func (h *JournalHandler) handleGetLogs(c *fiber.Ctx) error {
 		return err
 	}
 
-	result, err := h.Repository.GetLogs(context.Background(), repositories.GetLogsParams{
+	logs, err := h.Repository.GetLogs(context.Background(), repositories.GetLogsParams{
 		UserID:    int64(id),
 		IsPrivate: isPrivate,
 	})
 
-	logs := []models.ResponseGetLogs{}
-	for _, log := range result {
-		logs = append(logs, models.ResponseGetLogs{
-			Text:      log.Text,
-			IsSystem:  log.IsSystem,
-			IsPrivate: log.IsPrivate,
-			CreatedAt: log.CreatedAt,
-		})
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"data": fiber.Map{
+			"logs": logs,
+		},
+	})
+}
+
+func (h *JournalHandler) handleGetLogsByUserId(c *fiber.Ctx) error {
+	userId, err := c.ParamsInt("id")
+	if err != nil {
+		slog.Error("Failed to get packet id", "err", err)
+	}
+
+	logs, err := h.JournalService.GetLogs(userId, false)
+	if err != nil {
+		return err
 	}
 
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
@@ -102,4 +111,5 @@ func (h *JournalHandler) handleGetLogs(c *fiber.Ctx) error {
 			"logs": logs,
 		},
 	})
+
 }

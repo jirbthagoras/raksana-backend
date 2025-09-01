@@ -47,7 +47,8 @@ func (h *PacketHandler) RegisterRoutes(router fiber.Router) {
 	g.Use(helpers.TokenMiddleware)
 	g.Post("/", h.handleGeneratePacket)
 	g.Get("/", h.handleGetAllPackets)
-	g.Get("/:id", h.handleGetPacketDetail)
+	g.Get("/:id", h.handleGetPacketById)
+	g.Get("/detail/:id", h.handleGetPacketDetail)
 }
 
 func (h *PacketHandler) handleGetAllPackets(c *fiber.Ctx) error {
@@ -194,5 +195,21 @@ func (h *PacketHandler) handleGetPacketDetail(c *fiber.Ctx) error {
 
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"data": packetDetail,
+	})
+}
+
+func (h *PacketHandler) handleGetPacketById(c *fiber.Ctx) error {
+	userId, err := c.ParamsInt("id")
+	if err != nil {
+		slog.Error("Failed to get packet id", "err", err)
+	}
+
+	packets, err := h.PacketService.GetALlPackets(int64(userId))
+	if err != nil {
+		return err
+	}
+
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"dat": packets,
 	})
 }
