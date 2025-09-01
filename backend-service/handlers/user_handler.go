@@ -32,7 +32,7 @@ func (h *UserHandler) RegisterRoutes(router fiber.Router) {
 
 	g2 := router.Group("/profile")
 	g2.Use(helpers.TokenMiddleware)
-	g2.Get("/", h.handleGetProfile)
+	g2.Get("/me", h.handleGetProfile)
 	g2.Get("/:id", h.handleGetProfileById)
 }
 

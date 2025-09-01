@@ -66,6 +66,7 @@ func (s *UserService) GetUserDetail(id int) (models.ResponseGetUserProfileStatis
 		TaskCompletionRate: stringCompletionRate,
 		CompletedTask:      int32(tasks.CompletedTask),
 		AssignedTask:       int32(tasks.AssignedTask),
+		LongestStreak:      res.LongestStreak,
 	}
 
 	return profile, nil

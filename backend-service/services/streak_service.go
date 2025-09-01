@@ -83,7 +83,8 @@ func (s *StreakService) UpdateStreak(ctx context.Context, id int64) error {
 
 	stat, err := s.Repository.GetUserStatistic(ctx, id)
 	if err != nil {
-		return fmt.Errorf("db get statistic failed: %w", err)
+		slog.Error("Failed to get user stat", "err", err)
+		return err
 	}
 
 	if newStreak > int64(stat.LongestStreak) {
@@ -91,7 +92,8 @@ func (s *StreakService) UpdateStreak(ctx context.Context, id int64) error {
 			UserID:        id,
 			LongestStreak: int32(newStreak),
 		}); err != nil {
-			return fmt.Errorf("db update longest streak failed: %w", err)
+			slog.Error("Failed to get user stat", "err", err)
+			return err
 		}
 	}
 

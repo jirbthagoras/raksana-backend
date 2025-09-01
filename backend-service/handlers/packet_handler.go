@@ -46,7 +46,7 @@ func (h *PacketHandler) RegisterRoutes(router fiber.Router) {
 	g := router.Group("/packet")
 	g.Use(helpers.TokenMiddleware)
 	g.Post("/", h.handleGeneratePacket)
-	g.Get("/", h.handleGetAllPackets)
+	g.Get("/me", h.handleGetAllPackets)
 	g.Get("/:id", h.handleGetPacketById)
 	g.Get("/detail/:id", h.handleGetPacketDetail)
 }

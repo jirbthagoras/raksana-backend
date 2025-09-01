@@ -172,22 +172,3 @@ func recapConfig(generativeModel *genai.GenerativeModel) {
 		},
 	}
 }
-
-// func challengeGeneratorConfig(generativeModel *genai.GenerativeModel) {
-// 	generativeModel.SetTemperature(1.6)
-// 	generativeModel.SetTopK(40)
-// 	generativeModel.SetTopP(0.95)
-// 	generativeModel.SetMaxOutputTokens(8192)
-// 	generativeModel.ResponseMIMEType = "application/json"
-// 	generativeModel.ResponseSchema = &genai.Schema{
-// 		Type: genai.TypeObject,
-// 		Properties: map[string]*genai.Schema{
-// 			"name": {
-// 				Type: genai.TypeString,
-// 			},
-// 			"description": {
-// 				Type: genai.TypeString,
-// 			},
-// 		},
-// 	}
-// }
