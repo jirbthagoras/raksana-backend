@@ -176,6 +176,22 @@ func (q *Queries) CreateLog(ctx context.Context, arg CreateLogParams) (CreateLog
 	return i, err
 }
 
+const createMemory = `-- name: CreateMemory :exec
+INSERT INTO memories(user_id, file_url, description)
+VALUES ($1, $2, $3)
+`
+
+type CreateMemoryParams struct {
+	UserID      int64
+	FileUrl     string
+	Description string
+}
+
+func (q *Queries) CreateMemory(ctx context.Context, arg CreateMemoryParams) error {
+	_, err := q.db.Exec(ctx, createMemory, arg.UserID, arg.FileUrl, arg.Description)
+	return err
+}
+
 const createPacket = `-- name: CreatePacket :one
 INSERT INTO packets  (user_id, name, target, description, expected_task, task_per_day)
 VALUES ($1, $2, $3, $4, $5, $6)
@@ -370,6 +386,80 @@ func (q *Queries) GetLogs(ctx context.Context, arg GetLogsParams) ([]GetLogsRow,
 			&i.CreatedAt,
 			&i.IsSystem,
 			&i.IsPrivate,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getMemoryWithParticipation = `-- name: GetMemoryWithParticipation :many
+SELECT 
+    m.id AS memory_id,
+    m.file_url,
+    m.description AS memory_description,
+    m.created_at AS memory_created_at,
+    u.id AS user_id,
+    u.name AS user_name,
+    CASE 
+        WHEN p.id IS NOT NULL THEN TRUE 
+        ELSE FALSE 
+    END AS is_participation,
+    p.challenge_id,
+    c.day,
+    c.difficulty,
+    d.name AS challenge_name,
+    d.point_gain
+FROM memories m
+JOIN users u ON m.user_id = u.id
+LEFT JOIN participations p ON m.id = p.memory_id
+LEFT JOIN challenges c ON p.challenge_id = c.id
+LEFT JOIN details d ON c.detail_id = d.id
+WHERE m.user_id = $1
+ORDER BY m.created_at DESC
+`
+
+type GetMemoryWithParticipationRow struct {
+	MemoryID          int64
+	FileUrl           string
+	MemoryDescription string
+	MemoryCreatedAt   pgtype.Timestamp
+	UserID            int64
+	UserName          string
+	IsParticipation   bool
+	ChallengeID       pgtype.Int8
+	Day               pgtype.Int4
+	Difficulty        pgtype.Text
+	ChallengeName     pgtype.Text
+	PointGain         pgtype.Int8
+}
+
+func (q *Queries) GetMemoryWithParticipation(ctx context.Context, userID int64) ([]GetMemoryWithParticipationRow, error) {
+	rows, err := q.db.Query(ctx, getMemoryWithParticipation, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GetMemoryWithParticipationRow
+	for rows.Next() {
+		var i GetMemoryWithParticipationRow
+		if err := rows.Scan(
+			&i.MemoryID,
+			&i.FileUrl,
+			&i.MemoryDescription,
+			&i.MemoryCreatedAt,
+			&i.UserID,
+			&i.UserName,
+			&i.IsParticipation,
+			&i.ChallengeID,
+			&i.Day,
+			&i.Difficulty,
+			&i.ChallengeName,
+			&i.PointGain,
 		); err != nil {
 			return nil, err
 		}

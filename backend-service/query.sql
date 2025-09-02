@@ -180,4 +180,31 @@ FROM packets p
 JOIN users u ON u.id = p.user_id
 WHERE p.id = $1;
 
+-- name: CreateMemory :exec
+INSERT INTO memories(user_id, file_url, description)
+VALUES ($1, $2, $3);
 
+-- name: GetMemoryWithParticipation :many
+SELECT 
+    m.id AS memory_id,
+    m.file_url,
+    m.description AS memory_description,
+    m.created_at AS memory_created_at,
+    u.id AS user_id,
+    u.name AS user_name,
+    CASE 
+        WHEN p.id IS NOT NULL THEN TRUE 
+        ELSE FALSE 
+    END AS is_participation,
+    p.challenge_id,
+    c.day,
+    c.difficulty,
+    d.name AS challenge_name,
+    d.point_gain
+FROM memories m
+JOIN users u ON m.user_id = u.id
+LEFT JOIN participations p ON m.id = p.memory_id
+LEFT JOIN challenges c ON p.challenge_id = c.id
+LEFT JOIN details d ON c.detail_id = d.id
+WHERE m.user_id = $1
+ORDER BY m.created_at DESC;
