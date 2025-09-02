@@ -42,7 +42,7 @@ WHERE user_id = $2;
 -- name: GetUserProfile :one
 SELECT current_exp, exp_needed, level, points
 FROM profiles
-WHERE user_id = $1;
+WHERE user_id = $1 AND is_admin = false;
 
 -- name: IncreaseExp :one
 UPDATE profiles 

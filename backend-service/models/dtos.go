@@ -116,3 +116,8 @@ type ResponsePacketDetailHabit struct {
 	Locked      bool   `json:"locked"`
 	ExpGain     int32  `json:"point_gain"`
 }
+
+type PostFilePresigned struct {
+	Filename    string `json:"filename" validate:"required"`
+	ContentType string `json:"content_type" validate:"required"`
+}

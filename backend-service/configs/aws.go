@@ -2,12 +2,14 @@ package configs
 
 import (
 	"context"
+	"jirbthagoras/raksana-backend/helpers"
 	"log/slog"
+	"time"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
+	v4 "github.com/aws/aws-sdk-go-v2/aws/signer/v4"
 	awsConfig "github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/credentials"
-	"github.com/aws/aws-sdk-go-v2/feature/s3/manager"
 	"github.com/aws/aws-sdk-go-v2/service/rekognition"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/spf13/viper"
@@ -16,7 +18,7 @@ import (
 type AWSClient struct {
 	S3Client          *s3.Client
 	RekognitionClient *rekognition.Client
-	Uploader          *manager.Uploader
+	PsClient          *s3.PresignClient
 }
 
 func InitAWSClient(cnf *viper.Viper) *AWSClient {
@@ -40,13 +42,33 @@ func InitAWSClient(cnf *viper.Viper) *AWSClient {
 	}
 
 	s3Client := s3.NewFromConfig(awsCnf)
-	uploader := manager.NewUploader(s3Client)
+	psClient := s3.NewPresignClient(s3Client)
 	rekognitionClient := rekognition.NewFromConfig(awsCnf)
 
 	slog.Debug("Established connection to AWS")
 	return &AWSClient{
 		S3Client:          s3Client,
 		RekognitionClient: rekognitionClient,
-		Uploader:          uploader,
+		PsClient:          psClient,
 	}
+}
+
+func (a *AWSClient) CreatePresignUrlPutObject(key string, contentType string) (string, *v4.PresignedHTTPRequest, error) {
+	cnf := helpers.NewConfig()
+	bucket := cnf.GetString("AWS_BUCKET")
+	bucketUrl := cnf.GetString("AWS_URL")
+
+	presignReq, err := a.PsClient.PresignPutObject(context.Background(), &s3.PutObjectInput{
+		Bucket:      aws.String(bucket),
+		Key:         aws.String(key),
+		ContentType: aws.String(contentType),
+	}, s3.WithPresignExpires(10*time.Minute))
+	if err != nil {
+		slog.Error("Failed to create a presigned url")
+		return "", nil, err
+	}
+
+	fileUrl := bucketUrl + key
+
+	return fileUrl, presignReq, nil
 }

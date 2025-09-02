@@ -20,6 +20,7 @@ type AppRouter struct {
 	*handlers.PacketHandler
 	*handlers.TaskHandler
 	*handlers.UserHandler
+	*handlers.FileHandler
 }
 
 func NewAppRouter(
@@ -36,6 +37,7 @@ func NewAppRouter(
 
 	cnf := helpers.NewConfig()
 	aiClient := configs.InitAiClient(cnf)
+	awsClient := configs.InitAWSClient(cnf)
 
 	return &AppRouter{
 		AuthHandler:        handlers.NewAuthHandler(v, r),
@@ -45,6 +47,7 @@ func NewAppRouter(
 		PacketHandler:      handlers.NewPacketHandler(v, r, aiClient, journalService, packetService),
 		TaskHandler:        handlers.NewTaskHandler(r, streakService, habitService, journalService, expService),
 		UserHandler:        handlers.NewUserHandler(r, userService),
+		FileHandler:        handlers.NewFileHandler(v, awsClient),
 	}
 }
 
@@ -56,4 +59,5 @@ func (r *AppRouter) RegisterRoute(router fiber.Router) {
 	r.PacketHandler.RegisterRoutes(router)
 	r.TaskHandler.RegisterRoutes(router)
 	r.UserHandler.RegisterRoutes(router)
+	r.FileHandler.RegisterRoutes(router)
 }
