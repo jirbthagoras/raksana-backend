@@ -317,6 +317,24 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (CreateU
 	return i, err
 }
 
+const deleteMemory = `-- name: DeleteMemory :one
+DELETE FROM memories
+WHERE id = $1 AND user_id = $2
+RETURNING file_url
+`
+
+type DeleteMemoryParams struct {
+	ID     int64
+	UserID int64
+}
+
+func (q *Queries) DeleteMemory(ctx context.Context, arg DeleteMemoryParams) (string, error) {
+	row := q.db.QueryRow(ctx, deleteMemory, arg.ID, arg.UserID)
+	var file_url string
+	err := row.Scan(&file_url)
+	return file_url, err
+}
+
 const getAllPackets = `-- name: GetAllPackets :many
 SELECT id, user_id, name, target, description, completed_task, expected_task, task_per_day, completed, created_at FROM packets
 WHERE user_id = $1
@@ -420,7 +438,7 @@ LEFT JOIN participations p ON m.id = p.memory_id
 LEFT JOIN challenges c ON p.challenge_id = c.id
 LEFT JOIN details d ON c.detail_id = d.id
 WHERE m.user_id = $1
-ORDER BY m.created_at DESC
+ORDER BY m.created_at ASC
 `
 
 type GetMemoryWithParticipationRow struct {

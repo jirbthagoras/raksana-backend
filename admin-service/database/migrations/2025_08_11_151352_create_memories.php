@@ -15,7 +15,7 @@ return new class extends Migration
         Schema::create('memories', function (Blueprint $table) {
             $table->id();
             $table->foreignId("user_id")->references("id")->on("users");
-            $table->string("file_url");
+            $table->string("file_key");
             $table->text("description");
             $table->timestamp('created_at')->default(DB::raw('CURRENT_TIMESTAMP'));
         });

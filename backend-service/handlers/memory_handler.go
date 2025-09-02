@@ -4,12 +4,14 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"jirbthagoras/raksana-backend/configs"
 	"jirbthagoras/raksana-backend/exceptions"
 	"jirbthagoras/raksana-backend/helpers"
 	"jirbthagoras/raksana-backend/models"
 	"jirbthagoras/raksana-backend/repositories"
 	"log/slog"
 
+	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v2"
 )
@@ -17,15 +19,18 @@ import (
 type MemoryHandler struct {
 	Validator  *validator.Validate
 	Repository *repositories.Queries
+	*configs.AWSClient
 }
 
 func NewMemoryHandler(
 	v *validator.Validate,
 	r *repositories.Queries,
+	a *configs.AWSClient,
 ) *MemoryHandler {
 	return &MemoryHandler{
 		Validator:  v,
 		Repository: r,
+		AWSClient: a,
 	}
 }
 
@@ -35,6 +40,7 @@ func (h *MemoryHandler) RegisterRoutes(router fiber.Router) {
 	g.Post("/", h.handleCreateMemory)
 	g.Get("/me", h.handleGetMemories)
 	g.Get("/:id", h.handleGetMemoriesById)
+	g.Delete("/:id", h.handleGetMemoriesById)
 }
 
 func (h *MemoryHandler) handleCreateMemory(c *fiber.Ctx) error {
@@ -78,8 +84,6 @@ func (h *MemoryHandler) handleGetMemories(c *fiber.Ctx) error {
 		return err
 	}
 
-	slog.Info(fmt.Sprintf("%+v", userId))
-
 	res, err := h.Repository.GetMemoryWithParticipation(context.Background(), int64(userId))
 	if err != nil {
 		slog.Error("Failed to get memories")
@@ -102,7 +106,6 @@ func (h *MemoryHandler) handleGetMemories(c *fiber.Ctx) error {
 }
 
 func (h *MemoryHandler) handleGetMemoriesById(c *fiber.Ctx) error {
-
 	userId, err := c.ParamsInt("id")
 	if err != nil {
 		slog.Error("Failed to get packet id", "err", err)
@@ -127,4 +130,25 @@ func (h *MemoryHandler) handleGetMemoriesById(c *fiber.Ctx) error {
 		},
 	})
 
+}
+
+func (h *MemoryHandler) handleDeleteMemory(c *fiber.Ctx) error {
+	memoryId, err := c.ParamsInt("id")
+	if err != nil {
+		slog.Error("Failed to get packet id", "err", err)
+	}
+
+	userId, err := helpers.GetSubjectFromToken(c)
+	if err != nil {
+		return err
+	}
+
+	cnf := helpers.NewConfig()
+	bucketName := cnf.GetString("BUCKET_NAME")
+	key := fmt.Sprintf("memories/%v/")
+	
+	_, err = h.AWSClient.S3Client.DeleteObject(context.Background(), &s3.DeleteObjectInput{
+		Bucket: ,
+	})
+	return nil
 }

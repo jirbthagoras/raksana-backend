@@ -8,10 +8,12 @@ import (
 	"jirbthagoras/raksana-backend/helpers"
 	"jirbthagoras/raksana-backend/models"
 	"log/slog"
+	"path/filepath"
 	"strings"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v2"
+	"github.com/google/uuid"
 )
 
 var allowedVideoTypes = []string{
@@ -55,7 +57,7 @@ func (h *FileHandler) handleCreatePresigned(c *fiber.Ctx) error {
 		return exceptions.NewFailedValidationError(*req, err.(validator.ValidationErrors))
 	}
 
-	id, err := helpers.GetSubjectFromToken(c)
+	userId, err := helpers.GetSubjectFromToken(c)
 	if err != nil {
 		return err
 	}
@@ -63,11 +65,14 @@ func (h *FileHandler) handleCreatePresigned(c *fiber.Ctx) error {
 	option := c.Query("type")
 	var key string
 
+	id := uuid.New().String()
+	ext := filepath.Ext(req.Filename)
+
 	switch option {
 	case "profile":
-		key = fmt.Sprintf("profiles/%v/", id) + req.Filename
-	case "memories":
-		key = fmt.Sprintf("memories/%v/", id) + req.Filename
+		key = fmt.Sprintf("profiles/%v/%s%s", userId, id, ext)
+	case "memory":
+		key = fmt.Sprintf("memories/%v/%s%s", userId, id, ext)
 	case "scan":
 		key = "scan/"
 	default:

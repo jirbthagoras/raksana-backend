@@ -21,7 +21,7 @@ return new class extends Migration
             $table->string("contact");
             $table->date("starts_at");
             $table->date("ends_at");
-            $table->string("cover_url")->nullable(true);
+            $table->string("cover_key")->nullable(true);
             $table->foreign("code_id")->references("id")->on("codes");
         });
     }
