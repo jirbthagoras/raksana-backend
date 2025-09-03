@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict X843QuSqPfg9etneto1k7ilFhh0obCkDNi5Bone78FcgcM1jKXA1CUXN1byjDyV
+\restrict mmcU23jxXqbcx58yU5JRZVX4DWfanIGTLjTGTunP2IQVAQJTGVizfE1rfsDSp7X
 
 -- Dumped from database version 17.6 (Debian 17.6-1.pgdg13+1)
 -- Dumped by pg_dump version 17.6 (Ubuntu 17.6-1.pgdg24.04+1)
@@ -228,7 +228,7 @@ CREATE TABLE public.events (
     contact character varying(255) NOT NULL,
     starts_at date NOT NULL,
     ends_at date NOT NULL,
-    cover_url character varying(255)
+    cover_key character varying(255)
 );
 
 
@@ -412,7 +412,7 @@ ALTER SEQUENCE public.logs_id_seq OWNED BY public.logs.id;
 CREATE TABLE public.memories (
     id bigint NOT NULL,
     user_id bigint NOT NULL,
-    file_url character varying(255) NOT NULL,
+    file_key character varying(255) NOT NULL,
     description text NOT NULL,
     created_at timestamp(0) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL
 );
@@ -559,7 +559,7 @@ CREATE TABLE public.profiles (
     exp_needed bigint DEFAULT '100'::bigint NOT NULL,
     level integer DEFAULT 1 NOT NULL,
     points bigint DEFAULT '0'::bigint NOT NULL,
-    profile_url character varying(255) DEFAULT 'https://raksana-content.s3.ap-southeast-2.amazonaws.com/profiles/Portrait_Placeholder.png'::character varying NOT NULL
+    profile_key character varying(255) DEFAULT 'profiles/Portrait_Placeholder.png'::character varying NOT NULL
 );
 
 
@@ -1423,13 +1423,13 @@ ALTER TABLE ONLY public.treasures
 -- PostgreSQL database dump complete
 --
 
-\unrestrict X843QuSqPfg9etneto1k7ilFhh0obCkDNi5Bone78FcgcM1jKXA1CUXN1byjDyV
+\unrestrict mmcU23jxXqbcx58yU5JRZVX4DWfanIGTLjTGTunP2IQVAQJTGVizfE1rfsDSp7X
 
 --
 -- PostgreSQL database dump
 --
 
-\restrict W0dREWKGOreID2W0ldaNkZzuQYivIPDHQ1W7MbZqPc3L3OEREF0AOeFdF3ofs3r
+\restrict 9zvmGtw01SnKKZV2mUcZgeqmGT0HDRrVyW4xUcjjOofvQmTVf5htuOZ5JvAzdHS
 
 -- Dumped from database version 17.6 (Debian 17.6-1.pgdg13+1)
 -- Dumped by pg_dump version 17.6 (Ubuntu 17.6-1.pgdg24.04+1)
@@ -1486,5 +1486,5 @@ SELECT pg_catalog.setval('public.migrations_id_seq', 21, true);
 -- PostgreSQL database dump complete
 --
 
-\unrestrict W0dREWKGOreID2W0ldaNkZzuQYivIPDHQ1W7MbZqPc3L3OEREF0AOeFdF3ofs3r
+\unrestrict 9zvmGtw01SnKKZV2mUcZgeqmGT0HDRrVyW4xUcjjOofvQmTVf5htuOZ5JvAzdHS
 

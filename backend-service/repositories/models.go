@@ -73,7 +73,7 @@ type Event struct {
 	Contact   string
 	StartsAt  pgtype.Date
 	EndsAt    pgtype.Date
-	CoverUrl  pgtype.Text
+	CoverKey  pgtype.Text
 }
 
 type FailedJob struct {
@@ -131,7 +131,7 @@ type Log struct {
 type Memory struct {
 	ID          int64
 	UserID      int64
-	FileUrl     string
+	FileKey     string
 	Description string
 	CreatedAt   pgtype.Timestamp
 }
@@ -176,7 +176,7 @@ type Profile struct {
 	ExpNeeded  int64
 	Level      int32
 	Points     int64
-	ProfileUrl string
+	ProfileKey string
 }
 
 type Quest struct {

@@ -1,28 +1,40 @@
 package handlers
 
 import (
+	"context"
+	"errors"
+	"jirbthagoras/raksana-backend/configs"
+	"jirbthagoras/raksana-backend/exceptions"
 	"jirbthagoras/raksana-backend/helpers"
+	"jirbthagoras/raksana-backend/models"
 	"jirbthagoras/raksana-backend/repositories"
 	"jirbthagoras/raksana-backend/services"
 	"log/slog"
 	"sync"
 
+	"github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v2"
 )
 
 type UserHandler struct {
 	Repository *repositories.Queries
+	Validator  *validator.Validate
+	*configs.AWSClient
 	*services.UserService
 	Mu sync.Mutex
 }
 
 func NewUserHandler(
+	v *validator.Validate,
 	r *repositories.Queries,
 	us *services.UserService,
+	a *configs.AWSClient,
 ) *UserHandler {
 	return &UserHandler{
+		Validator:   v,
 		Repository:  r,
 		UserService: us,
+		AWSClient:   a,
 	}
 }
 
@@ -34,6 +46,7 @@ func (h *UserHandler) RegisterRoutes(router fiber.Router) {
 	g2.Use(helpers.TokenMiddleware)
 	g2.Get("/me", h.handleGetProfile)
 	g2.Get("/:id", h.handleGetProfileById)
+	g2.Put("/", h.handleUpdateProfilePicture)
 }
 
 func (h *UserHandler) handleGetProfile(c *fiber.Ctx) error {
@@ -64,5 +77,53 @@ func (h *UserHandler) handleGetProfileById(c *fiber.Ctx) error {
 
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"data": profile,
+	})
+}
+
+func (h *UserHandler) handleUpdateProfilePicture(c *fiber.Ctx) error {
+	req := &models.PutUserEditProfile{}
+
+	err := c.BodyParser(req)
+	if err != nil {
+		return err
+	}
+
+	userId, err := helpers.GetSubjectFromToken(c)
+	if err != nil {
+		return err
+	}
+
+	err = h.Validator.Struct(req)
+	if err != nil && errors.As(err, &validator.ValidationErrors{}) {
+		return exceptions.NewFailedValidationError(*req, err.(validator.ValidationErrors))
+	}
+
+	ctx := context.Background()
+
+	profile, err := h.Repository.GetUserProfile(ctx, int64(userId))
+	if err != nil {
+		slog.Error("Failed to get user prodile", "err", err)
+		return err
+	}
+
+	cnf := helpers.NewConfig()
+	bucketName := cnf.GetString("AWS_BUCKET")
+
+	err = h.AWSClient.CheckObjectExistence(bucketName, req.ProfileKey)
+	if err != nil {
+		return err
+	}
+
+	_ = h.AWSClient.DeleteObject(bucketName, profile.ProfileKey)
+
+	err = h.Repository.UpdateUserProfile(ctx, repositories.UpdateUserProfileParams{
+		UserID:     int64(userId),
+		ProfileKey: req.ProfileKey,
+	})
+
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"data": fiber.Map{
+			"profile_key": req.ProfileKey,
+		},
 	})
 }

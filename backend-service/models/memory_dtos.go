@@ -1,6 +1,7 @@
 package models
 
 import (
+	"jirbthagoras/raksana-backend/helpers"
 	"jirbthagoras/raksana-backend/repositories"
 	"time"
 )
@@ -21,14 +22,18 @@ type ResponseMemory struct {
 }
 
 type PostMemoryCreate struct {
-	FileUrl     string `json:"file_url" validate:"required"`
+	FileKey     string `json:"file_key" validate:"required"`
 	Description string `json:"description" validate:"required"`
 }
 
 func ToResponseMemory(row repositories.GetMemoryWithParticipationRow) ResponseMemory {
+
+	cnf := helpers.NewConfig()
+	bucketUrl := cnf.GetString("AWS_URL")
+
 	resp := ResponseMemory{
 		MemoryID:        row.MemoryID,
-		FileURL:         row.FileUrl,
+		FileURL:         bucketUrl + row.FileKey,
 		Description:     row.MemoryDescription,
 		CreatedAt:       row.MemoryCreatedAt.Time,
 		UserID:          row.UserID,

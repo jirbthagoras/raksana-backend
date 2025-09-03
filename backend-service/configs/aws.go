@@ -2,8 +2,10 @@ package configs
 
 import (
 	"context"
+	"errors"
 	"jirbthagoras/raksana-backend/helpers"
 	"log/slog"
+	"net/http"
 	"time"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
@@ -12,6 +14,8 @@ import (
 	"github.com/aws/aws-sdk-go-v2/credentials"
 	"github.com/aws/aws-sdk-go-v2/service/rekognition"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
+	"github.com/aws/smithy-go"
+	"github.com/gofiber/fiber/v2"
 	"github.com/spf13/viper"
 )
 
@@ -53,10 +57,9 @@ func InitAWSClient(cnf *viper.Viper) *AWSClient {
 	}
 }
 
-func (a *AWSClient) CreatePresignUrlPutObject(key string, contentType string) (string, *v4.PresignedHTTPRequest, error) {
+func (a *AWSClient) CreatePresignUrlPutObject(key string, contentType string) (*v4.PresignedHTTPRequest, error) {
 	cnf := helpers.NewConfig()
 	bucket := cnf.GetString("AWS_BUCKET")
-	bucketUrl := cnf.GetString("AWS_URL")
 
 	presignReq, err := a.PsClient.PresignPutObject(context.Background(), &s3.PutObjectInput{
 		Bucket:      aws.String(bucket),
@@ -65,10 +68,49 @@ func (a *AWSClient) CreatePresignUrlPutObject(key string, contentType string) (s
 	}, s3.WithPresignExpires(10*time.Minute))
 	if err != nil {
 		slog.Error("Failed to create a presigned url")
-		return "", nil, err
+		return nil, err
 	}
 
-	fileUrl := bucketUrl + key
+	return presignReq, nil
+}
 
-	return fileUrl, presignReq, nil
+func (a *AWSClient) DeleteObject(bucketName string, key string) error {
+	ctx := context.Background()
+	_, err := a.S3Client.DeleteObject(ctx, &s3.DeleteObjectInput{
+		Bucket: aws.String(bucketName),
+		Key:    aws.String(key),
+	})
+	if err != nil {
+		slog.Error("Failed to delete image from bucket")
+		return err
+	}
+	return nil
+}
+
+func (a *AWSClient) CheckObjectExistence(bucketName string, key string) error {
+	ctx := context.Background()
+	_, err := a.S3Client.HeadObject(ctx, &s3.HeadObjectInput{
+		Bucket: aws.String(bucketName),
+		Key:    aws.String(key),
+	})
+
+	if err != nil {
+		var apiErr smithy.APIError
+
+		if errors.As(err, &apiErr) {
+			if apiErr.ErrorCode() == "NotFound" {
+				return fiber.NewError(fiber.StatusBadRequest, "New Profile Picture Not Found")
+			}
+			// Sometimes it's returned as a status code instead of error code
+			if respErr, ok := err.(interface{ HTTPStatusCode() int }); ok && respErr.HTTPStatusCode() == http.StatusNotFound {
+				slog.Error("Failed to check object head")
+				return err
+			}
+		}
+
+		slog.Error("Failed to check object head")
+		return err
+	}
+
+	return nil
 }

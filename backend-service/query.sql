@@ -40,9 +40,10 @@ UPDATE statistics SET longest_streak = $1
 WHERE user_id = $2;
 
 -- name: GetUserProfile :one
-SELECT current_exp, exp_needed, level, points
-FROM profiles
-WHERE user_id = $1 AND is_admin = false;
+SELECT p.*
+FROM profiles p
+JOIN users u ON p.user_id = u.id
+WHERE p.user_id = $1;
 
 -- name: IncreaseExp :one
 UPDATE profiles 
@@ -150,7 +151,7 @@ SELECT
     p.exp_needed,
     p.level,
     p.points,
-    p.profile_url,
+    p.profile_key,
     s.challenges,
     s.events,
     s.quests,
@@ -181,13 +182,13 @@ JOIN users u ON u.id = p.user_id
 WHERE p.id = $1;
 
 -- name: CreateMemory :exec
-INSERT INTO memories(user_id, file_url, description)
+INSERT INTO memories(user_id, file_key, description)
 VALUES ($1, $2, $3);
 
 -- name: GetMemoryWithParticipation :many
 SELECT 
     m.id AS memory_id,
-    m.file_url,
+    m.file_key,
     m.description AS memory_description,
     m.created_at AS memory_created_at,
     u.id AS user_id,
@@ -212,4 +213,9 @@ ORDER BY m.created_at ASC;
 -- name: DeleteMemory :one
 DELETE FROM memories
 WHERE id = $1 AND user_id = $2
-RETURNING file_url;
+RETURNING file_key;
+
+-- name: UpdateUserProfile :exec
+UPDATE profiles
+SET profile_key = $1
+WHERE user_id = $2;

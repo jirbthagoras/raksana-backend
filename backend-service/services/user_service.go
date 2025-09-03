@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"jirbthagoras/raksana-backend/helpers"
 	"jirbthagoras/raksana-backend/models"
 	"jirbthagoras/raksana-backend/repositories"
 	"log/slog"
@@ -49,6 +50,9 @@ func (s *UserService) GetUserDetail(id int) (models.ResponseGetUserProfileStatis
 
 	stringCompletionRate := fmt.Sprintf("%v", completionRate) + "%"
 
+	cnf := helpers.NewConfig()
+	bucketUrl := cnf.GetString("AWS_URL")
+
 	profile = models.ResponseGetUserProfileStatistic{
 		Id:                 int(res.UserID),
 		Name:               res.Name,
@@ -58,7 +62,7 @@ func (s *UserService) GetUserDetail(id int) (models.ResponseGetUserProfileStatis
 		ExpNeeded:          res.ExpNeeded,
 		Level:              res.Level,
 		Points:             res.Points,
-		ProfileUrl:         res.ProfileUrl,
+		ProfileUrl:         bucketUrl + res.ProfileKey,
 		Challenges:         res.Challenges,
 		Events:             res.Events,
 		Quests:             res.Quests,

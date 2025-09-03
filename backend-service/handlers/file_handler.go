@@ -85,7 +85,7 @@ func (h *FileHandler) handleCreatePresigned(c *fiber.Ctx) error {
 		}
 	}
 
-	fileUrl, presignedReq, err := h.AWSClient.CreatePresignUrlPutObject(key, req.ContentType)
+	presignedReq, err := h.AWSClient.CreatePresignUrlPutObject(key, req.ContentType)
 	if err != nil {
 		return err
 	}
@@ -93,7 +93,7 @@ func (h *FileHandler) handleCreatePresigned(c *fiber.Ctx) error {
 	return c.Status(fiber.StatusCreated).JSON(fiber.Map{
 		"data": fiber.Map{
 			"presigned_url": presignedReq.URL,
-			"file_url":      fileUrl,
+			"file_key":      key,
 		},
 	})
 }

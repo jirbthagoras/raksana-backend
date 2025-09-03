@@ -47,9 +47,9 @@ func NewAppRouter(
 		StreakHandler:      handlers.NewStreakHandler(rd, streakService),
 		PacketHandler:      handlers.NewPacketHandler(v, r, aiClient, journalService, packetService),
 		TaskHandler:        handlers.NewTaskHandler(r, streakService, habitService, journalService, expService),
-		UserHandler:        handlers.NewUserHandler(r, userService),
+		UserHandler:        handlers.NewUserHandler(v, r, userService, awsClient),
 		FileHandler:        handlers.NewFileHandler(v, awsClient),
-		MemoryHandler:      handlers.NewMemoryHandler(v, r),
+		MemoryHandler:      handlers.NewMemoryHandler(v, r, awsClient),
 	}
 }
 

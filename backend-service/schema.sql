@@ -1,3 +1,4 @@
+
 --
 -- PostgreSQL database dump
 --
@@ -226,7 +227,7 @@ CREATE TABLE public.events (
     contact character varying(255) NOT NULL,
     starts_at date NOT NULL,
     ends_at date NOT NULL,
-    cover_url character varying(255)
+    cover_key character varying(255)
 );
 
 
@@ -410,7 +411,7 @@ ALTER SEQUENCE public.logs_id_seq OWNED BY public.logs.id;
 CREATE TABLE public.memories (
     id bigint NOT NULL,
     user_id bigint NOT NULL,
-    file_url character varying(255) NOT NULL,
+    file_key character varying(255) NOT NULL,
     description text NOT NULL,
     created_at timestamp(0) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL
 );
@@ -557,7 +558,7 @@ CREATE TABLE public.profiles (
     exp_needed bigint DEFAULT '100'::bigint NOT NULL,
     level integer DEFAULT 1 NOT NULL,
     points bigint DEFAULT '0'::bigint NOT NULL,
-    profile_url character varying(255) DEFAULT 'https://raksana-content.s3.ap-southeast-2.amazonaws.com/profiles/Portrait_Placeholder.png'::character varying NOT NULL
+    profile_key character varying(255) DEFAULT 'profiles/Portrait_Placeholder.png'::character varying NOT NULL
 );
 
 
@@ -1420,3 +1421,4 @@ ALTER TABLE ONLY public.treasures
 --
 -- PostgreSQL database dump complete
 --
+

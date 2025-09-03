@@ -177,18 +177,18 @@ func (q *Queries) CreateLog(ctx context.Context, arg CreateLogParams) (CreateLog
 }
 
 const createMemory = `-- name: CreateMemory :exec
-INSERT INTO memories(user_id, file_url, description)
+INSERT INTO memories(user_id, file_key, description)
 VALUES ($1, $2, $3)
 `
 
 type CreateMemoryParams struct {
 	UserID      int64
-	FileUrl     string
+	FileKey     string
 	Description string
 }
 
 func (q *Queries) CreateMemory(ctx context.Context, arg CreateMemoryParams) error {
-	_, err := q.db.Exec(ctx, createMemory, arg.UserID, arg.FileUrl, arg.Description)
+	_, err := q.db.Exec(ctx, createMemory, arg.UserID, arg.FileKey, arg.Description)
 	return err
 }
 
@@ -320,7 +320,7 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (CreateU
 const deleteMemory = `-- name: DeleteMemory :one
 DELETE FROM memories
 WHERE id = $1 AND user_id = $2
-RETURNING file_url
+RETURNING file_key
 `
 
 type DeleteMemoryParams struct {
@@ -330,9 +330,9 @@ type DeleteMemoryParams struct {
 
 func (q *Queries) DeleteMemory(ctx context.Context, arg DeleteMemoryParams) (string, error) {
 	row := q.db.QueryRow(ctx, deleteMemory, arg.ID, arg.UserID)
-	var file_url string
-	err := row.Scan(&file_url)
-	return file_url, err
+	var file_key string
+	err := row.Scan(&file_key)
+	return file_key, err
 }
 
 const getAllPackets = `-- name: GetAllPackets :many
@@ -418,7 +418,7 @@ func (q *Queries) GetLogs(ctx context.Context, arg GetLogsParams) ([]GetLogsRow,
 const getMemoryWithParticipation = `-- name: GetMemoryWithParticipation :many
 SELECT 
     m.id AS memory_id,
-    m.file_url,
+    m.file_key,
     m.description AS memory_description,
     m.created_at AS memory_created_at,
     u.id AS user_id,
@@ -443,7 +443,7 @@ ORDER BY m.created_at ASC
 
 type GetMemoryWithParticipationRow struct {
 	MemoryID          int64
-	FileUrl           string
+	FileKey           string
 	MemoryDescription string
 	MemoryCreatedAt   pgtype.Timestamp
 	UserID            int64
@@ -467,7 +467,7 @@ func (q *Queries) GetMemoryWithParticipation(ctx context.Context, userID int64) 
 		var i GetMemoryWithParticipationRow
 		if err := rows.Scan(
 			&i.MemoryID,
-			&i.FileUrl,
+			&i.FileKey,
 			&i.MemoryDescription,
 			&i.MemoryCreatedAt,
 			&i.UserID,
@@ -747,26 +747,23 @@ func (q *Queries) GetUserById(ctx context.Context, id int64) (GetUserByIdRow, er
 }
 
 const getUserProfile = `-- name: GetUserProfile :one
-SELECT current_exp, exp_needed, level, points
-FROM profiles
-WHERE user_id = $1 AND is_admin = false
+SELECT p.id, p.user_id, p.current_exp, p.exp_needed, p.level, p.points, p.profile_key
+FROM profiles p
+JOIN users u ON p.user_id = u.id
+WHERE p.user_id = $1
 `
 
-type GetUserProfileRow struct {
-	CurrentExp int64
-	ExpNeeded  int64
-	Level      int32
-	Points     int64
-}
-
-func (q *Queries) GetUserProfile(ctx context.Context, userID int64) (GetUserProfileRow, error) {
+func (q *Queries) GetUserProfile(ctx context.Context, userID int64) (Profile, error) {
 	row := q.db.QueryRow(ctx, getUserProfile, userID)
-	var i GetUserProfileRow
+	var i Profile
 	err := row.Scan(
+		&i.ID,
+		&i.UserID,
 		&i.CurrentExp,
 		&i.ExpNeeded,
 		&i.Level,
 		&i.Points,
+		&i.ProfileKey,
 	)
 	return i, err
 }
@@ -781,7 +778,7 @@ SELECT
     p.exp_needed,
     p.level,
     p.points,
-    p.profile_url,
+    p.profile_key,
     s.challenges,
     s.events,
     s.quests,
@@ -803,7 +800,7 @@ type GetUserProfileStatisticRow struct {
 	ExpNeeded     int64
 	Level         int32
 	Points        int64
-	ProfileUrl    string
+	ProfileKey    string
 	Challenges    int32
 	Events        int32
 	Quests        int32
@@ -824,7 +821,7 @@ func (q *Queries) GetUserProfileStatistic(ctx context.Context, id int64) (GetUse
 		&i.ExpNeeded,
 		&i.Level,
 		&i.Points,
-		&i.ProfileUrl,
+		&i.ProfileKey,
 		&i.Challenges,
 		&i.Events,
 		&i.Quests,
@@ -933,5 +930,21 @@ type UpdateLongestStreakParams struct {
 
 func (q *Queries) UpdateLongestStreak(ctx context.Context, arg UpdateLongestStreakParams) error {
 	_, err := q.db.Exec(ctx, updateLongestStreak, arg.LongestStreak, arg.UserID)
+	return err
+}
+
+const updateUserProfile = `-- name: UpdateUserProfile :exec
+UPDATE profiles
+SET profile_key = $1
+WHERE user_id = $2
+`
+
+type UpdateUserProfileParams struct {
+	ProfileKey string
+	UserID     int64
+}
+
+func (q *Queries) UpdateUserProfile(ctx context.Context, arg UpdateUserProfileParams) error {
+	_, err := q.db.Exec(ctx, updateUserProfile, arg.ProfileKey, arg.UserID)
 	return err
 }

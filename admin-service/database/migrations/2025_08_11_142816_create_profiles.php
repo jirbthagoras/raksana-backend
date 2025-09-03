@@ -18,7 +18,7 @@ return new class extends Migration
             $table->bigInteger("exp_needed")->default(100);
             $table->integer("level")->default(1);
             $table->bigInteger("points")->default(0);
-            $table->string("profile_url")->default("https://raksana-content.s3.ap-southeast-2.amazonaws.com/profiles/Portrait_Placeholder.png");
+            $table->string("profile_key")->default("profiles/Portrait_Placeholder.png");
         });
     }
 

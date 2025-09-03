@@ -33,3 +33,7 @@ type PostUserLogin struct {
 	Email    string `json:"email" validate:"required,email"`
 	Password string `json:"password" validate:"required,min=6"`
 }
+
+type PutUserEditProfile struct {
+	ProfileKey string `json:"profile_key" validate:"required"`
+}

@@ -3,7 +3,6 @@ package handlers
 import (
 	"context"
 	"errors"
-	"fmt"
 	"jirbthagoras/raksana-backend/configs"
 	"jirbthagoras/raksana-backend/exceptions"
 	"jirbthagoras/raksana-backend/helpers"
@@ -11,9 +10,9 @@ import (
 	"jirbthagoras/raksana-backend/repositories"
 	"log/slog"
 
-	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v2"
+	"github.com/jackc/pgx/v5"
 )
 
 type MemoryHandler struct {
@@ -30,7 +29,7 @@ func NewMemoryHandler(
 	return &MemoryHandler{
 		Validator:  v,
 		Repository: r,
-		AWSClient: a,
+		AWSClient:  a,
 	}
 }
 
@@ -40,7 +39,7 @@ func (h *MemoryHandler) RegisterRoutes(router fiber.Router) {
 	g.Post("/", h.handleCreateMemory)
 	g.Get("/me", h.handleGetMemories)
 	g.Get("/:id", h.handleGetMemoriesById)
-	g.Delete("/:id", h.handleGetMemoriesById)
+	g.Delete("/:id", h.handleDeleteMemory)
 }
 
 func (h *MemoryHandler) handleCreateMemory(c *fiber.Ctx) error {
@@ -64,7 +63,7 @@ func (h *MemoryHandler) handleCreateMemory(c *fiber.Ctx) error {
 	err = h.Repository.CreateMemory(context.Background(), repositories.CreateMemoryParams{
 		UserID:      int64(userId),
 		Description: req.Description,
-		FileUrl:     req.FileUrl,
+		FileKey:     req.FileKey,
 	})
 	if err != nil {
 		slog.Error("Failed to create memory", "err", err)
@@ -89,7 +88,6 @@ func (h *MemoryHandler) handleGetMemories(c *fiber.Ctx) error {
 		slog.Error("Failed to get memories")
 		return err
 	}
-	slog.Info(fmt.Sprintf("%+v", res))
 
 	var memories []models.ResponseMemory
 
@@ -129,7 +127,6 @@ func (h *MemoryHandler) handleGetMemoriesById(c *fiber.Ctx) error {
 			"memories": memories,
 		},
 	})
-
 }
 
 func (h *MemoryHandler) handleDeleteMemory(c *fiber.Ctx) error {
@@ -143,12 +140,31 @@ func (h *MemoryHandler) handleDeleteMemory(c *fiber.Ctx) error {
 		return err
 	}
 
-	cnf := helpers.NewConfig()
-	bucketName := cnf.GetString("BUCKET_NAME")
-	key := fmt.Sprintf("memories/%v/")
-	
-	_, err = h.AWSClient.S3Client.DeleteObject(context.Background(), &s3.DeleteObjectInput{
-		Bucket: ,
+	ctx := context.Background()
+
+	key, err := h.Repository.DeleteMemory(ctx, repositories.DeleteMemoryParams{
+		UserID: int64(userId),
+		ID:     int64(memoryId),
 	})
-	return nil
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return fiber.NewError(fiber.StatusBadRequest, "Memory not found")
+		}
+		slog.Error("Failed to get memory with such id")
+		return err
+	}
+
+	cnf := helpers.NewConfig()
+	bucketName := cnf.GetString("AWS_BUCKET")
+
+	err = h.AWSClient.DeleteObject(bucketName, key)
+	if err != nil {
+		return err
+	}
+
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"data": fiber.Map{
+			"message": "success",
+		},
+	})
 }
