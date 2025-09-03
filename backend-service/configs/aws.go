@@ -101,7 +101,6 @@ func (a *AWSClient) CheckObjectExistence(bucketName string, key string) error {
 			if apiErr.ErrorCode() == "NotFound" {
 				return fiber.NewError(fiber.StatusBadRequest, "New Profile Picture Not Found")
 			}
-			// Sometimes it's returned as a status code instead of error code
 			if respErr, ok := err.(interface{ HTTPStatusCode() int }); ok && respErr.HTTPStatusCode() == http.StatusNotFound {
 				slog.Error("Failed to check object head")
 				return err

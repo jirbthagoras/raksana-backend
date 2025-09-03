@@ -46,7 +46,7 @@ class EventResource extends Resource
                         Forms\Components\DatePicker::make('starts_at')->required(),
                         Forms\Components\DatePicker::make('ends_at')->required(),
 
-                        Forms\Components\FileUpload::make('cover_url')
+                        Forms\Components\FileUpload::make('cover_key')
                             ->label('Cover Image')
                             ->disk('s3')
                             ->directory('events/covers')

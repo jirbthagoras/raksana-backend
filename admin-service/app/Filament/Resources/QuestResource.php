@@ -100,7 +100,18 @@ class QuestResource extends Resource
                 Tables\Actions\EditAction::make(),
             ])
             ->bulkActions([
-                Tables\Actions\DeleteBulkAction::make(),
+                Tables\Actions\DeleteBulkAction::make()
+                    ->before(function ($records) {
+                                foreach ($records as $record) {
+                                    if ($record->code && $record->code->image_url) {
+                                        $path = str_replace(Storage::disk('s3')->url(''), '', $record->code->image_url);
+
+                                        if (Storage::disk('s3')->exists($path)) {
+                                            Storage::disk('s3')->delete($path);                                        var_dump($path);
+                                        }
+                                    }
+                                }
+                            }),
             ]);
     }
 
@@ -130,7 +141,7 @@ class QuestResource extends Resource
             ])->setPaper('a4', 'portrait');
             $pdf->setOptions([
                 'isHtml5ParserEnabled' => true,
-                'isRemoteEnabled' => true, // 👈 this is required for S3 images
+                'isRemoteEnabled' => true,
             ]);
 
             return response()->streamDownload(

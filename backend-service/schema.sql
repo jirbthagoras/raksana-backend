@@ -85,7 +85,7 @@ CREATE TABLE public.challenges (
     detail_id bigint NOT NULL,
     day integer NOT NULL,
     difficulty character varying(255) NOT NULL,
-    CONSTRAINT challenges_difficulty_check CHECK (((difficulty)::text = ANY ((ARRAY['easy'::character varying, 'hard'::character varying])::text[])))
+    CONSTRAINT challenges_difficulty_check CHECK (((difficulty)::text = ANY ((ARRAY['easy'::character varying, 'normal'::character varying, 'hard'::character varying])::text[])))
 );
 
 
@@ -1421,4 +1421,42 @@ ALTER TABLE ONLY public.treasures
 --
 -- PostgreSQL database dump complete
 --
+
+
+--
+-- PostgreSQL database dump
+--
+
+
+-- Dumped from database version 17.6 (Debian 17.6-1.pgdg13+1)
+-- Dumped by pg_dump version 17.6 (Ubuntu 17.6-1.pgdg24.04+1)
+
+SET statement_timeout = 0;
+SET lock_timeout = 0;
+SET idle_in_transaction_session_timeout = 0;
+SET transaction_timeout = 0;
+SET client_encoding = 'UTF8';
+SET standard_conforming_strings = on;
+SELECT pg_catalog.set_config('search_path', '', false);
+SET check_function_bodies = false;
+SET xmloption = content;
+SET client_min_messages = warning;
+SET row_security = off;
+
+--
+-- Data for Name: migrations; Type: TABLE DATA; Schema: public; Owner: -
+--
+
+
+--
+-- Name: migrations_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+--
+
+SELECT pg_catalog.setval('public.migrations_id_seq', 21, true);
+
+
+--
+-- PostgreSQL database dump complete
+--
+
 

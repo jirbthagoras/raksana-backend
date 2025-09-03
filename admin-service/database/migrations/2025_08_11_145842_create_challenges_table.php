@@ -15,7 +15,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId("detail_id")->references("id")->on("details");
             $table->integer("day");
-            $table->enum("difficulty", ["easy", "hard"]);
+            $table->enum("difficulty", ["easy", "normal", "hard"]);
         });
     }
 

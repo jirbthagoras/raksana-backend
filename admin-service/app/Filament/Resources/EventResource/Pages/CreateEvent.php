@@ -39,7 +39,7 @@ class CreateEvent extends CreateRecord
 
         unset($data['detail_name'], $data['detail_description'], $data['detail_point_gain']);
 
-        $uuid = (string) Str::uuid();
+        $uuid = (string) Str::random(12);
 
         $nbf = strtotime($data['starts_at']);
         $exp = strtotime($data['ends_at']);

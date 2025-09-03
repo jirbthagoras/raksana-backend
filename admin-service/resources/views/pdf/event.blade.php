@@ -2,12 +2,12 @@
 <html>
 <head>
     <meta charset="utf-8">
-    <title>Recent Quests</title>
+    <title>Recent events</title>
     <style>
         body { font-family: sans-serif; font-size: 12px; }
         h1 { text-align: center; margin-bottom: 20px; }
-        .quest { margin-bottom: 20px; border-bottom: 1px solid #ccc; padding-bottom: 10px; }
-        .quest:last-child { border-bottom: none; }
+        .event { margin-bottom: 20px; border-bottom: 1px solid #ccc; padding-bottom: 10px; }
+        .event:last-child { border-bottom: none; }
         img { margin-top: 10px; }
     </style>
 </head>
@@ -26,10 +26,19 @@
             <p><strong>Starts at:</strong> {{ $event->starts_at }}</p>
             <p><strong>Ends at:</strong> {{ $event->ends_at }}</p>
 
+            @if($event->latitude && $event->longitude)
+                <p><strong>Map:</strong></p>
+                <img 
+                    src="https://maps.googleapis.com/maps/api/staticmap?center={{ $event->latitude }},{{ $event->longitude }}&zoom=15&size=600x300&markers=color:red|{{ $event->latitude }},{{ $event->longitude }}&key={{ config('services.google.maps_key') }}" 
+                    width="300" 
+                    alt="Map">
+            @endif
+            <br>
+
             @if($event->code?->image_url)
                <img src="{{ $event->code->image_url }}" width="120" alt="QR Code">
-          @endif
-               </div>
+            @endif
+        </div>
     @endforeach
 </body>
 </html>

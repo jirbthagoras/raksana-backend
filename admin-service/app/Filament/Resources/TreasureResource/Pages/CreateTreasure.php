@@ -18,7 +18,7 @@ class CreateTreasure extends CreateRecord
 
     protected function mutateFormDataBeforeCreate(array $data): array
     {
-        $uuid = (string) Str::uuid();
+        $uuid = (string) Str::random(12);
 
         $payload = [
             'uuid' => $uuid,

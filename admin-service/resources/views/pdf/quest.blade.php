@@ -24,10 +24,20 @@
             <p><strong>Longitude:</strong> {{ $quest->longitude }}</p>
             <p><strong>Max Contributors:</strong> {{ $quest->max_contributors }}</p>
 
+            @if($quest->latitude && $quest->longitude)
+                <p><strong>Map:</strong></p>
+                <img 
+                    src="https://maps.googleapis.com/maps/api/staticmap?center={{ $quest->latitude }},{{ $quest->longitude }}&zoom=15&size=600x300&markers=color:red|{{ $quest->latitude }},{{ $quest->longitude }}&key={{ config('services.google.maps_key') }}" 
+                    width="300" 
+                    alt="Map">
+            @endif
+
+            <br>
+
             @if($quest->code?->image_url)
                <img src="{{ $quest->code->image_url }}" width="120" alt="QR Code">
-          @endif
-               </div>
+            @endif
+            </div>
     @endforeach
 </body>
 </html>
