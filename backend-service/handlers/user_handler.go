@@ -10,6 +10,7 @@ import (
 	"jirbthagoras/raksana-backend/repositories"
 	"jirbthagoras/raksana-backend/services"
 	"log/slog"
+	"strconv"
 	"sync"
 
 	"github.com/go-playground/validator/v10"
@@ -21,6 +22,7 @@ type UserHandler struct {
 	Validator  *validator.Validate
 	*configs.AWSClient
 	*services.UserService
+	*services.LeaderboardService
 	Mu sync.Mutex
 }
 
@@ -28,13 +30,15 @@ func NewUserHandler(
 	v *validator.Validate,
 	r *repositories.Queries,
 	us *services.UserService,
+	ls *services.LeaderboardService,
 	a *configs.AWSClient,
 ) *UserHandler {
 	return &UserHandler{
-		Validator:   v,
-		Repository:  r,
-		UserService: us,
-		AWSClient:   a,
+		Validator:          v,
+		Repository:         r,
+		UserService:        us,
+		LeaderboardService: ls,
+		AWSClient:          a,
 	}
 }
 
@@ -46,7 +50,7 @@ func (h *UserHandler) RegisterRoutes(router fiber.Router) {
 	g2.Use(helpers.TokenMiddleware)
 	g2.Get("/me", h.handleGetProfile)
 	g2.Get("/:id", h.handleGetProfileById)
-	g2.Put("/", h.handleUpdateProfilePicture)
+	g2.Put("/picture", h.handleUpdateProfilePicture)
 }
 
 func (h *UserHandler) handleGetProfile(c *fiber.Ctx) error {
@@ -108,6 +112,7 @@ func (h *UserHandler) handleUpdateProfilePicture(c *fiber.Ctx) error {
 
 	cnf := helpers.NewConfig()
 	bucketName := cnf.GetString("AWS_BUCKET")
+	bucketUrl := cnf.GetString("AWS_URL")
 
 	err = h.AWSClient.CheckObjectExistence(bucketName, req.ProfileKey)
 	if err != nil {
@@ -120,6 +125,13 @@ func (h *UserHandler) handleUpdateProfilePicture(c *fiber.Ctx) error {
 		UserID:     int64(userId),
 		ProfileKey: req.ProfileKey,
 	})
+
+	imageUrl := bucketUrl + req.ProfileKey
+
+	err = h.LeaderboardService.UpdateProfile(strconv.Itoa(userId), imageUrl)
+	if err != nil {
+		return err
+	}
 
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"data": fiber.Map{

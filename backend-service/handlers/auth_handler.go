@@ -7,7 +7,9 @@ import (
 	"jirbthagoras/raksana-backend/helpers"
 	"jirbthagoras/raksana-backend/models"
 	"jirbthagoras/raksana-backend/repositories"
+	"jirbthagoras/raksana-backend/services"
 	"log/slog"
+	"strconv"
 	"time"
 
 	"github.com/go-playground/validator/v10"
@@ -19,15 +21,18 @@ import (
 type AuthHandler struct {
 	Validator  *validator.Validate
 	Repository *repositories.Queries
+	*services.LeaderboardService
 }
 
 func NewAuthHandler(
 	v *validator.Validate,
 	r *repositories.Queries,
+	ls *services.LeaderboardService,
 ) *AuthHandler {
 	return &AuthHandler{
-		Validator:  v,
-		Repository: r,
+		Validator:          v,
+		Repository:         r,
+		LeaderboardService: ls,
 	}
 }
 
@@ -86,12 +91,23 @@ func (h *AuthHandler) handleRegister(c *fiber.Ctx) error {
 		return err
 	}
 
-	err = h.Repository.CreateProfile(ctx, repositories.CreateProfileParams{
+	profile, err := h.Repository.CreateProfile(ctx, repositories.CreateProfileParams{
 		UserID:    user.ID,
 		ExpNeeded: 50,
 	})
 	if err != nil {
 		slog.Error(err.Error())
+		return err
+	}
+
+	userId := strconv.Itoa(int(user.ID))
+
+	cnf := helpers.NewConfig()
+	bucketUrl := cnf.GetString("AWS_URL")
+	link := bucketUrl + profile.ProfileKey
+
+	err = h.LeaderboardService.SetUserInfo(userId, user.Username, link)
+	if err != nil {
 		return err
 	}
 
@@ -154,7 +170,7 @@ func (h *AuthHandler) handleMe(c *fiber.Ctx) error {
 	token, err := helpers.GetTokenFromRequest(c)
 	if err != nil {
 		slog.Error("Failed to get token from request", "err", err.Error())
-		return fiber.NewError(fiber.StatusUnauthorized, "Token does not attached")
+		return fiber.NewError(fiber.StatusUnauthorized, "Token is not attached")
 	}
 
 	_, claims, err := helpers.ValidateToken(token)

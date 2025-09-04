@@ -9,6 +9,7 @@ import (
 	"jirbthagoras/raksana-backend/helpers"
 	"jirbthagoras/raksana-backend/models"
 	"jirbthagoras/raksana-backend/repositories"
+	"jirbthagoras/raksana-backend/services"
 	"log/slog"
 	"time"
 
@@ -20,15 +21,18 @@ import (
 type RecapHandler struct {
 	Repository *repositories.Queries
 	*configs.AIClient
+	*services.JournalService
 }
 
 func NewRecapHandler(
 	r *repositories.Queries,
 	ai *configs.AIClient,
+	js *services.JournalService,
 ) *RecapHandler {
 	return &RecapHandler{
-		Repository: r,
-		AIClient:   ai,
+		Repository:     r,
+		AIClient:       ai,
+		JournalService: js,
 	}
 }
 
@@ -54,7 +58,7 @@ func (h *RecapHandler) handleCreateWeeklyRecap(c *fiber.Ctx) error {
 
 	today := time.Now().In(loc).Weekday()
 	if today != time.Sunday {
-		return fiber.NewError(fiber.StatusBadRequest, "Today it's not weekend, cannot retreive current weekly recap")
+		return fiber.NewError(fiber.StatusBadRequest, "Hari ini bukan waktu yang tepat untuk weekly recap")
 	}
 
 	cnf := helpers.NewConfig()
@@ -103,7 +107,7 @@ func (h *RecapHandler) handleCreateWeeklyRecap(c *fiber.Ctx) error {
 	}
 
 	if latestRecap.CreatedAt.Time.Format("2006-01-02") == todayDate {
-		return fiber.NewError(fiber.StatusBadRequest, "You already take current week's recap!")
+		return fiber.NewError(fiber.StatusBadRequest, "Anda sudah mengambil weekly recap minggu ini")
 	}
 
 	userTasks, err := h.Repository.CountUserTask(ctx, int64(userId))
@@ -154,6 +158,18 @@ func (h *RecapHandler) handleCreateWeeklyRecap(c *fiber.Ctx) error {
 	if err != nil {
 		slog.Error("Failed to parse Gemini response content", "err", err)
 		return err
+	}
+
+	if recapResponse.GrowthRating == "5" || recapResponse.GrowthRating == "4" {
+		logMsg := fmt.Sprintf("Saya baru saja mendapatkan growth rating %s di weekly recap %s milik saya!", recapResponse.GrowthRating, todayDate)
+		err := h.JournalService.AppendLog(&models.PostLogAppend{
+			Text:      logMsg,
+			IsSystem:  true,
+			IsPrivate: false,
+		}, userId)
+		if err != nil {
+			return err
+		}
 	}
 
 	err = h.Repository.CreateWeeklyRecap(ctx, repositories.CreateWeeklyRecapParams{

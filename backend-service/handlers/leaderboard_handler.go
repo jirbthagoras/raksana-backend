@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"jirbthagoras/raksana-backend/helpers"
 	"jirbthagoras/raksana-backend/repositories"
 
 	"github.com/gofiber/fiber/v2"
@@ -23,5 +24,6 @@ func NewLeaderboardHandler(
 }
 
 func (h *LeaderboardHandler) RegisterRoutes(router fiber.Router) {
-	_ = router.Group("/leaderboard")
+	g := router.Group("/leaderboard")
+	g.Use(helpers.TokenMiddleware)
 }

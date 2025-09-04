@@ -92,7 +92,7 @@ func (h *PacketHandler) handleGeneratePacket(c *fiber.Ctx) error {
 	}
 
 	if result != 0 {
-		return fiber.NewError(fiber.StatusBadRequest, "You already have some active packet, please complete the packet first")
+		return fiber.NewError(fiber.StatusBadRequest, "Anda sudah memiliki beberapa packet aktif!")
 	}
 
 	msg := fmt.Sprintf("Deskripsi: %s, target: %s", req.Description, req.Target)

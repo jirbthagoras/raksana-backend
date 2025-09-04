@@ -36,22 +36,23 @@ func NewAppRouter(
 	expService := services.NewExpService(r, journalService)
 	packetService := services.NewPacketService(r)
 	userService := services.NewUserService(r)
+	leaderboardService := services.NewLeaderboardService(rd)
 
 	cnf := helpers.NewConfig()
 	aiClient := configs.InitAiClient(cnf)
 	awsClient := configs.InitAWSClient(cnf)
 
 	return &AppRouter{
-		AuthHandler:        handlers.NewAuthHandler(v, r),
+		AuthHandler:        handlers.NewAuthHandler(v, r, leaderboardService),
 		JournalHandler:     handlers.NewJournalHandler(v, journalService),
 		LeaderboardHandler: handlers.NewLeaderboardHandler(rd, r),
 		StreakHandler:      handlers.NewStreakHandler(rd, streakService),
 		PacketHandler:      handlers.NewPacketHandler(v, r, aiClient, journalService, packetService),
 		TaskHandler:        handlers.NewTaskHandler(r, streakService, habitService, journalService, expService),
-		UserHandler:        handlers.NewUserHandler(v, r, userService, awsClient),
+		UserHandler:        handlers.NewUserHandler(v, r, userService, leaderboardService, awsClient),
 		FileHandler:        handlers.NewFileHandler(v, awsClient),
 		MemoryHandler:      handlers.NewMemoryHandler(v, r, awsClient),
-		RecapHandler:       handlers.NewRecapHandler(r, aiClient),
+		RecapHandler:       handlers.NewRecapHandler(r, aiClient, journalService),
 	}
 }
 

@@ -13,9 +13,10 @@ SELECT id, username, email, password
 FROM users
 WHERE email = $1;
 
--- name: CreateProfile :exec
+-- name: CreateProfile :one
 INSERT INTO profiles (user_id, exp_needed)
-VALUES ($1, $2);
+VALUES ($1, $2)
+RETURNING *;
 
 -- name: CreateStatistics :exec
 INSERT INTO statistics (user_id)

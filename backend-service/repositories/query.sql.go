@@ -221,9 +221,10 @@ func (q *Queries) CreatePacket(ctx context.Context, arg CreatePacketParams) (int
 	return id, err
 }
 
-const createProfile = `-- name: CreateProfile :exec
+const createProfile = `-- name: CreateProfile :one
 INSERT INTO profiles (user_id, exp_needed)
 VALUES ($1, $2)
+RETURNING id, user_id, current_exp, exp_needed, level, points, profile_key
 `
 
 type CreateProfileParams struct {
@@ -231,9 +232,19 @@ type CreateProfileParams struct {
 	ExpNeeded int64
 }
 
-func (q *Queries) CreateProfile(ctx context.Context, arg CreateProfileParams) error {
-	_, err := q.db.Exec(ctx, createProfile, arg.UserID, arg.ExpNeeded)
-	return err
+func (q *Queries) CreateProfile(ctx context.Context, arg CreateProfileParams) (Profile, error) {
+	row := q.db.QueryRow(ctx, createProfile, arg.UserID, arg.ExpNeeded)
+	var i Profile
+	err := row.Scan(
+		&i.ID,
+		&i.UserID,
+		&i.CurrentExp,
+		&i.ExpNeeded,
+		&i.Level,
+		&i.Points,
+		&i.ProfileKey,
+	)
+	return i, err
 }
 
 const createStatistics = `-- name: CreateStatistics :exec
