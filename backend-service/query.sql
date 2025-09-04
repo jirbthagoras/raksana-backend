@@ -234,6 +234,10 @@ WHERE user_id = $1
 ORDER BY created_at DESC
 LIMIT 1;
 
+-- name: GetWeeklyRecaps :many
+SELECT * FROM recaps
+WHERE user_id = $1 AND type = 'weekly';
+
 -- name: CreateWeeklyRecap :exec
 INSERT INTO recaps(user_id, summary, tips, assigned_task, completed_task, completion_rate, growth_rating, type)
 VALUES ($1, $2, $3, $4, $5, $6, $7, 'weekly');

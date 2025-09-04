@@ -945,6 +945,42 @@ func (q *Queries) GetUserStatistic(ctx context.Context, userID int64) (Statistic
 	return i, err
 }
 
+const getWeeklyRecaps = `-- name: GetWeeklyRecaps :many
+SELECT id, user_id, summary, tips, assigned_task, completed_task, completion_rate, growth_rating, type, created_at FROM recaps
+WHERE user_id = $1 AND type = 'weekly'
+`
+
+func (q *Queries) GetWeeklyRecaps(ctx context.Context, userID int64) ([]Recap, error) {
+	rows, err := q.db.Query(ctx, getWeeklyRecaps, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Recap
+	for rows.Next() {
+		var i Recap
+		if err := rows.Scan(
+			&i.ID,
+			&i.UserID,
+			&i.Summary,
+			&i.Tips,
+			&i.AssignedTask,
+			&i.CompletedTask,
+			&i.CompletionRate,
+			&i.GrowthRating,
+			&i.Type,
+			&i.CreatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const increaseExp = `-- name: IncreaseExp :one
 UPDATE profiles 
 SET current_exp = current_exp + $1::int

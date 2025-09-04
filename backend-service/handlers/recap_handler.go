@@ -35,7 +35,9 @@ func NewRecapHandler(
 func (h *RecapHandler) RegisterRoutes(router fiber.Router) {
 	g := router.Group("/recap")
 	g.Use(helpers.TokenMiddleware)
-	g.Post("/", h.handleCreateWeeklyRecap)
+	g.Post("/weekly", h.handleCreateWeeklyRecap)
+	g.Get("/weekly/me", h.handleGetWeeklyRecap)
+	g.Get("/weekly/:id", h.handleCreateWeeklyRecap)
 }
 
 func (h *RecapHandler) handleCreateWeeklyRecap(c *fiber.Ctx) error {
@@ -50,15 +52,15 @@ func (h *RecapHandler) handleCreateWeeklyRecap(c *fiber.Ctx) error {
 		return err
 	}
 
-	// today := time.Now().In(loc).Weekday()
-	// if today != time.Sunday {
-	// 	return fiber.NewError(fiber.StatusBadRequest, "Today it's not weekend, cannot retreive current weekly recap")
-	// }
+	today := time.Now().In(loc).Weekday()
+	if today != time.Sunday {
+		return fiber.NewError(fiber.StatusBadRequest, "Today it's not weekend, cannot retreive current weekly recap")
+	}
 
 	cnf := helpers.NewConfig()
 	aiModel, err := configs.InitModel(h.AIClient.Genai, cnf, configs.RecapWeekly)
 	if err != nil {
-		slog.Error("Faield to init model", "err", err)
+		slog.Error("Failed to init model", "err", err)
 		return err
 	}
 
@@ -83,7 +85,7 @@ func (h *RecapHandler) handleCreateWeeklyRecap(c *fiber.Ctx) error {
 		})
 	}
 
-	var todayDate string = time.Now().In(loc).Format("2006-01-2")
+	var todayDate string = time.Now().In(loc).Format("2006-01-02")
 
 	session := aiModel.StartChat()
 	session.History = []*genai.Content{}
@@ -100,9 +102,13 @@ func (h *RecapHandler) handleCreateWeeklyRecap(c *fiber.Ctx) error {
 		}
 	}
 
+	if latestRecap.CreatedAt.Time.Format("2006-01-02") == todayDate {
+		return fiber.NewError(fiber.StatusBadRequest, "You already take current week's recap!")
+	}
+
 	userTasks, err := h.Repository.CountUserTask(ctx, int64(userId))
 	if err != nil {
-		slog.Error("Failed to count user tasks")
+		slog.Error("Failed to count user tasks", "err", err)
 		return err
 	}
 	var completionRate float64 = 0.0
@@ -175,6 +181,39 @@ func (h *RecapHandler) handleCreateWeeklyRecap(c *fiber.Ctx) error {
 				"task_completion_rate": stringCompletionRate,
 				"growth_rating":        recapResponse.GrowthRating,
 			},
+		},
+	})
+}
+
+func (h *RecapHandler) handleGetWeeklyRecap(c *fiber.Ctx) error {
+	userId, err := helpers.GetSubjectFromToken(c)
+	if err != nil {
+		return err
+	}
+
+	res, err := h.Repository.GetWeeklyRecaps(context.Background(), int64(userId))
+	if err != nil {
+		slog.Error("Failed to get weekly recaps", "err", err)
+		return err
+	}
+
+	var recaps []models.ResponseRecap
+
+	for _, recap := range res {
+		recaps = append(recaps, models.ResponseRecap{
+			Summary:            recap.Summary,
+			Tips:               recap.Tips,
+			CompletedTask:      recap.CompletedTask,
+			AssignedTask:       recap.AssignedTask,
+			TaskCompletionRate: recap.CompletionRate,
+			CreatedAt:          recap.CreatedAt.Time.Format("2006-01-02"),
+			GrowthRating:       recap.GrowthRating,
+		})
+	}
+
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"data": fiber.Map{
+			"recaps": recaps,
 		},
 	})
 }
