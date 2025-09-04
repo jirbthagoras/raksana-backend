@@ -71,7 +71,59 @@ func (s *UserService) GetUserDetail(id int) (models.ResponseGetUserProfileStatis
 		CompletedTask:      int32(tasks.CompletedTask),
 		AssignedTask:       int32(tasks.AssignedTask),
 		LongestStreak:      res.LongestStreak,
+		Badges:             s.CheckBadges(res),
 	}
 
 	return profile, nil
+}
+
+func (s *UserService) CheckBadges(profile repositories.GetUserProfileStatisticRow) []models.Badge {
+
+	var badges []models.Badge
+
+	if profile.Challenges == 0 &&
+		profile.Treasures == 0 &&
+		profile.Events == 0 &&
+		profile.Quests == 0 {
+		return []models.Badge{
+			{
+				Name:      "Peasant",
+				Frequency: 0,
+			},
+		}
+	}
+
+	GetBadge("challenge", int(profile.Challenges), "Challenger", &badges)
+	GetBadge("quest", int(profile.Quests), "Adventurer", &badges)
+	GetBadge("event", int(profile.Events), "Scholar", &badges)
+	GetBadge("treasure", int(profile.Treasures), "Hunter", &badges)
+
+	return badges
+}
+
+func GetBadge(category string, frequency int, role string, badges *[]models.Badge) {
+	switch {
+	case frequency == 0:
+		return
+	case frequency >= 1 && frequency <= 5:
+		*badges = append(*badges, models.Badge{
+			Category:  category,
+			Name:      "Beginner " + role,
+			Frequency: frequency,
+		})
+	case frequency >= 6 && frequency <= 15:
+		*badges = append(*badges, models.Badge{
+			Category:  category,
+			Name:      "Novice " + role,
+			Frequency: frequency,
+		})
+	case frequency >= 16:
+		*badges = append(*badges, models.Badge{
+			Category:  category,
+			Name:      "Expert " + role,
+			Frequency: frequency,
+		})
+	}
+
+	return
 }

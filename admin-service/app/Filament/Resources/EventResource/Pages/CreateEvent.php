@@ -61,7 +61,7 @@ class CreateEvent extends CreateRecord
         $result = Builder::create()
             ->data($jwt)
             ->encoding(encoding: new Encoding('UTF-8'))
-            ->size(200)
+            ->size(100)
             ->margin(5)
             ->foregroundColor(new Color(0, 0, 0))
             ->backgroundColor(new Color(255, 255, 255))

@@ -12,14 +12,13 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('recaps', function (Blueprint $table) {
+        Schema::create('recap_details', function (Blueprint $table) {
             $table->id();
-            $table->foreignId("user_id")->references("id")->on("users");
-            $table->text("summary");
-            $table->text("tips");
-            $table->integer("assigned_task");
-            $table->integer("completed_task");
-            $table->enum("type", ["weekly", "monthly"]);
+            $table->foreignId("monthly_recap_id")->references("id")->on("recaps");$table->integer("challenges")->default(0);
+            $table->integer("events")->default(0);
+            $table->integer("quests")->default(0);
+            $table->integer("treasures")->default(0);
+            $table->integer("longest_streak")->default(0);
             $table->timestamp('created_at')->default(DB::raw('CURRENT_TIMESTAMP'));
         });
     }
@@ -29,6 +28,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('recaps');
+        Schema::dropIfExists('recap_details');
     }
 };
