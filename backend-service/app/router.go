@@ -22,6 +22,7 @@ type AppRouter struct {
 	*handlers.UserHandler
 	*handlers.FileHandler
 	*handlers.MemoryHandler
+	*handlers.RecapHandler
 }
 
 func NewAppRouter(
@@ -50,6 +51,7 @@ func NewAppRouter(
 		UserHandler:        handlers.NewUserHandler(v, r, userService, awsClient),
 		FileHandler:        handlers.NewFileHandler(v, awsClient),
 		MemoryHandler:      handlers.NewMemoryHandler(v, r, awsClient),
+		RecapHandler:       handlers.NewRecapHandler(r, aiClient),
 	}
 }
 
@@ -63,4 +65,5 @@ func (r *AppRouter) RegisterRoute(router fiber.Router) {
 	r.UserHandler.RegisterRoutes(router)
 	r.FileHandler.RegisterRoutes(router)
 	r.MemoryHandler.RegisterRoutes(router)
+	r.RecapHandler.RegisterRoutes(router)
 }

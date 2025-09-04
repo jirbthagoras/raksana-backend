@@ -87,6 +87,7 @@ func (s *UserService) CheckBadges(profile repositories.GetUserProfileStatisticRo
 		profile.Quests == 0 {
 		return []models.Badge{
 			{
+				Category:  "nuetral",
 				Name:      "Peasant",
 				Frequency: 0,
 			},

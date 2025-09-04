@@ -19,6 +19,8 @@ return new class extends Migration
             $table->text("tips");
             $table->integer("assigned_task");
             $table->integer("completed_task");
+            $table->string("completion_rate");
+            $table->string("growth_rating");
             $table->enum("type", ["weekly", "monthly"]);
             $table->timestamp('created_at')->default(DB::raw('CURRENT_TIMESTAMP'));
         });

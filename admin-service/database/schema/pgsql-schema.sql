@@ -1,7 +1,8 @@
-
 --
 -- PostgreSQL database dump
 --
+
+\restrict hdJWKev6mdxgrg0qv0FvvY0iGlBasUlq5DqjuahvuCm1XCNxGZW1sGEFMdQTR90
 
 -- Dumped from database version 17.6 (Debian 17.6-1.pgdg13+1)
 -- Dumped by pg_dump version 17.6 (Ubuntu 17.6-1.pgdg24.04+1)
@@ -1481,4 +1482,69 @@ ALTER TABLE ONLY public.treasures
 -- PostgreSQL database dump complete
 --
 
+\unrestrict hdJWKev6mdxgrg0qv0FvvY0iGlBasUlq5DqjuahvuCm1XCNxGZW1sGEFMdQTR90
+
+--
+-- PostgreSQL database dump
+--
+
+\restrict KQLdWgKXgEvrbiJg2iWtgWItNCwpaDPKNDTl80cXyNiryp0R2oNd4VLi4HchKs9
+
+-- Dumped from database version 17.6 (Debian 17.6-1.pgdg13+1)
+-- Dumped by pg_dump version 17.6 (Ubuntu 17.6-1.pgdg24.04+1)
+
+SET statement_timeout = 0;
+SET lock_timeout = 0;
+SET idle_in_transaction_session_timeout = 0;
+SET transaction_timeout = 0;
+SET client_encoding = 'UTF8';
+SET standard_conforming_strings = on;
+SELECT pg_catalog.set_config('search_path', '', false);
+SET check_function_bodies = false;
+SET xmloption = content;
+SET client_min_messages = warning;
+SET row_security = off;
+
+--
+-- Data for Name: migrations; Type: TABLE DATA; Schema: public; Owner: -
+--
+
+COPY public.migrations (id, migration, batch) FROM stdin;
+1	0001_01_01_000000_create_users_table	1
+2	0001_01_01_000001_create_cache_table	1
+3	0001_01_01_000002_create_jobs_table	1
+4	2025_08_11_142816_create_profiles	1
+5	2025_08_11_143332_create_statistics	1
+6	2025_08_11_143910_create_details_table	1
+7	2025_08_11_145842_create_challenges_table	1
+8	2025_08_11_150400_create_codes_table	1
+9	2025_08_11_150805_create_quests	1
+10	2025_08_11_150953_create_events	1
+11	2025_08_11_151106_create_contributions	1
+12	2025_08_11_151352_create_memories	1
+13	2025_08_11_151540_create_participations	1
+14	2025_08_11_151644_create_attendances	1
+15	2025_08_11_151803_create_treasures_table	1
+16	2025_08_11_152019_create_claimed	1
+17	2025_08_11_152127_create_logs	1
+18	2025_08_20_124603_create_recaps	1
+19	2025_08_26_141537_create_packets	1
+20	2025_08_26_141543_create_habits	1
+21	2025_08_26_141550_create_routines	1
+22	2025_09_03_162511_create_recap_details	1
+\.
+
+
+--
+-- Name: migrations_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+--
+
+SELECT pg_catalog.setval('public.migrations_id_seq', 22, true);
+
+
+--
+-- PostgreSQL database dump complete
+--
+
+\unrestrict KQLdWgKXgEvrbiJg2iWtgWItNCwpaDPKNDTl80cXyNiryp0R2oNd4VLi4HchKs9
 

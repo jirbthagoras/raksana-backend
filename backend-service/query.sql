@@ -219,3 +219,21 @@ RETURNING file_key;
 UPDATE profiles
 SET profile_key = $1
 WHERE user_id = $2;
+
+-- name: GetLastWeekTasks :many
+SELECT *
+FROM tasks
+WHERE created_at >= NOW() - INTERVAL '7 weeks' AND user_id = $1
+ORDER BY created_at DESC;
+
+-- name: GetLatestRecap :one
+SELECT *
+FROM recaps
+WHERE user_id = $1
+  AND type = 'weekly'
+ORDER BY created_at DESC
+LIMIT 1;
+
+-- name: CreateWeeklyRecap :exec
+INSERT INTO recaps(user_id, summary, tips, assigned_task, completed_task, completion_rate, growth_rating, type)
+VALUES ($1, $2, $3, $4, $5, $6, $7, 'weekly');

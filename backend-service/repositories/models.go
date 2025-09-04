@@ -190,15 +190,27 @@ type Quest struct {
 }
 
 type Recap struct {
-	ID            int64
-	UserID        int64
-	Summary       string
-	Tips          string
-	AssignedTask  int32
-	CompletedTask int32
-	LongestStreak int32
-	Type          string
-	CreatedAt     pgtype.Timestamp
+	ID             int64
+	UserID         int64
+	Summary        string
+	Tips           string
+	AssignedTask   int32
+	CompletedTask  int32
+	CompletionRate string
+	GrowthRating   string
+	Type           string
+	CreatedAt      pgtype.Timestamp
+}
+
+type RecapDetail struct {
+	ID             int64
+	MonthlyRecapID int64
+	Challenges     int32
+	Events         int32
+	Quests         int32
+	Treasures      int32
+	LongestStreak  int32
+	CreatedAt      pgtype.Timestamp
 }
 
 type Session struct {

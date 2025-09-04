@@ -317,6 +317,34 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (CreateU
 	return i, err
 }
 
+const createWeeklyRecap = `-- name: CreateWeeklyRecap :exec
+INSERT INTO recaps(user_id, summary, tips, assigned_task, completed_task, completion_rate, growth_rating, type)
+VALUES ($1, $2, $3, $4, $5, $6, $7, 'weekly')
+`
+
+type CreateWeeklyRecapParams struct {
+	UserID         int64
+	Summary        string
+	Tips           string
+	AssignedTask   int32
+	CompletedTask  int32
+	CompletionRate string
+	GrowthRating   string
+}
+
+func (q *Queries) CreateWeeklyRecap(ctx context.Context, arg CreateWeeklyRecapParams) error {
+	_, err := q.db.Exec(ctx, createWeeklyRecap,
+		arg.UserID,
+		arg.Summary,
+		arg.Tips,
+		arg.AssignedTask,
+		arg.CompletedTask,
+		arg.CompletionRate,
+		arg.GrowthRating,
+	)
+	return err
+}
+
 const deleteMemory = `-- name: DeleteMemory :one
 DELETE FROM memories
 WHERE id = $1 AND user_id = $2
@@ -369,6 +397,71 @@ func (q *Queries) GetAllPackets(ctx context.Context, userID int64) ([]Packet, er
 		return nil, err
 	}
 	return items, nil
+}
+
+const getLastWeekTasks = `-- name: GetLastWeekTasks :many
+SELECT id, habit_id, user_id, packet_id, name, description, difficulty, completed, created_at, updated_at
+FROM tasks
+WHERE created_at >= NOW() - INTERVAL '7 weeks' AND user_id = $1
+ORDER BY created_at DESC
+`
+
+func (q *Queries) GetLastWeekTasks(ctx context.Context, userID int64) ([]Task, error) {
+	rows, err := q.db.Query(ctx, getLastWeekTasks, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Task
+	for rows.Next() {
+		var i Task
+		if err := rows.Scan(
+			&i.ID,
+			&i.HabitID,
+			&i.UserID,
+			&i.PacketID,
+			&i.Name,
+			&i.Description,
+			&i.Difficulty,
+			&i.Completed,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getLatestRecap = `-- name: GetLatestRecap :one
+SELECT id, user_id, summary, tips, assigned_task, completed_task, completion_rate, growth_rating, type, created_at
+FROM recaps
+WHERE user_id = $1
+  AND type = 'weekly'
+ORDER BY created_at DESC
+LIMIT 1
+`
+
+func (q *Queries) GetLatestRecap(ctx context.Context, userID int64) (Recap, error) {
+	row := q.db.QueryRow(ctx, getLatestRecap, userID)
+	var i Recap
+	err := row.Scan(
+		&i.ID,
+		&i.UserID,
+		&i.Summary,
+		&i.Tips,
+		&i.AssignedTask,
+		&i.CompletedTask,
+		&i.CompletionRate,
+		&i.GrowthRating,
+		&i.Type,
+		&i.CreatedAt,
+	)
+	return i, err
 }
 
 const getLogs = `-- name: GetLogs :many
