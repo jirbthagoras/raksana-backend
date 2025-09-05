@@ -749,7 +749,7 @@ LEFT JOIN participations p ON m.id = p.memory_id
 LEFT JOIN challenges c ON p.challenge_id = c.id
 LEFT JOIN details d ON c.detail_id = d.id
 WHERE m.user_id = $1
-ORDER BY m.created_at ASC
+ORDER BY m.created_at DESC
 `
 
 type GetMemoryWithParticipationRow struct {

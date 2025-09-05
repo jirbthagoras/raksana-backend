@@ -15,6 +15,7 @@ type ResponseGetUserProfileStatistic struct {
 	Quests             int32   `json:"quests"`
 	Treasures          int32   `json:"treasures"`
 	LongestStreak      int32   `json:"longest_streak"`
+	CurrentStreak      int     `json:"current_Streak"`
 	TreeGrown          int32   `json:"tree_grown"`
 	CompletedTask      int32   `json:"completed_task"`
 	AssignedTask       int32   `json:"assigend_task"`

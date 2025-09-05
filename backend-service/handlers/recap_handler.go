@@ -22,17 +22,20 @@ type RecapHandler struct {
 	Repository *repositories.Queries
 	*configs.AIClient
 	*services.JournalService
+	*services.StreakService
 }
 
 func NewRecapHandler(
 	r *repositories.Queries,
 	ai *configs.AIClient,
 	js *services.JournalService,
+	ss *services.StreakService,
 ) *RecapHandler {
 	return &RecapHandler{
 		Repository:     r,
 		AIClient:       ai,
 		JournalService: js,
+		StreakService:  ss,
 	}
 }
 
@@ -186,6 +189,11 @@ func (h *RecapHandler) handleCreateWeeklyRecap(c *fiber.Ctx) error {
 		return err
 	}
 
+	err = h.StreakService.UpdateStreak(ctx, int64(userId))
+	if err != nil {
+		return err
+	}
+
 	return c.Status(fiber.StatusCreated).JSON(fiber.Map{
 		"data": fiber.Map{
 			"recap": fiber.Map{
@@ -222,7 +230,7 @@ func (h *RecapHandler) handleGetWeeklyRecap(c *fiber.Ctx) error {
 			CompletedTask:      recap.CompletedTask,
 			AssignedTask:       recap.AssignedTask,
 			TaskCompletionRate: recap.CompletionRate,
-			CreatedAt:          recap.CreatedAt.Time.Format("2006-01-02"),
+			CreatedAt:          recap.CreatedAt.Time.Format("2006-01-02 15:04"),
 			GrowthRating:       recap.GrowthRating,
 		})
 	}

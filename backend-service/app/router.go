@@ -39,7 +39,7 @@ func NewAppRouter(
 	habitService := services.NewHabitService(r, streakService)
 	expService := services.NewExpService(r, journalService)
 	packetService := services.NewPacketService(r)
-	userService := services.NewUserService(r)
+	userService := services.NewUserService(r, streakService)
 	leaderboardService := services.NewLeaderboardService(rd)
 	memoryService := services.NewMemoryService(r)
 	pointService := services.NewPointService(r)
@@ -47,15 +47,15 @@ func NewAppRouter(
 
 	return &AppRouter{
 		AuthHandler:        handlers.NewAuthHandler(v, r, leaderboardService),
-		JournalHandler:     handlers.NewJournalHandler(v, journalService),
+		JournalHandler:     handlers.NewJournalHandler(v, r, journalService, streakService),
 		LeaderboardHandler: handlers.NewLeaderboardHandler(leaderboardService),
 		StreakHandler:      handlers.NewStreakHandler(rd, streakService),
-		PacketHandler:      handlers.NewPacketHandler(v, r, aiClient, journalService, packetService),
+		PacketHandler:      handlers.NewPacketHandler(v, r, aiClient, journalService, packetService, streakService),
 		TaskHandler:        handlers.NewTaskHandler(r, streakService, habitService, journalService, expService),
 		UserHandler:        handlers.NewUserHandler(v, r, userService, leaderboardService, awsClient),
-		MemoryHandler:      handlers.NewMemoryHandler(v, r, memoryService, fileService, awsClient),
-		RecapHandler:       handlers.NewRecapHandler(r, aiClient, journalService),
-		ChallengeHandler:   handlers.NewChallengeHandler(v, r, memoryService, pointService, journalService, leaderboardService, fileService),
+		MemoryHandler:      handlers.NewMemoryHandler(v, r, memoryService, fileService, streakService, awsClient),
+		RecapHandler:       handlers.NewRecapHandler(r, aiClient, journalService, streakService),
+		ChallengeHandler:   handlers.NewChallengeHandler(v, r, memoryService, pointService, journalService, leaderboardService, fileService, streakService),
 	}
 }
 

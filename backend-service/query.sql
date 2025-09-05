@@ -210,7 +210,7 @@ LEFT JOIN participations p ON m.id = p.memory_id
 LEFT JOIN challenges c ON p.challenge_id = c.id
 LEFT JOIN details d ON c.detail_id = d.id
 WHERE m.user_id = $1
-ORDER BY m.created_at ASC;
+ORDER BY m.created_at DESC;
 
 -- name: DeleteMemory :one
 DELETE FROM memories
@@ -238,7 +238,8 @@ LIMIT 1;
 
 -- name: GetWeeklyRecaps :many
 SELECT * FROM recaps
-WHERE user_id = $1 AND type = 'weekly';
+WHERE user_id = $1 AND type = 'weekly'
+ORDER BY created_at DESC;
 
 -- name: CreateWeeklyRecap :exec
 INSERT INTO recaps(user_id, summary, tips, assigned_task, completed_task, completion_rate, growth_rating, type)

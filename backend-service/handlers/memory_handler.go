@@ -23,6 +23,7 @@ type MemoryHandler struct {
 	*services.MemoryService
 	*services.FileService
 	*configs.AWSClient
+	*services.StreakService
 }
 
 func NewMemoryHandler(
@@ -30,6 +31,7 @@ func NewMemoryHandler(
 	r *repositories.Queries,
 	ms *services.MemoryService,
 	fs *services.FileService,
+	ss *services.StreakService,
 	a *configs.AWSClient,
 ) *MemoryHandler {
 	return &MemoryHandler{
@@ -38,6 +40,7 @@ func NewMemoryHandler(
 		AWSClient:     a,
 		MemoryService: ms,
 		FileService:   fs,
+		StreakService: ss,
 	}
 }
 
@@ -46,7 +49,7 @@ func (h *MemoryHandler) RegisterRoutes(router fiber.Router) {
 	g.Use(helpers.TokenMiddleware)
 	g.Post("/", h.handleCreateMemory)
 	g.Get("/me", h.handleGetMemories)
-	g.Get("/:id", h.handleGetMemoriesById)
+	g.Get("/:id", h.handleGetMemoriesByUserId)
 	g.Delete("/:id", h.handleDeleteMemory)
 }
 
@@ -76,6 +79,11 @@ func (h *MemoryHandler) handleCreateMemory(c *fiber.Ctx) error {
 	)
 
 	_, err = h.MemoryService.CreateMemory(req.Description, fileKey, userId)
+	if err != nil {
+		return err
+	}
+
+	err = h.StreakService.UpdateStreak(context.Background(), int64(userId))
 	if err != nil {
 		return err
 	}
@@ -113,7 +121,7 @@ func (h *MemoryHandler) handleGetMemories(c *fiber.Ctx) error {
 	})
 }
 
-func (h *MemoryHandler) handleGetMemoriesById(c *fiber.Ctx) error {
+func (h *MemoryHandler) handleGetMemoriesByUserId(c *fiber.Ctx) error {
 	userId, err := c.ParamsInt("id")
 	if err != nil {
 		slog.Error("Failed to get packet id", "err", err)

@@ -15,13 +15,16 @@ import (
 
 type UserService struct {
 	Repository *repositories.Queries
+	*StreakService
 }
 
 func NewUserService(
 	r *repositories.Queries,
+	ss *StreakService,
 ) *UserService {
 	return &UserService{
-		Repository: r,
+		Repository:    r,
+		StreakService: ss,
 	}
 }
 
@@ -53,6 +56,8 @@ func (s *UserService) GetUserDetail(id int) (models.ResponseGetUserProfileStatis
 	cnf := helpers.NewConfig()
 	bucketUrl := cnf.GetString("AWS_URL")
 
+	streak, err := s.StreakService.GetCurrentStreak(int(res.UserID))
+
 	profile = models.ResponseGetUserProfileStatistic{
 		Id:                 int(res.UserID),
 		Name:               res.Name,
@@ -71,6 +76,7 @@ func (s *UserService) GetUserDetail(id int) (models.ResponseGetUserProfileStatis
 		CompletedTask:      int32(tasks.CompletedTask),
 		AssignedTask:       int32(tasks.AssignedTask),
 		LongestStreak:      res.LongestStreak,
+		CurrentStreak:      streak,
 		Badges:             s.CheckBadges(res),
 	}
 

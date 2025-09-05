@@ -1,7 +1,5 @@
 package models
 
-import "github.com/jackc/pgx/v5/pgtype"
-
 type PostLogAppend struct {
 	Text      string `json:"text" validate:"required"`
 	IsSystem  bool   `json:"is_system" validate:"boolean"`
@@ -9,8 +7,8 @@ type PostLogAppend struct {
 }
 
 type ResponseGetLogs struct {
-	Text      string           `json:"text"`
-	IsSystem  bool             `json:"is_system"`
-	IsPrivate bool             `json:"is_private"`
-	CreatedAt pgtype.Timestamp `json:"created_at"`
+	Text      string `json:"text"`
+	IsSystem  bool   `json:"is_system"`
+	IsPrivate bool   `json:"is_private"`
+	CreatedAt string `json:"created_at"`
 }

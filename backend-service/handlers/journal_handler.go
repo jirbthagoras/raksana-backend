@@ -10,23 +10,30 @@ import (
 	"jirbthagoras/raksana-backend/services"
 	"log/slog"
 	"strconv"
+	"time"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v2"
 )
 
 type JournalHandler struct {
-	Validator *validator.Validate
+	Validator  *validator.Validate
+	Repository *repositories.Queries
 	*services.JournalService
+	*services.StreakService
 }
 
 func NewJournalHandler(
 	v *validator.Validate,
+	r *repositories.Queries,
 	s *services.JournalService,
+	ss *services.StreakService,
 ) *JournalHandler {
 	return &JournalHandler{
+		Repository:     r,
 		Validator:      v,
 		JournalService: s,
+		StreakService:  ss,
 	}
 }
 
@@ -53,16 +60,20 @@ func (h *JournalHandler) handleAppendJournal(c *fiber.Ctx) error {
 		return exceptions.NewFailedValidationError(*req, err.(validator.ValidationErrors))
 	}
 
-	id, err := helpers.GetSubjectFromToken(c)
+	userId, err := helpers.GetSubjectFromToken(c)
 	if err != nil {
 		return err
 	}
 
-	err = h.JournalService.AppendLog(req, id)
+	err = h.JournalService.AppendLog(req, userId)
 	if err != nil {
 		return err
 	}
 
+	err = h.StreakService.UpdateStreak(context.Background(), int64(userId))
+	if err != nil {
+		return err
+	}
 	return c.Status(fiber.StatusCreated).JSON(fiber.Map{
 		"data": fiber.Map{
 			"message": "success",
@@ -72,21 +83,31 @@ func (h *JournalHandler) handleAppendJournal(c *fiber.Ctx) error {
 
 func (h *JournalHandler) handleGetLogs(c *fiber.Ctx) error {
 	isPrivateParam := c.Query("is_private", "false")
-
+	loc, _ := time.LoadLocation("Asia/Jakarta")
 	isPrivate, err := strconv.ParseBool(isPrivateParam)
 	if err != nil {
 		isPrivate = false
 	}
 
-	id, err := helpers.GetSubjectFromToken(c)
+	userId, err := helpers.GetSubjectFromToken(c)
 	if err != nil {
 		return err
 	}
 
-	logs, err := h.Repository.GetLogs(context.Background(), repositories.GetLogsParams{
-		UserID:    int64(id),
+	res, err := h.Repository.GetLogs(context.Background(), repositories.GetLogsParams{
+		UserID:    int64(userId),
 		IsPrivate: isPrivate,
 	})
+
+	var logs = []models.ResponseGetLogs{}
+	for _, log := range res {
+		logs = append(logs, models.ResponseGetLogs{
+			Text:      log.Text,
+			IsSystem:  log.IsSystem,
+			IsPrivate: log.IsPrivate,
+			CreatedAt: log.CreatedAt.Time.In(loc).Format("2006-01-02 15:04"),
+		})
+	}
 
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"data": fiber.Map{

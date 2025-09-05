@@ -24,6 +24,7 @@ type PacketHandler struct {
 	*configs.AIClient
 	*services.JournalService
 	*services.PacketService
+	*services.StreakService
 }
 
 func NewPacketHandler(
@@ -32,6 +33,7 @@ func NewPacketHandler(
 	ai *configs.AIClient,
 	js *services.JournalService,
 	ps *services.PacketService,
+	ss *services.StreakService,
 ) *PacketHandler {
 	return &PacketHandler{
 		Validator:      v,
@@ -39,6 +41,7 @@ func NewPacketHandler(
 		AIClient:       ai,
 		JournalService: js,
 		PacketService:  ps,
+		StreakService:  ss,
 	}
 }
 
@@ -171,6 +174,11 @@ func (h *PacketHandler) handleGeneratePacket(c *fiber.Ctx) error {
 		IsPrivate: false,
 		Text:      logMsg,
 	}, userId)
+	if err != nil {
+		return err
+	}
+
+	err = h.StreakService.UpdateStreak(ctx, int64(userId))
 	if err != nil {
 		return err
 	}

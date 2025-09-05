@@ -26,6 +26,7 @@ type ChallengeHandler struct {
 	*services.JournalService
 	*services.LeaderboardService
 	*services.FileService
+	*services.StreakService
 }
 
 func NewChallengeHandler(
@@ -36,6 +37,7 @@ func NewChallengeHandler(
 	js *services.JournalService,
 	ls *services.LeaderboardService,
 	fs *services.FileService,
+	ss *services.StreakService,
 ) *ChallengeHandler {
 	return &ChallengeHandler{
 		Validator:          v,
@@ -45,6 +47,7 @@ func NewChallengeHandler(
 		JournalService:     js,
 		LeaderboardService: ls,
 		FileService:        fs,
+		StreakService:      ss,
 	}
 }
 
@@ -54,6 +57,7 @@ func (h *ChallengeHandler) RegisterRoutes(router fiber.Router) {
 	g.Post("/", h.handleParticipate)
 	g.Get("/today", h.handleGetTodayChallenge)
 	g.Get("/", h.handleGetAllChallenges)
+	g.Get(":/id", h.handleGetChallengeParticipants)
 }
 
 func (h *ChallengeHandler) handleParticipate(c *fiber.Ctx) error {
@@ -162,6 +166,11 @@ func (h *ChallengeHandler) handleParticipate(c *fiber.Ctx) error {
 		return err
 	}
 
+	err = h.StreakService.UpdateStreak(ctx, int64(userId))
+	if err != nil {
+		return err
+	}
+
 	return c.Status(fiber.StatusCreated).JSON(fiber.Map{
 		"data": fiber.Map{
 			"presigned_url": presignedUrl,
@@ -210,5 +219,35 @@ func (h *ChallengeHandler) handleGetAllChallenges(c *fiber.Ctx) error {
 
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"data": challenges,
+	})
+}
+
+func (h *ChallengeHandler) handleGetChallengeParticipants(c *fiber.Ctx) error {
+	challengeId, err := c.ParamsInt("id")
+	if err != nil {
+		slog.Error("Failed to get packet id", "err", err)
+	}
+
+	res, err := h.Repository.GetMemoriesByChallengeID(context.Background(), int64(challengeId))
+	if err != nil {
+		slog.Error("Failed to get memories relaetdd to challenge", "err", err)
+		return err
+	}
+
+	var challengeMemories []models.ResponseMemory
+	cnf := helpers.NewConfig()
+	bucketUrl := cnf.GetString("AWS_URL")
+	for _, memory := range res {
+		challengeMemories = append(challengeMemories, models.ResponseMemory{
+			UserID:      memory.UserID,
+			UserName:    memory.Username,
+			FileURL:     bucketUrl + memory.FileKey,
+			Description: memory.Description,
+			CreatedAt:   memory.MemoryCreatedAt.Time.Format("2006-01-02 15:00"),
+		})
+	}
+
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"data": challengeMemories,
 	})
 }
