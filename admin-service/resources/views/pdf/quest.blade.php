@@ -23,6 +23,7 @@
             <p><strong>Latitude:</strong> {{ $quest->latitude }}</p>
             <p><strong>Longitude:</strong> {{ $quest->longitude }}</p>
             <p><strong>Max Contributors:</strong> {{ $quest->max_contributors }}</p>
+            <p><strong>Created at:</strong> {{ $quest->details->created_at }}</p>
 
             @if($quest->latitude && $quest->longitude)
                 <p><strong>Map:</strong></p>

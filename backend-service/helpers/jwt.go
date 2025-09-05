@@ -19,6 +19,11 @@ type Claims struct {
 	jwt.RegisteredClaims
 }
 
+type ActivityClaims struct {
+	Type string `json:"type"`
+	jwt.RegisteredClaims
+}
+
 func getSecretKey() []byte {
 	// taking the cached secret key
 	if secretKey != nil {
@@ -82,6 +87,22 @@ func ValidateToken(tokenStr string) (*jwt.Token, *Claims, error) {
 	})
 
 	// Checks if the token valid.
+	if err != nil || !token.Valid {
+		return nil, nil, fmt.Errorf("invalid token")
+	}
+
+	return token, claims, nil
+}
+
+func ValidateActivityToken(tokenStr string) (*jwt.Token, *ActivityClaims, error) {
+	claims := &ActivityClaims{}
+	token, err := jwt.ParseWithClaims(tokenStr, claims, func(token *jwt.Token) (any, error) {
+		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
+		}
+		return getSecretKey(), nil
+	})
+
 	if err != nil || !token.Valid {
 		return nil, nil, fmt.Errorf("invalid token")
 	}

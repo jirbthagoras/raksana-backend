@@ -25,6 +25,7 @@
             <p><strong>Contact Person:</strong> {{ $event->contact }}</p>
             <p><strong>Starts at:</strong> {{ $event->starts_at }}</p>
             <p><strong>Ends at:</strong> {{ $event->ends_at }}</p>
+            <p><strong>Created at:</strong> {{ $event->details->created_at }}</p>
 
             @if($event->latitude && $event->longitude)
                 <p><strong>Map:</strong></p>

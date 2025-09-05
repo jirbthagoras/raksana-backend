@@ -2,28 +2,42 @@ package handlers
 
 import (
 	"jirbthagoras/raksana-backend/helpers"
-	"jirbthagoras/raksana-backend/repositories"
+	"jirbthagoras/raksana-backend/services"
+	"strconv"
 
 	"github.com/gofiber/fiber/v2"
-	"github.com/redis/go-redis/v9"
 )
 
 type LeaderboardHandler struct {
-	Redis      *redis.Client
-	Repository *repositories.Queries
+	*services.LeaderboardService
 }
 
 func NewLeaderboardHandler(
-	rd *redis.Client,
-	r *repositories.Queries,
+	ls *services.LeaderboardService,
 ) *LeaderboardHandler {
 	return &LeaderboardHandler{
-		Redis:      rd,
-		Repository: r,
+		LeaderboardService: ls,
 	}
 }
 
 func (h *LeaderboardHandler) RegisterRoutes(router fiber.Router) {
 	g := router.Group("/leaderboard")
 	g.Use(helpers.TokenMiddleware)
+	g.Get("/", h.handleLeaderboard)
+}
+
+func (h *LeaderboardHandler) handleLeaderboard(c *fiber.Ctx) error {
+	userId, err := helpers.GetSubjectFromToken(c)
+	if err != nil {
+		return err
+	}
+
+	leaderboard, err := h.LeaderboardService.GetTopLeaderboard(strconv.Itoa(userId))
+	if err != nil {
+		return err
+	}
+
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"data": leaderboard,
+	})
 }

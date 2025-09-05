@@ -18,6 +18,7 @@
         <div class="treasure">
             <h2>{{ $treasure->name }}</h2>
             <p><strong>Point Gain:</strong> {{ $treasure->point_gain }}</p>
+            <p><strong>Created at:</strong> {{ $treasure->created_at }}</p>
 
             @if($treasure->code?->image_url)
                <img src="{{ $treasure->code->image_url }}" width="120" alt="QR Code">

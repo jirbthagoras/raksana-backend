@@ -11,6 +11,7 @@ use Filament\Forms\Form;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Filament\Resources\Resource;
+use Filament\Tables\Columns\TextColumn;
 
 class TreasureResource extends Resource
 {
@@ -41,6 +42,7 @@ class TreasureResource extends Resource
                 Tables\Columns\TextColumn::make('name'),
                 Tables\Columns\TextColumn::make('point_gain'),
                 Tables\Columns\IconColumn::make('claimed')->boolean(),
+                TextColumn::make('created_at'),
                 Tables\Columns\ImageColumn::make('code.image_url')->label('QR Code'),
             ])
             ->actions([

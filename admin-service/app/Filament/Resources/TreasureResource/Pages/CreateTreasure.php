@@ -21,7 +21,7 @@ class CreateTreasure extends CreateRecord
         $uuid = (string) Str::random(12);
 
         $payload = [
-            'uuid' => $uuid,
+            'sub' => $uuid,
             'type' => "treasure",
             'exp'  => time() + (365 * 24 * 60 * 60),
         ];

@@ -10,6 +10,7 @@ use Cheesegrits\FilamentGoogleMaps\Fields\Map;
 use Filament\Forms;
 use Filament\Tables;
 use Filament\Resources\Resource;
+use Filament\Tables\Columns\TextColumn;
 use Illuminate\Support\Facades\Storage;
 
 class EventResource extends Resource
@@ -91,6 +92,7 @@ class EventResource extends Resource
             ->columns([
                 Tables\Columns\TextColumn::make('detail.name')->label('Event Name'),
                 Tables\Columns\TextColumn::make('location'),
+                TextColumn::make('detail.created_at'),
                 Tables\Columns\ImageColumn::make('code.image_url')->label('QR Code'),
             ])
             ->actions([

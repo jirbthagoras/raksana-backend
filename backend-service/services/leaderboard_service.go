@@ -8,22 +8,20 @@ import (
 )
 
 type LeaderboardService struct {
-	Redis   *redis.Client
-	KeyName string
+	Redis *redis.Client
 }
 
 func NewLeaderboardService(
 	redis *redis.Client,
 ) *LeaderboardService {
 	return &LeaderboardService{
-		Redis:   redis,
-		KeyName: "raksana:leaderboard",
+		Redis: redis,
 	}
 }
 
 func (s *LeaderboardService) UpdatePoint(userId string, points float64) error {
 	ctx := context.Background()
-	_, err := s.Redis.ZAdd(ctx, s.KeyName, redis.Z{
+	_, err := s.Redis.ZAdd(ctx, "raksana:leaderboard", redis.Z{
 		Score:  points,
 		Member: userId,
 	}).Result()
@@ -36,7 +34,7 @@ func (s *LeaderboardService) UpdatePoint(userId string, points float64) error {
 
 func (s *LeaderboardService) IncrPoint(userId string, points float64) error {
 	ctx := context.Background()
-	_, err := s.Redis.ZIncrBy(ctx, s.KeyName, points, userId).Result()
+	_, err := s.Redis.ZIncrBy(ctx, "raksana:leaderboard", points, userId).Result()
 	if err != nil {
 		slog.Error("Faield to incraese point", "err", err)
 		return err
@@ -46,7 +44,7 @@ func (s *LeaderboardService) IncrPoint(userId string, points float64) error {
 
 func (s *LeaderboardService) GetUserScore(userId string) (float64, error) {
 	ctx := context.Background()
-	score, err := s.Redis.ZScore(ctx, s.KeyName, userId).Result()
+	score, err := s.Redis.ZScore(ctx, "raksana:leaderboard", userId).Result()
 	if err != nil {
 		slog.Error("Failed to get user score", "err", err)
 		return 0, err
@@ -56,7 +54,7 @@ func (s *LeaderboardService) GetUserScore(userId string) (float64, error) {
 
 func (s *LeaderboardService) GetUserRank(userId string) (int64, error) {
 	ctx := context.Background()
-	rank, err := s.Redis.ZRevRank(ctx, s.KeyName, userId).Result()
+	rank, err := s.Redis.ZRevRank(ctx, "raksana:leaderboard", userId).Result()
 	if err != nil {
 		return 0, err
 	}
@@ -84,23 +82,25 @@ func (s *LeaderboardService) UpdateProfile(userId string, imageUrl string) error
 }
 
 type UserInfoRedis struct {
-	ID       string
-	Name     string
-	ImageUrl string
-	Score    int
-	Rank     int
-	IsUser   bool
+	ID       string `json:"id"`
+	Name     string `json:"name"`
+	ImageUrl string `json:"image_url"`
+	Points   int    `json:"points"`
+	Rank     int    `json:"rank"`
+	IsUser   bool   `json:"is_user"`
 }
 
 func (s *LeaderboardService) GetUserInfo(userId string) (UserInfoRedis, error) {
 	ctx := context.Background()
 	var user UserInfoRedis
-	name, err := s.Redis.HGet(ctx, "user:"+userId, "name").Result()
+	name, err := s.Redis.HGet(ctx, "user:leaderboard:"+userId, "name").Result()
 	if err != nil {
+		slog.Error("Failed to get user info: name", "err", err)
 		return user, err
 	}
-	imageUrl, err := s.Redis.HGet(ctx, "user:"+userId, "name").Result()
+	imageUrl, err := s.Redis.HGet(ctx, "user:leaderboard:"+userId, "profile").Result()
 	if err != nil {
+		slog.Error("Failed to get user info: profile", "err", err)
 		return user, err
 	}
 	return UserInfoRedis{
@@ -110,10 +110,14 @@ func (s *LeaderboardService) GetUserInfo(userId string) (UserInfoRedis, error) {
 	}, nil
 }
 
-func (s *LeaderboardService) GetTopLeaderboard(currentUserId string) ([]UserInfoRedis, error) {
+func (s *LeaderboardService) GetTopLeaderboard(currentUserId string) (
+	[]UserInfoRedis,
+	error,
+) {
 	ctx := context.Background()
-	results, err := s.Redis.ZRevRangeWithScores(ctx, s.KeyName, 0, 100000).Result()
+	results, err := s.Redis.ZRevRangeWithScores(ctx, "raksana:leaderboard", 0, 100000).Result()
 	if err != nil {
+		slog.Error("Failed to get", "err", err)
 		return nil, err
 	}
 
@@ -127,7 +131,7 @@ func (s *LeaderboardService) GetTopLeaderboard(currentUserId string) ([]UserInfo
 		}
 
 		row.Rank = i + 1
-		row.Score = int(z.Score)
+		row.Points = int(z.Score)
 		row.IsUser = false
 		if currentUserId == userId {
 			row.IsUser = true

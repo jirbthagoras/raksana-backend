@@ -11,6 +11,24 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+const checkParticipation = `-- name: CheckParticipation :one
+SELECT
+COUNT (*) FILTER (WHERE user_id = $1 AND challenge_id = $2)
+FROM participations
+`
+
+type CheckParticipationParams struct {
+	UserID      int64
+	ChallengeID int64
+}
+
+func (q *Queries) CheckParticipation(ctx context.Context, arg CheckParticipationParams) (int64, error) {
+	row := q.db.QueryRow(ctx, checkParticipation, arg.UserID, arg.ChallengeID)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
 const completePacket = `-- name: CompletePacket :exec
 UPDATE packets
 SET completed = true
@@ -176,9 +194,10 @@ func (q *Queries) CreateLog(ctx context.Context, arg CreateLogParams) (CreateLog
 	return i, err
 }
 
-const createMemory = `-- name: CreateMemory :exec
+const createMemory = `-- name: CreateMemory :one
 INSERT INTO memories(user_id, file_key, description)
 VALUES ($1, $2, $3)
+RETURNING id
 `
 
 type CreateMemoryParams struct {
@@ -187,9 +206,11 @@ type CreateMemoryParams struct {
 	Description string
 }
 
-func (q *Queries) CreateMemory(ctx context.Context, arg CreateMemoryParams) error {
-	_, err := q.db.Exec(ctx, createMemory, arg.UserID, arg.FileKey, arg.Description)
-	return err
+func (q *Queries) CreateMemory(ctx context.Context, arg CreateMemoryParams) (int64, error) {
+	row := q.db.QueryRow(ctx, createMemory, arg.UserID, arg.FileKey, arg.Description)
+	var id int64
+	err := row.Scan(&id)
+	return id, err
 }
 
 const createPacket = `-- name: CreatePacket :one
@@ -219,6 +240,31 @@ func (q *Queries) CreatePacket(ctx context.Context, arg CreatePacketParams) (int
 	var id int64
 	err := row.Scan(&id)
 	return id, err
+}
+
+const createParticipation = `-- name: CreateParticipation :one
+INSERT INTO participations(challenge_id, user_id, memory_id)
+VALUES ($1, $2, $3)
+RETURNING id, challenge_id, user_id, memory_id, created_at
+`
+
+type CreateParticipationParams struct {
+	ChallengeID int64
+	UserID      int64
+	MemoryID    int64
+}
+
+func (q *Queries) CreateParticipation(ctx context.Context, arg CreateParticipationParams) (Participation, error) {
+	row := q.db.QueryRow(ctx, createParticipation, arg.ChallengeID, arg.UserID, arg.MemoryID)
+	var i Participation
+	err := row.Scan(
+		&i.ID,
+		&i.ChallengeID,
+		&i.UserID,
+		&i.MemoryID,
+		&i.CreatedAt,
+	)
+	return i, err
 }
 
 const createProfile = `-- name: CreateProfile :one
@@ -408,6 +454,52 @@ func (q *Queries) GetAllPackets(ctx context.Context, userID int64) ([]Packet, er
 		return nil, err
 	}
 	return items, nil
+}
+
+const getChallengeWithDetail = `-- name: GetChallengeWithDetail :one
+SELECT 
+    c.id AS challenge_id,
+    c.day,
+    c.difficulty,
+    d.id AS detail_id,
+    d.name,
+    d.description,
+    d.point_gain,
+    d.created_at,
+    d.updated_at
+FROM challenges c
+JOIN details d ON c.detail_id = d.id
+WHERE c.id = $1
+LIMIT 1
+`
+
+type GetChallengeWithDetailRow struct {
+	ChallengeID int64
+	Day         int32
+	Difficulty  string
+	DetailID    int64
+	Name        string
+	Description string
+	PointGain   int64
+	CreatedAt   pgtype.Timestamp
+	UpdatedAt   pgtype.Timestamp
+}
+
+func (q *Queries) GetChallengeWithDetail(ctx context.Context, id int64) (GetChallengeWithDetailRow, error) {
+	row := q.db.QueryRow(ctx, getChallengeWithDetail, id)
+	var i GetChallengeWithDetailRow
+	err := row.Scan(
+		&i.ChallengeID,
+		&i.Day,
+		&i.Difficulty,
+		&i.DetailID,
+		&i.Name,
+		&i.Description,
+		&i.PointGain,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
 }
 
 const getLastWeekTasks = `-- name: GetLastWeekTasks :many
@@ -992,6 +1084,52 @@ func (q *Queries) GetWeeklyRecaps(ctx context.Context, userID int64) ([]Recap, e
 	return items, nil
 }
 
+const increaseChallengesFieldByOne = `-- name: IncreaseChallengesFieldByOne :one
+UPDATE statistics
+SET challenges = challenges + 1
+WHERE user_id = $1
+RETURNING id, user_id, challenges, events, quests, treasures, longest_streak, tree_grown
+`
+
+func (q *Queries) IncreaseChallengesFieldByOne(ctx context.Context, userID int64) (Statistic, error) {
+	row := q.db.QueryRow(ctx, increaseChallengesFieldByOne, userID)
+	var i Statistic
+	err := row.Scan(
+		&i.ID,
+		&i.UserID,
+		&i.Challenges,
+		&i.Events,
+		&i.Quests,
+		&i.Treasures,
+		&i.LongestStreak,
+		&i.TreeGrown,
+	)
+	return i, err
+}
+
+const increaseEventsFieldByOne = `-- name: IncreaseEventsFieldByOne :one
+UPDATE statistics
+SET events = events + 1
+WHERE user_id = $1
+RETURNING id, user_id, challenges, events, quests, treasures, longest_streak, tree_grown
+`
+
+func (q *Queries) IncreaseEventsFieldByOne(ctx context.Context, userID int64) (Statistic, error) {
+	row := q.db.QueryRow(ctx, increaseEventsFieldByOne, userID)
+	var i Statistic
+	err := row.Scan(
+		&i.ID,
+		&i.UserID,
+		&i.Challenges,
+		&i.Events,
+		&i.Quests,
+		&i.Treasures,
+		&i.LongestStreak,
+		&i.TreeGrown,
+	)
+	return i, err
+}
+
 const increaseExp = `-- name: IncreaseExp :one
 UPDATE profiles 
 SET current_exp = current_exp + $1::int
@@ -1026,6 +1164,79 @@ WHERE id = $1
 func (q *Queries) IncreasePacketCompletedTask(ctx context.Context, id int64) error {
 	_, err := q.db.Exec(ctx, increasePacketCompletedTask, id)
 	return err
+}
+
+const increaseQuestsFieldByOne = `-- name: IncreaseQuestsFieldByOne :one
+UPDATE statistics
+SET quests = quests + 1
+WHERE user_id = $1
+RETURNING id, user_id, challenges, events, quests, treasures, longest_streak, tree_grown
+`
+
+func (q *Queries) IncreaseQuestsFieldByOne(ctx context.Context, userID int64) (Statistic, error) {
+	row := q.db.QueryRow(ctx, increaseQuestsFieldByOne, userID)
+	var i Statistic
+	err := row.Scan(
+		&i.ID,
+		&i.UserID,
+		&i.Challenges,
+		&i.Events,
+		&i.Quests,
+		&i.Treasures,
+		&i.LongestStreak,
+		&i.TreeGrown,
+	)
+	return i, err
+}
+
+const increaseTreasuresFieldByOne = `-- name: IncreaseTreasuresFieldByOne :one
+UPDATE statistics
+SET treasures = treasures + 1
+WHERE user_id = $1
+RETURNING id, user_id, challenges, events, quests, treasures, longest_streak, tree_grown
+`
+
+func (q *Queries) IncreaseTreasuresFieldByOne(ctx context.Context, userID int64) (Statistic, error) {
+	row := q.db.QueryRow(ctx, increaseTreasuresFieldByOne, userID)
+	var i Statistic
+	err := row.Scan(
+		&i.ID,
+		&i.UserID,
+		&i.Challenges,
+		&i.Events,
+		&i.Quests,
+		&i.Treasures,
+		&i.LongestStreak,
+		&i.TreeGrown,
+	)
+	return i, err
+}
+
+const increaseUserPoints = `-- name: IncreaseUserPoints :one
+UPDATE profiles
+SET points = points + $1
+WHERE user_id = $2
+RETURNING id, user_id, current_exp, exp_needed, level, points, profile_key
+`
+
+type IncreaseUserPointsParams struct {
+	Points int64
+	UserID int64
+}
+
+func (q *Queries) IncreaseUserPoints(ctx context.Context, arg IncreaseUserPointsParams) (Profile, error) {
+	row := q.db.QueryRow(ctx, increaseUserPoints, arg.Points, arg.UserID)
+	var i Profile
+	err := row.Scan(
+		&i.ID,
+		&i.UserID,
+		&i.CurrentExp,
+		&i.ExpNeeded,
+		&i.Level,
+		&i.Points,
+		&i.ProfileKey,
+	)
+	return i, err
 }
 
 const unlockHabit = `-- name: UnlockHabit :exec

@@ -43,7 +43,7 @@ class CreateQuest extends CreateRecord
         $uuid = (string) Str::random(12);
 
         $payload = [
-            'uuid' => $uuid,
+            'sub' => $uuid,
             'exp'  => time() + (7 * 24 * 60 * 60),
             'type' => "quest",
         ];

@@ -1,1 +1,168 @@
 package handlers
+
+import (
+	"context"
+	"errors"
+	"fmt"
+	"jirbthagoras/raksana-backend/exceptions"
+	"jirbthagoras/raksana-backend/helpers"
+	"jirbthagoras/raksana-backend/models"
+	"jirbthagoras/raksana-backend/repositories"
+	"jirbthagoras/raksana-backend/services"
+	"log/slog"
+	"strconv"
+	"time"
+
+	"github.com/go-playground/validator/v10"
+	"github.com/gofiber/fiber/v2"
+	"github.com/jackc/pgx/v5"
+)
+
+type ChallengeHandler struct {
+	Validator  *validator.Validate
+	Repository *repositories.Queries
+	*services.MemoryService
+	*services.PointService
+	*services.JournalService
+	*services.LeaderboardService
+	*services.FileService
+}
+
+func NewChallengeHandler(
+	v *validator.Validate,
+	r *repositories.Queries,
+	ms *services.MemoryService,
+	ps *services.PointService,
+	js *services.JournalService,
+	ls *services.LeaderboardService,
+	fs *services.FileService,
+) *ChallengeHandler {
+	return &ChallengeHandler{
+		Validator:          v,
+		Repository:         r,
+		MemoryService:      ms,
+		PointService:       ps,
+		JournalService:     js,
+		LeaderboardService: ls,
+		FileService:        fs,
+	}
+}
+
+func (h *ChallengeHandler) RegisterRoutes(router fiber.Router) {
+	g := router.Group("/challenge")
+	g.Use(helpers.TokenMiddleware)
+	g.Post("/", h.handleParticipate)
+}
+
+func (h *ChallengeHandler) handleParticipate(c *fiber.Ctx) error {
+	req := &models.PostCreateParticipation{}
+
+	err := c.BodyParser(req)
+	if err != nil {
+		slog.Error("Failed to parse body", "err", err)
+		return err
+	}
+
+	err = h.Validator.Struct(req)
+	if err != nil && errors.As(err, &validator.ValidationErrors{}) {
+		return exceptions.NewFailedValidationError(*req, err.(validator.ValidationErrors))
+	}
+
+	userId, err := helpers.GetSubjectFromToken(c)
+	if err != nil {
+		return err
+	}
+
+	ctx := context.Background()
+
+	challenge, err := h.Repository.GetChallengeWithDetail(ctx, int64(req.ChallengeID))
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return fiber.NewError(fiber.StatusBadRequest, "Challenge not found")
+		}
+		slog.Error("Failed to get challenge with details", "err", err)
+		return err
+	}
+
+	participation, err := h.Repository.CheckParticipation(ctx, repositories.CheckParticipationParams{
+		UserID:      int64(userId),
+		ChallengeID: challenge.ChallengeID,
+	})
+	if err != nil {
+		slog.Error("Failed to get current timezone", "err", err)
+		return err
+	}
+
+	if participation != 0 {
+		return fiber.NewError(fiber.StatusBadRequest, "Anda sudah berpartisipasi dalam tantangan ini")
+	}
+
+	loc, err := time.LoadLocation("Asia/Jakarta")
+	if err != nil {
+		slog.Error("Failed to get current timezone", "err", err)
+		return err
+	}
+
+	var todayDate string = time.Now().In(loc).Format("2006-01-02")
+
+	if todayDate != challenge.CreatedAt.Time.Format("2006-01-02") {
+		return fiber.NewError(fiber.StatusBadRequest, "Invalid challenge")
+	}
+
+	presignedUrl, fileKey, err := h.FileService.CreatePresignedURL(
+		"memory",
+		strconv.Itoa(userId),
+		req.FileName,
+		req.ContentType,
+	)
+	if err != nil {
+		return err
+	}
+
+	memoryId, err := h.MemoryService.CreateMemory(req.Description, fileKey, userId)
+	if err != nil {
+		return err
+	}
+
+	_, err = h.Repository.CreateParticipation(context.Background(), repositories.CreateParticipationParams{
+		MemoryID:    int64(memoryId),
+		UserID:      int64(userId),
+		ChallengeID: int64(req.ChallengeID),
+	})
+	if err != nil {
+		slog.Error("Failed to insert row to participation", "err", err)
+		return err
+	}
+
+	_, err = h.PointService.UpdateUserPoint(int64(userId), challenge.PointGain)
+	if err != nil {
+		return err
+	}
+
+	logMsg := fmt.Sprintf("Saya baru saja berpartisipasi dalam challenge harian day-%v, dan mendapatkan poin sebesar %v ", challenge.Day, challenge.PointGain)
+	err = h.JournalService.AppendLog(&models.PostLogAppend{
+		Text:      logMsg,
+		IsSystem:  true,
+		IsPrivate: false,
+	}, userId)
+	if err != nil {
+		return err
+	}
+
+	err = h.LeaderboardService.IncrPoint(strconv.Itoa(userId), float64(challenge.PointGain))
+	if err != nil {
+		return err
+	}
+
+	_, err = h.Repository.IncreaseChallengesFieldByOne(ctx, int64(userId))
+	if err != nil {
+		slog.Error("Failed to increase challenges field by one", "err", err)
+		return err
+	}
+
+	return c.Status(fiber.StatusCreated).JSON(fiber.Map{
+		"data": fiber.Map{
+			"presigned_url": presignedUrl,
+		},
+	})
+}

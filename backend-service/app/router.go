@@ -20,9 +20,9 @@ type AppRouter struct {
 	*handlers.PacketHandler
 	*handlers.TaskHandler
 	*handlers.UserHandler
-	*handlers.FileHandler
 	*handlers.MemoryHandler
 	*handlers.RecapHandler
+	*handlers.ChallengeHandler
 }
 
 func NewAppRouter(
@@ -30,6 +30,10 @@ func NewAppRouter(
 	r *repositories.Queries,
 	rd *redis.Client,
 ) *AppRouter {
+	cnf := helpers.NewConfig()
+	aiClient := configs.InitAiClient(cnf)
+	awsClient := configs.InitAWSClient(cnf)
+
 	journalService := services.NewJournalService(r)
 	streakService := services.NewStreakService(rd, r)
 	habitService := services.NewHabitService(r, streakService)
@@ -37,22 +41,21 @@ func NewAppRouter(
 	packetService := services.NewPacketService(r)
 	userService := services.NewUserService(r)
 	leaderboardService := services.NewLeaderboardService(rd)
-
-	cnf := helpers.NewConfig()
-	aiClient := configs.InitAiClient(cnf)
-	awsClient := configs.InitAWSClient(cnf)
+	memoryService := services.NewMemoryService(r)
+	pointService := services.NewPointService(r)
+	fileService := services.NewFileService(awsClient)
 
 	return &AppRouter{
 		AuthHandler:        handlers.NewAuthHandler(v, r, leaderboardService),
 		JournalHandler:     handlers.NewJournalHandler(v, journalService),
-		LeaderboardHandler: handlers.NewLeaderboardHandler(rd, r),
+		LeaderboardHandler: handlers.NewLeaderboardHandler(leaderboardService),
 		StreakHandler:      handlers.NewStreakHandler(rd, streakService),
 		PacketHandler:      handlers.NewPacketHandler(v, r, aiClient, journalService, packetService),
 		TaskHandler:        handlers.NewTaskHandler(r, streakService, habitService, journalService, expService),
 		UserHandler:        handlers.NewUserHandler(v, r, userService, leaderboardService, awsClient),
-		FileHandler:        handlers.NewFileHandler(v, awsClient),
-		MemoryHandler:      handlers.NewMemoryHandler(v, r, awsClient),
+		MemoryHandler:      handlers.NewMemoryHandler(v, r, memoryService, fileService, awsClient),
 		RecapHandler:       handlers.NewRecapHandler(r, aiClient, journalService),
+		ChallengeHandler:   handlers.NewChallengeHandler(v, r, memoryService, pointService, journalService, leaderboardService, fileService),
 	}
 }
 
@@ -64,7 +67,7 @@ func (r *AppRouter) RegisterRoute(router fiber.Router) {
 	r.PacketHandler.RegisterRoutes(router)
 	r.TaskHandler.RegisterRoutes(router)
 	r.UserHandler.RegisterRoutes(router)
-	r.FileHandler.RegisterRoutes(router)
 	r.MemoryHandler.RegisterRoutes(router)
 	r.RecapHandler.RegisterRoutes(router)
+	r.ChallengeHandler.RegisterRoutes(router)
 }

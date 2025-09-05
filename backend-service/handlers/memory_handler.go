@@ -8,7 +8,9 @@ import (
 	"jirbthagoras/raksana-backend/helpers"
 	"jirbthagoras/raksana-backend/models"
 	"jirbthagoras/raksana-backend/repositories"
+	"jirbthagoras/raksana-backend/services"
 	"log/slog"
+	"strconv"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v2"
@@ -18,18 +20,24 @@ import (
 type MemoryHandler struct {
 	Validator  *validator.Validate
 	Repository *repositories.Queries
+	*services.MemoryService
+	*services.FileService
 	*configs.AWSClient
 }
 
 func NewMemoryHandler(
 	v *validator.Validate,
 	r *repositories.Queries,
+	ms *services.MemoryService,
+	fs *services.FileService,
 	a *configs.AWSClient,
 ) *MemoryHandler {
 	return &MemoryHandler{
-		Validator:  v,
-		Repository: r,
-		AWSClient:  a,
+		Validator:     v,
+		Repository:    r,
+		AWSClient:     a,
+		MemoryService: ms,
+		FileService:   fs,
 	}
 }
 
@@ -60,19 +68,21 @@ func (h *MemoryHandler) handleCreateMemory(c *fiber.Ctx) error {
 		return err
 	}
 
-	err = h.Repository.CreateMemory(context.Background(), repositories.CreateMemoryParams{
-		UserID:      int64(userId),
-		Description: req.Description,
-		FileKey:     req.FileKey,
-	})
+	presignedUrl, fileKey, err := h.FileService.CreatePresignedURL(
+		"memory",
+		strconv.Itoa(userId),
+		req.FileName,
+		req.ContentType,
+	)
+
+	_, err = h.MemoryService.CreateMemory(req.Description, fileKey, userId)
 	if err != nil {
-		slog.Error("Failed to create memory", "err", err)
 		return err
 	}
 
 	return c.Status(fiber.StatusCreated).JSON(fiber.Map{
 		"data": fiber.Map{
-			"message": "success",
+			"presigned_url": presignedUrl,
 		},
 	})
 }

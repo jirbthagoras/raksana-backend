@@ -22,7 +22,8 @@ type ResponseMemory struct {
 }
 
 type PostMemoryCreate struct {
-	FileKey     string `json:"file_key" validate:"required"`
+	ContentType string `json:"content_type" validate:"required"`
+	FileName    string `json:"filename" validate:"required"`
 	Description string `json:"description" validate:"required"`
 }
 
@@ -58,4 +59,11 @@ func ToResponseMemory(row repositories.GetMemoryWithParticipationRow) ResponseMe
 	}
 
 	return resp
+}
+
+type PostCreateParticipation struct {
+	ChallengeID int    `json:"challenge_id" validate:"required"`
+	Description string `json:"description" validate:"required"`
+	FileName    string `json:"filename" validate:"required"`
+	ContentType string `json:"content_type" validate:"required"`
 }

@@ -49,7 +49,7 @@ class CreateEvent extends CreateRecord
         }
 
         $payload = [
-            'uuid' => $uuid,
+            'sub' => $uuid,
             'nbf'  => $nbf,
             'exp'  => $exp,
             'type' => "event",

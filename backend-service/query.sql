@@ -182,9 +182,10 @@ FROM packets p
 JOIN users u ON u.id = p.user_id
 WHERE p.id = $1;
 
--- name: CreateMemory :exec
+-- name: CreateMemory :one
 INSERT INTO memories(user_id, file_key, description)
-VALUES ($1, $2, $3);
+VALUES ($1, $2, $3)
+RETURNING id;
 
 -- name: GetMemoryWithParticipation :many
 SELECT 
@@ -242,3 +243,59 @@ WHERE user_id = $1 AND type = 'weekly';
 -- name: CreateWeeklyRecap :exec
 INSERT INTO recaps(user_id, summary, tips, assigned_task, completed_task, completion_rate, growth_rating, type)
 VALUES ($1, $2, $3, $4, $5, $6, $7, 'weekly');
+
+-- name: CreateParticipation :one
+INSERT INTO participations(challenge_id, user_id, memory_id)
+VALUES ($1, $2, $3)
+RETURNING *;
+
+-- name: GetChallengeWithDetail :one
+SELECT 
+    c.id AS challenge_id,
+    c.day,
+    c.difficulty,
+    d.id AS detail_id,
+    d.name,
+    d.description,
+    d.point_gain,
+    d.created_at,
+    d.updated_at
+FROM challenges c
+JOIN details d ON c.detail_id = d.id
+WHERE c.id = $1
+LIMIT 1;
+
+-- name: IncreaseUserPoints :one
+UPDATE profiles
+SET points = points + $1
+WHERE user_id = $2
+RETURNING *;
+
+-- name: IncreaseChallengesFieldByOne :one
+UPDATE statistics
+SET challenges = challenges + 1
+WHERE user_id = $1
+RETURNING *;
+
+-- name: IncreaseQuestsFieldByOne :one
+UPDATE statistics
+SET quests = quests + 1
+WHERE user_id = $1
+RETURNING *;
+
+-- name: IncreaseEventsFieldByOne :one
+UPDATE statistics
+SET events = events + 1
+WHERE user_id = $1
+RETURNING *;
+
+-- name: IncreaseTreasuresFieldByOne :one
+UPDATE statistics
+SET treasures = treasures + 1
+WHERE user_id = $1
+RETURNING *;
+
+-- name: CheckParticipation :one
+SELECT
+COUNT (*) FILTER (WHERE user_id = $1 AND challenge_id = $2)
+FROM participations;

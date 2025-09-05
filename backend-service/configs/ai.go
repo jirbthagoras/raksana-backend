@@ -88,10 +88,6 @@ func trashScannerConfig(generativeModel *genai.GenerativeModel) {
 						"name": {
 							Type: genai.TypeString,
 						},
-						"type": {
-							Type: genai.TypeString,
-							Enum: []string{"recycle", "reuse", "upcycle"},
-						},
 						"description": {
 							Type: genai.TypeString,
 						},

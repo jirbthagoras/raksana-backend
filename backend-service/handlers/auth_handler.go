@@ -111,6 +111,11 @@ func (h *AuthHandler) handleRegister(c *fiber.Ctx) error {
 		return err
 	}
 
+	err = h.LeaderboardService.UpdatePoint(userId, 0)
+	if err != nil {
+		return err
+	}
+
 	err = h.Repository.CreateStatistics(ctx, user.ID)
 
 	return c.Status(fiber.StatusCreated).JSON(fiber.Map{
