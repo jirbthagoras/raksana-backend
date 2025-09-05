@@ -23,6 +23,7 @@ type UserHandler struct {
 	*configs.AWSClient
 	*services.UserService
 	*services.LeaderboardService
+	*services.FileService
 	Mu sync.Mutex
 }
 
@@ -31,6 +32,7 @@ func NewUserHandler(
 	r *repositories.Queries,
 	us *services.UserService,
 	ls *services.LeaderboardService,
+	fs *services.FileService,
 	a *configs.AWSClient,
 ) *UserHandler {
 	return &UserHandler{
@@ -38,6 +40,7 @@ func NewUserHandler(
 		Repository:         r,
 		UserService:        us,
 		LeaderboardService: ls,
+		FileService:        fs,
 		AWSClient:          a,
 	}
 }
@@ -114,7 +117,7 @@ func (h *UserHandler) handleUpdateProfilePicture(c *fiber.Ctx) error {
 	bucketName := cnf.GetString("AWS_BUCKET")
 	bucketUrl := cnf.GetString("AWS_URL")
 
-	err = h.AWSClient.CheckObjectExistence(bucketName, req.ProfileKey)
+	presignedUrl, key, err := h.FileService.CreatePresignedURL("profile", strconv.Itoa(userId), req.Filename, req.ContentType)
 	if err != nil {
 		return err
 	}
@@ -123,10 +126,10 @@ func (h *UserHandler) handleUpdateProfilePicture(c *fiber.Ctx) error {
 
 	err = h.Repository.UpdateUserProfile(ctx, repositories.UpdateUserProfileParams{
 		UserID:     int64(userId),
-		ProfileKey: req.ProfileKey,
+		ProfileKey: key,
 	})
 
-	imageUrl := bucketUrl + req.ProfileKey
+	imageUrl := bucketUrl + key
 
 	err = h.LeaderboardService.UpdateProfile(strconv.Itoa(userId), imageUrl)
 	if err != nil {
@@ -135,7 +138,7 @@ func (h *UserHandler) handleUpdateProfilePicture(c *fiber.Ctx) error {
 
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"data": fiber.Map{
-			"profile_key": req.ProfileKey,
+			"presigned_url": presignedUrl,
 		},
 	})
 }

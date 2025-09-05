@@ -43,5 +43,6 @@ type PostUserLogin struct {
 }
 
 type PutUserEditProfile struct {
-	ProfileKey string `json:"profile_key" validate:"required"`
+	Filename    string `json:"filename" validate:"required"`
+	ContentType string `json:"content_type"`
 }

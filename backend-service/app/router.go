@@ -52,7 +52,7 @@ func NewAppRouter(
 		StreakHandler:      handlers.NewStreakHandler(rd, streakService),
 		PacketHandler:      handlers.NewPacketHandler(v, r, aiClient, journalService, packetService, streakService),
 		TaskHandler:        handlers.NewTaskHandler(r, streakService, habitService, journalService, expService),
-		UserHandler:        handlers.NewUserHandler(v, r, userService, leaderboardService, awsClient),
+		UserHandler:        handlers.NewUserHandler(v, r, userService, leaderboardService, fileService, awsClient),
 		MemoryHandler:      handlers.NewMemoryHandler(v, r, memoryService, fileService, streakService, awsClient),
 		RecapHandler:       handlers.NewRecapHandler(r, aiClient, journalService, streakService),
 		ChallengeHandler:   handlers.NewChallengeHandler(v, r, memoryService, pointService, journalService, leaderboardService, fileService, streakService),

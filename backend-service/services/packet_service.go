@@ -2,11 +2,16 @@ package services
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"jirbthagoras/raksana-backend/helpers"
 	"jirbthagoras/raksana-backend/models"
 	"jirbthagoras/raksana-backend/repositories"
 	"log/slog"
+	"time"
+
+	"github.com/gofiber/fiber/v2"
+	"github.com/jackc/pgx/v5"
 )
 
 type PacketService struct {
@@ -26,6 +31,11 @@ func (s *PacketService) GetALlPackets(userId int64) ([]models.ResponseGetPacket,
 		return nil, err
 	}
 
+	loc, err := time.LoadLocation("Asia/Jakarta")
+	if err != nil {
+		return nil, err
+	}
+
 	var packets []models.ResponseGetPacket
 	for _, packet := range res {
 		packetTask, err := s.Repository.CountPacketTasks(context.Background(), repositories.CountPacketTasksParams{
@@ -38,6 +48,10 @@ func (s *PacketService) GetALlPackets(userId int64) ([]models.ResponseGetPacket,
 		}
 
 		completionRate := float64(packet.CompletedTask) * 100.0 / float64(packetTask.AssignedTask)
+		if packetTask.AssignedTask == 0 {
+			completionRate = 0
+		}
+
 		stringCompletionRate := fmt.Sprintf("%v", completionRate) + "%"
 
 		packets = append(packets, models.ResponseGetPacket{
@@ -48,8 +62,9 @@ func (s *PacketService) GetALlPackets(userId int64) ([]models.ResponseGetPacket,
 			ExpectedTask:   packet.ExpectedTask,
 			CompletedTask:  packet.CompletedTask,
 			CompletionRate: stringCompletionRate,
+			AssignedTask:   int32(packetTask.AssignedTask),
 			TaskPerDay:     packet.TaskPerDay,
-			CreatedAt:      packet.CreatedAt,
+			CreatedAt:      packet.CreatedAt.Time.In(loc).Format("2006-01-02 15:04"),
 		})
 	}
 
@@ -60,9 +75,16 @@ func (s *PacketService) GetPacketDetail(id int) (models.ResponsePacketDetail, er
 	ctx := context.Background()
 
 	var habitDetail models.ResponsePacketDetail
+	loc, err := time.LoadLocation("Asia/Jakarta")
+	if err != nil {
+		return habitDetail, err
+	}
 
 	packetDetails, err := s.Repository.GetPacketDetail(ctx, int64(id))
 	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return habitDetail, fiber.NewError(fiber.StatusBadRequest, "No packet found ")
+		}
 		slog.Error("Failed to get packet detail", "err", err)
 		return habitDetail, err
 	}
@@ -99,6 +121,10 @@ func (s *PacketService) GetPacketDetail(id int) (models.ResponsePacketDetail, er
 	}
 
 	completionRate := float64(packetDetails.CompletedTask) * 100.0 / float64(packetTask.AssignedTask)
+	if packetTask.AssignedTask == 0 {
+		completionRate = 0
+	}
+
 	stringCompletionRate := fmt.Sprintf("%v", completionRate) + "%"
 
 	habitDetail = models.ResponsePacketDetail{
@@ -109,10 +135,11 @@ func (s *PacketService) GetPacketDetail(id int) (models.ResponsePacketDetail, er
 		Description:        packetDetails.Description,
 		CompletedTask:      packetDetails.CompletedTask,
 		ExpectedTask:       packetDetails.ExpectedTask,
+		AssignedTask:       int32(packetTask.AssignedTask),
 		TaskPerDay:         packetDetails.TaskPerDay,
 		TaskCompletionRate: stringCompletionRate,
 		Completed:          packetDetails.Completed,
-		CreatedAt:          packetDetails.CreatedAt.Time,
+		CreatedAt:          packetDetails.CreatedAt.Time.In(loc).Format("2006-01-02 15:04"),
 		Habits:             packetHabits,
 	}
 

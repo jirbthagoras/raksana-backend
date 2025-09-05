@@ -59,10 +59,10 @@ func (h *RecapHandler) handleCreateWeeklyRecap(c *fiber.Ctx) error {
 		return err
 	}
 
-	today := time.Now().In(loc).Weekday()
-	if today != time.Sunday {
-		return fiber.NewError(fiber.StatusBadRequest, "Hari ini bukan waktu yang tepat untuk weekly recap")
-	}
+	// today := time.Now().In(loc).Weekday()
+	// if today != time.Sunday {
+	// 	return fiber.NewError(fiber.StatusBadRequest, "Hari ini bukan waktu yang tepat untuk weekly recap")
+	// }
 
 	cnf := helpers.NewConfig()
 	aiModel, err := configs.InitModel(h.AIClient.Genai, cnf, configs.RecapWeekly)
