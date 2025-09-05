@@ -420,6 +420,64 @@ func (q *Queries) DeleteMemory(ctx context.Context, arg DeleteMemoryParams) (str
 	return file_key, err
 }
 
+const getAllChallenges = `-- name: GetAllChallenges :many
+SELECT 
+c.id AS challenge_id,
+c.day,
+c.difficulty,
+d.id AS detail_id,
+d.name,
+d.description,
+d.point_gain,
+d.created_at,
+d.updated_at
+FROM challenges c
+JOIN details d ON c.detail_id = d.id
+ORDER BY d.created_at DESC
+`
+
+type GetAllChallengesRow struct {
+	ChallengeID int64
+	Day         int32
+	Difficulty  string
+	DetailID    int64
+	Name        string
+	Description string
+	PointGain   int64
+	CreatedAt   pgtype.Timestamp
+	UpdatedAt   pgtype.Timestamp
+}
+
+func (q *Queries) GetAllChallenges(ctx context.Context) ([]GetAllChallengesRow, error) {
+	rows, err := q.db.Query(ctx, getAllChallenges)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GetAllChallengesRow
+	for rows.Next() {
+		var i GetAllChallengesRow
+		if err := rows.Scan(
+			&i.ChallengeID,
+			&i.Day,
+			&i.Difficulty,
+			&i.DetailID,
+			&i.Name,
+			&i.Description,
+			&i.PointGain,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const getAllPackets = `-- name: GetAllPackets :many
 SELECT id, user_id, name, target, description, completed_task, expected_task, task_per_day, completed, created_at FROM packets
 WHERE user_id = $1
@@ -600,6 +658,63 @@ func (q *Queries) GetLogs(ctx context.Context, arg GetLogsParams) ([]GetLogsRow,
 			&i.CreatedAt,
 			&i.IsSystem,
 			&i.IsPrivate,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getMemoriesByChallengeID = `-- name: GetMemoriesByChallengeID :many
+SELECT 
+    m.id AS memory_id,
+    m.file_key,
+    m.description,
+    m.created_at AS memory_created_at,
+    u.id AS user_id,
+    u.name AS user_name,
+    u.username,
+    u.email
+FROM participations p
+JOIN memories m ON p.memory_id = m.id
+JOIN users u ON m.user_id = u.id
+WHERE p.challenge_id = $1
+ORDER BY m.created_at DESC
+`
+
+type GetMemoriesByChallengeIDRow struct {
+	MemoryID        int64
+	FileKey         string
+	Description     string
+	MemoryCreatedAt pgtype.Timestamp
+	UserID          int64
+	UserName        string
+	Username        string
+	Email           string
+}
+
+func (q *Queries) GetMemoriesByChallengeID(ctx context.Context, challengeID int64) ([]GetMemoriesByChallengeIDRow, error) {
+	rows, err := q.db.Query(ctx, getMemoriesByChallengeID, challengeID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GetMemoriesByChallengeIDRow
+	for rows.Next() {
+		var i GetMemoriesByChallengeIDRow
+		if err := rows.Scan(
+			&i.MemoryID,
+			&i.FileKey,
+			&i.Description,
+			&i.MemoryCreatedAt,
+			&i.UserID,
+			&i.UserName,
+			&i.Username,
+			&i.Email,
 		); err != nil {
 			return nil, err
 		}
@@ -824,6 +939,52 @@ func (q *Queries) GetTaskById(ctx context.Context, id int64) (Task, error) {
 		&i.Description,
 		&i.Difficulty,
 		&i.Completed,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
+const getTodayChallenge = `-- name: GetTodayChallenge :one
+SELECT 
+    c.id AS challenge_id,
+    c.day,
+    c.difficulty,
+    d.id AS detail_id,
+    d.name,
+    d.description,
+    d.point_gain,
+    d.created_at,
+    d.updated_at
+FROM challenges c
+JOIN details d ON c.detail_id = d.id
+ORDER BY d.created_at DESC
+LIMIT 1
+`
+
+type GetTodayChallengeRow struct {
+	ChallengeID int64
+	Day         int32
+	Difficulty  string
+	DetailID    int64
+	Name        string
+	Description string
+	PointGain   int64
+	CreatedAt   pgtype.Timestamp
+	UpdatedAt   pgtype.Timestamp
+}
+
+func (q *Queries) GetTodayChallenge(ctx context.Context) (GetTodayChallengeRow, error) {
+	row := q.db.QueryRow(ctx, getTodayChallenge)
+	var i GetTodayChallengeRow
+	err := row.Scan(
+		&i.ChallengeID,
+		&i.Day,
+		&i.Difficulty,
+		&i.DetailID,
+		&i.Name,
+		&i.Description,
+		&i.PointGain,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 	)

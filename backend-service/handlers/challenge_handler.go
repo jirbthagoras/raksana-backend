@@ -52,6 +52,8 @@ func (h *ChallengeHandler) RegisterRoutes(router fiber.Router) {
 	g := router.Group("/challenge")
 	g.Use(helpers.TokenMiddleware)
 	g.Post("/", h.handleParticipate)
+	g.Get("/today", h.handleGetTodayChallenge)
+	g.Get("/", h.handleGetAllChallenges)
 }
 
 func (h *ChallengeHandler) handleParticipate(c *fiber.Ctx) error {
@@ -164,5 +166,49 @@ func (h *ChallengeHandler) handleParticipate(c *fiber.Ctx) error {
 		"data": fiber.Map{
 			"presigned_url": presignedUrl,
 		},
+	})
+}
+
+func (h *ChallengeHandler) handleGetTodayChallenge(c *fiber.Ctx) error {
+	res, err := h.Repository.GetTodayChallenge(context.Background())
+	if err != nil {
+		slog.Error("Failed to get today challenge", "err", err)
+		return err
+	}
+
+	var challenge = models.ResponseChallenge{
+		ID:          int(res.ChallengeID),
+		Name:        res.Name,
+		Description: res.Description,
+		Difficulty:  res.Difficulty,
+		Day:         int(res.Day),
+		PointGain:   int(res.PointGain),
+	}
+
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"data": challenge,
+	})
+}
+
+func (h *ChallengeHandler) handleGetAllChallenges(c *fiber.Ctx) error {
+	res, err := h.Repository.GetAllChallenges(context.Background())
+	if err != nil {
+		slog.Error("Failed to get all challenges", "err", err)
+		return err
+	}
+
+	var challenges []models.ResponseChallenge
+	for _, challenge := range res {
+		challenges = append(challenges, models.ResponseChallenge{
+			ID:          int(challenge.ChallengeID),
+			Name:        challenge.Name,
+			Description: challenge.Description,
+			Difficulty:  challenge.Difficulty,
+			Day:         int(challenge.Day),
+		})
+	}
+
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"data": challenges,
 	})
 }

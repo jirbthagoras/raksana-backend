@@ -299,3 +299,50 @@ RETURNING *;
 SELECT
 COUNT (*) FILTER (WHERE user_id = $1 AND challenge_id = $2)
 FROM participations;
+
+-- name: GetTodayChallenge :one
+SELECT 
+    c.id AS challenge_id,
+    c.day,
+    c.difficulty,
+    d.id AS detail_id,
+    d.name,
+    d.description,
+    d.point_gain,
+    d.created_at,
+    d.updated_at
+FROM challenges c
+JOIN details d ON c.detail_id = d.id
+ORDER BY d.created_at DESC
+LIMIT 1;
+
+-- name: GetAllChallenges :many
+SELECT 
+c.id AS challenge_id,
+c.day,
+c.difficulty,
+d.id AS detail_id,
+d.name,
+d.description,
+d.point_gain,
+d.created_at,
+d.updated_at
+FROM challenges c
+JOIN details d ON c.detail_id = d.id
+ORDER BY d.created_at DESC;
+
+-- name: GetMemoriesByChallengeID :many
+SELECT 
+    m.id AS memory_id,
+    m.file_key,
+    m.description,
+    m.created_at AS memory_created_at,
+    u.id AS user_id,
+    u.name AS user_name,
+    u.username,
+    u.email
+FROM participations p
+JOIN memories m ON p.memory_id = m.id
+JOIN users u ON m.user_id = u.id
+WHERE p.challenge_id = $1
+ORDER BY m.created_at DESC;
