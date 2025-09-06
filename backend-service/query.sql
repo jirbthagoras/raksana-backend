@@ -4,12 +4,12 @@ VALUES ($1, $2, $3, $4)
 RETURNING id, username, email;
 
 -- name: GetUserById :one
-SELECT id, username, email, password
+SELECT id, username, email, password, is_admin
 FROM users
 WHERE id = $1;
 
 -- name: GetUserByEmail :one
-SELECT id, username, email, password
+SELECT id, username, email, password, is_admin 
 FROM users
 WHERE email = $1;
 
@@ -385,3 +385,91 @@ SELECT
 FROM claimed c
 JOIN treasures t ON c.treasure_id = t.id
 WHERE c.user_id = $1;
+
+-- name: GetQuestByCodeId :one
+SELECT 
+  q.id AS id,
+  q.location AS location,
+  q.max_contributors AS max_contributors,
+  q.latitude AS latitude,
+  q.longitude AS longitude,
+  d.name AS name,
+  d.description AS description,
+  d.point_gain AS point_gain
+FROM quests q
+JOIN details d ON q.detail_id = d.id
+WHERE q.code_id = $1;
+
+-- name: CountQuestContributors :many 
+SELECT * FROM contributions
+WHERE quest_id = $1;
+
+-- name: CreateContributions :one
+INSERT INTO contributions(user_id, quest_id)
+VALUES ($1, $2)
+RETURNING *;
+
+-- name: GetUserContributions :many
+SELECT 
+    c.id               AS contribution_id,
+    q.latitude,
+    q.longitude,
+FROM contributions c
+JOIN quests q ON c.quest_id = q.id
+JOIN details d ON q.detail_id = d.id
+WHERE c.user_id = $1
+ORDER BY c.created_at DESC;
+
+-- name: GetContributionDetails :one
+SELECT 
+    c.id               AS contribution_id,
+    c.created_at       AS contribution_date,
+    q.id               AS quest_id,
+    q.code_id,
+    q.location,
+    q.latitude,
+    q.longitude,
+    q.max_contributors,
+    d.id               AS detail_id,
+    d.name             AS detail_name,
+    d.description      AS detail_description,
+    d.point_gain,
+    d.created_at       AS detail_created_at,
+    d.updated_at       AS detail_updated_at
+FROM contributions c
+JOIN quests q ON c.quest_id = q.id
+JOIN details d ON q.detail_id = d.id
+WHERE c.id = $1;
+
+-- name: GetUserAttendances :many
+SELECT 
+    a.id AS attendance_id,
+    a.attended,
+    e.latitude,
+    e.longitude,
+FROM attendances a
+JOIN events e ON a.event_id = e.id
+JOIN details d ON e.detail_id = d.id
+WHERE a.user_id = $1;
+
+-- name: GetAttendanceDetails :one
+SELECT 
+    a.id AS attendance_id,
+    a.attended,
+    a.created_at AS attended_at,
+    e.id AS event_id,
+    e.location,
+    e.latitude,
+    e.longitude,
+    e.contact,
+    e.starts_at,
+    e.ends_at,
+    e.cover_key,
+    d.id AS detail_id,
+    d.name AS detail_name,
+    d.description AS detail_description,
+    d.point_gain
+FROM attendances a
+JOIN events e ON a.event_id = e.id
+JOIN details d ON e.detail_id = d.id
+WHERE a.id = $1;

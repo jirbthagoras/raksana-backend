@@ -22,7 +22,7 @@
 
             @if($treasure->code?->image_url)
                <img src="{{ $treasure->code->image_url }}" width="120" alt="QR Code">
-          @endif
+            @endif
                </div>
     @endforeach
 </body>

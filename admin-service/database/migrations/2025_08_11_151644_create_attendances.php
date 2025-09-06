@@ -18,6 +18,7 @@ return new class extends Migration
             $table->foreignId("event_id")->references("id")->on("events");
             $table->boolean("attended")->default(false);
             $table->timestamp('created_at')->default(DB::raw('CURRENT_TIMESTAMP'));
+            $table->timestamp('attended_at')->nullable(true);
         });
     }
 

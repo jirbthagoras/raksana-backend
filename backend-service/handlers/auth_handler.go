@@ -152,6 +152,10 @@ func (h *AuthHandler) handleLogin(c *fiber.Ctx) error {
 		return err
 	}
 
+	if user.IsAdmin {
+		return fiber.NewError(fiber.StatusUnauthorized, "Anda adalah admin")
+	}
+
 	if ok := helpers.CheckPassword(req.Password, user.Password); !ok {
 		return fiber.NewError(fiber.StatusBadRequest, "Password does not match")
 	}

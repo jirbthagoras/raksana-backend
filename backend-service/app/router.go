@@ -24,6 +24,8 @@ type AppRouter struct {
 	*handlers.RecapHandler
 	*handlers.ChallengeHandler
 	*handlers.TreasureHandler
+	*handlers.QuestHandler
+	*handlers.ScanHandler
 }
 
 func NewAppRouter(
@@ -46,6 +48,9 @@ func NewAppRouter(
 	pointService := services.NewPointService(r, leaderboardService)
 	fileService := services.NewFileService(awsClient)
 
+	treasureHandler := handlers.NewTreasureHandler(v, r, pointService, journalService, streakService)
+	questHandler := handlers.NewQuestHandler(v, r, pointService, journalService, streakService)
+
 	return &AppRouter{
 		AuthHandler:        handlers.NewAuthHandler(v, r, leaderboardService),
 		JournalHandler:     handlers.NewJournalHandler(v, r, journalService, streakService),
@@ -57,7 +62,9 @@ func NewAppRouter(
 		MemoryHandler:      handlers.NewMemoryHandler(v, r, memoryService, fileService, streakService, awsClient),
 		RecapHandler:       handlers.NewRecapHandler(r, aiClient, journalService, streakService),
 		ChallengeHandler:   handlers.NewChallengeHandler(v, r, memoryService, pointService, journalService, fileService, streakService),
-		TreasureHandler:    handlers.NewTreasureHandler(v, r, pointService, journalService),
+		TreasureHandler:    treasureHandler,
+		QuestHandler:       questHandler,
+		ScanHandler:        handlers.NewScanHandler(v, treasureHandler, questHandler),
 	}
 }
 
@@ -73,4 +80,6 @@ func (r *AppRouter) RegisterRoute(router fiber.Router) {
 	r.RecapHandler.RegisterRoutes(router)
 	r.ChallengeHandler.RegisterRoutes(router)
 	r.TreasureHandler.RegisterRoutes(router)
+	r.QuestHandler.RegisterRoutes(router)
+	r.ScanHandler.RegisterRoutes(router)
 }

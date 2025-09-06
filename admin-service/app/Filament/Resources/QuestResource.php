@@ -94,7 +94,7 @@ class QuestResource extends Resource
                 Tables\Columns\TextColumn::make('location'),
                 Tables\Columns\TextColumn::make('max_contributors')->label('Max Contributors'),
                 TextColumn::make('detail.point_gain')->label('Point Gain'),
-                TextColumn::make('detail.created_at'),
+                TextColumn::make('detail.created_at')->label("Created At"),
                 Tables\Columns\ImageColumn::make('code.image_url')->label('QR Code'),
             ])
             ->actions([

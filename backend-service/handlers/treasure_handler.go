@@ -22,6 +22,7 @@ type TreasureHandler struct {
 	Repository *repositories.Queries
 	*services.PointService
 	*services.JournalService
+	*services.StreakService
 }
 
 func NewTreasureHandler(
@@ -29,21 +30,22 @@ func NewTreasureHandler(
 	r *repositories.Queries,
 	ps *services.PointService,
 	js *services.JournalService,
+	ss *services.StreakService,
 ) *TreasureHandler {
 	return &TreasureHandler{
 		Validator:      v,
 		Repository:     r,
 		PointService:   ps,
 		JournalService: js,
+		StreakService:  ss,
 	}
 }
 
 func (h *TreasureHandler) RegisterRoutes(router fiber.Router) {
 	g := router.Group("/treasure")
 	g.Use(helpers.TokenMiddleware)
-	g.Post("/", h.handleClaimTreasure)
-	g.Get("/me", h.handleGetAllClaimedTreasure)
-	g.Get("/:id", h.handleGetAllClaimedTreasureByUserId)
+	g.Get("/me", h.handlGetCurrentUserTreasures)
+	g.Get("/:id", h.handleGetUserTreasure)
 }
 
 func (h *TreasureHandler) handleClaimTreasure(c *fiber.Ctx) error {
@@ -102,7 +104,12 @@ func (h *TreasureHandler) handleClaimTreasure(c *fiber.Ctx) error {
 		return err
 	}
 
-	logMsg := fmt.Sprintf("Baru saja mendapatkan treasure %s, memperoleh poin: %v", treasure.Name, treasure.PointGain)
+	err = h.StreakService.UpdateStreak(ctx, int64(userId))
+	if err != nil {
+		return err
+	}
+
+	logMsg := fmt.Sprintf("Baru saja mendapatkan treasure: '%s', memperoleh poin: %v", treasure.Name, treasure.PointGain)
 	err = h.JournalService.AppendLog(&models.PostLogAppend{
 		Text:      logMsg,
 		IsSystem:  true,
@@ -120,12 +127,13 @@ func (h *TreasureHandler) handleClaimTreasure(c *fiber.Ctx) error {
 
 	return c.Status(fiber.StatusCreated).JSON(fiber.Map{
 		"data": fiber.Map{
+			"type":    "treasures",
 			"message": "success",
 		},
 	})
 }
 
-func (h *TreasureHandler) handleGetAllClaimedTreasure(c *fiber.Ctx) error {
+func (h *TreasureHandler) handlGetCurrentUserTreasures(c *fiber.Ctx) error {
 	userId, err := helpers.GetSubjectFromToken(c)
 	if err != nil {
 		return err
@@ -156,7 +164,7 @@ func (h *TreasureHandler) handleGetAllClaimedTreasure(c *fiber.Ctx) error {
 	})
 }
 
-func (h *TreasureHandler) handleGetAllClaimedTreasureByUserId(c *fiber.Ctx) error {
+func (h *TreasureHandler) handleGetUserTreasure(c *fiber.Ctx) error {
 	userId, err := c.ParamsInt("id")
 	if err != nil {
 		slog.Error("Failed to get packet id", "err", err)
