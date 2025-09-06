@@ -24,7 +24,6 @@ type ChallengeHandler struct {
 	*services.MemoryService
 	*services.PointService
 	*services.JournalService
-	*services.LeaderboardService
 	*services.FileService
 	*services.StreakService
 }
@@ -35,19 +34,17 @@ func NewChallengeHandler(
 	ms *services.MemoryService,
 	ps *services.PointService,
 	js *services.JournalService,
-	ls *services.LeaderboardService,
 	fs *services.FileService,
 	ss *services.StreakService,
 ) *ChallengeHandler {
 	return &ChallengeHandler{
-		Validator:          v,
-		Repository:         r,
-		MemoryService:      ms,
-		PointService:       ps,
-		JournalService:     js,
-		LeaderboardService: ls,
-		FileService:        fs,
-		StreakService:      ss,
+		Validator:      v,
+		Repository:     r,
+		MemoryService:  ms,
+		PointService:   ps,
+		JournalService: js,
+		FileService:    fs,
+		StreakService:  ss,
 	}
 }
 
@@ -57,7 +54,7 @@ func (h *ChallengeHandler) RegisterRoutes(router fiber.Router) {
 	g.Post("/", h.handleParticipate)
 	g.Get("/today", h.handleGetTodayChallenge)
 	g.Get("/", h.handleGetAllChallenges)
-	g.Get(":/id", h.handleGetChallengeParticipants)
+	g.Get("/:id", h.handleGetChallengeParticipants)
 }
 
 func (h *ChallengeHandler) handleParticipate(c *fiber.Ctx) error {
@@ -81,11 +78,8 @@ func (h *ChallengeHandler) handleParticipate(c *fiber.Ctx) error {
 
 	ctx := context.Background()
 
-	challenge, err := h.Repository.GetChallengeWithDetail(ctx, int64(req.ChallengeID))
+	challenge, err := h.Repository.GetChallengeWithDetail(ctx)
 	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			return fiber.NewError(fiber.StatusBadRequest, "Challenge not found")
-		}
 		slog.Error("Failed to get challenge with details", "err", err)
 		return err
 	}
@@ -133,7 +127,7 @@ func (h *ChallengeHandler) handleParticipate(c *fiber.Ctx) error {
 	_, err = h.Repository.CreateParticipation(context.Background(), repositories.CreateParticipationParams{
 		MemoryID:    int64(memoryId),
 		UserID:      int64(userId),
-		ChallengeID: int64(req.ChallengeID),
+		ChallengeID: int64(challenge.ChallengeID),
 	})
 	if err != nil {
 		slog.Error("Failed to insert row to participation", "err", err)
@@ -145,17 +139,12 @@ func (h *ChallengeHandler) handleParticipate(c *fiber.Ctx) error {
 		return err
 	}
 
-	logMsg := fmt.Sprintf("Saya baru saja berpartisipasi dalam challenge harian day-%v, dan mendapatkan poin sebesar %v ", challenge.Day, challenge.PointGain)
+	logMsg := fmt.Sprintf("Baru saja berpartisipasi dalam challenge harian day-%v, dan mendapatkan poin sebesar %v ", challenge.Day, challenge.PointGain)
 	err = h.JournalService.AppendLog(&models.PostLogAppend{
 		Text:      logMsg,
 		IsSystem:  true,
 		IsPrivate: false,
 	}, userId)
-	if err != nil {
-		return err
-	}
-
-	err = h.LeaderboardService.IncrPoint(strconv.Itoa(userId), float64(challenge.PointGain))
 	if err != nil {
 		return err
 	}
@@ -226,6 +215,15 @@ func (h *ChallengeHandler) handleGetChallengeParticipants(c *fiber.Ctx) error {
 	challengeId, err := c.ParamsInt("id")
 	if err != nil {
 		slog.Error("Failed to get packet id", "err", err)
+	}
+
+	_, err = h.Repository.GetChallengeWithDetailById(context.Background(), int64(challengeId))
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return fiber.NewError(fiber.StatusBadRequest, "Challenge not found")
+		}
+		slog.Error("Failed to get challenge detail")
+		return err
 	}
 
 	res, err := h.Repository.GetMemoriesByChallengeID(context.Background(), int64(challengeId))

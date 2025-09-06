@@ -21,7 +21,7 @@ type ResponsePacketDetailHabit struct {
 	Description string `json:"description"`
 	Difficulty  string `json:"difficulty"`
 	Locked      bool   `json:"locked"`
-	ExpGain     int32  `json:"point_gain"`
+	ExpGain     int32  `json:"exp_gain"`
 }
 
 type ResponseGetPacket struct {

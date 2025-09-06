@@ -7,7 +7,7 @@ import (
 )
 
 type ResponseMemory struct {
-	MemoryID        int64   `json:"memory_id"`
+	MemoryID        int64   `json:"memory_id,omitempty"`
 	FileURL         string  `json:"file_url"`
 	Description     string  `json:"description"`
 	CreatedAt       string  `json:"created_at"`
@@ -62,7 +62,6 @@ func ToResponseMemory(row repositories.GetMemoryWithParticipationRow) ResponseMe
 }
 
 type PostCreateParticipation struct {
-	ChallengeID int    `json:"challenge_id" validate:"required"`
 	Description string `json:"description" validate:"required"`
 	FileName    string `json:"filename" validate:"required"`
 	ContentType string `json:"content_type" validate:"required"`

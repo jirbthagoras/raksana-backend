@@ -23,6 +23,7 @@ type AppRouter struct {
 	*handlers.MemoryHandler
 	*handlers.RecapHandler
 	*handlers.ChallengeHandler
+	*handlers.TreasureHandler
 }
 
 func NewAppRouter(
@@ -42,7 +43,7 @@ func NewAppRouter(
 	userService := services.NewUserService(r, streakService)
 	leaderboardService := services.NewLeaderboardService(rd)
 	memoryService := services.NewMemoryService(r)
-	pointService := services.NewPointService(r)
+	pointService := services.NewPointService(r, leaderboardService)
 	fileService := services.NewFileService(awsClient)
 
 	return &AppRouter{
@@ -55,7 +56,8 @@ func NewAppRouter(
 		UserHandler:        handlers.NewUserHandler(v, r, userService, leaderboardService, fileService, awsClient),
 		MemoryHandler:      handlers.NewMemoryHandler(v, r, memoryService, fileService, streakService, awsClient),
 		RecapHandler:       handlers.NewRecapHandler(r, aiClient, journalService, streakService),
-		ChallengeHandler:   handlers.NewChallengeHandler(v, r, memoryService, pointService, journalService, leaderboardService, fileService, streakService),
+		ChallengeHandler:   handlers.NewChallengeHandler(v, r, memoryService, pointService, journalService, fileService, streakService),
+		TreasureHandler:    handlers.NewTreasureHandler(v, r, pointService, journalService),
 	}
 }
 
@@ -70,4 +72,5 @@ func (r *AppRouter) RegisterRoute(router fiber.Router) {
 	r.MemoryHandler.RegisterRoutes(router)
 	r.RecapHandler.RegisterRoutes(router)
 	r.ChallengeHandler.RegisterRoutes(router)
+	r.TreasureHandler.RegisterRoutes(router)
 }

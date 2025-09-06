@@ -29,6 +29,6 @@ type ResponseRecap struct {
 	AssignedTask       int32  `json:"assigned_task"`
 	CompletedTask      int32  `json:"completed_task"`
 	TaskCompletionRate string `json:"completion_rate"`
-	GrowthRating       string `json:"growth_rating`
+	GrowthRating       string `json:"growth_rating"`
 	CreatedAt          string `json:"created_at"`
 }

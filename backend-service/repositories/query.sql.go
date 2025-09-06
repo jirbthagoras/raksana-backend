@@ -128,6 +128,21 @@ func (q *Queries) CountUserTask(ctx context.Context, userID int64) (CountUserTas
 	return i, err
 }
 
+const createClaimed = `-- name: CreateClaimed :exec
+INSERT INTO claimed(user_id, treasure_id)
+VALUES ($1, $2)
+`
+
+type CreateClaimedParams struct {
+	UserID     int64
+	TreasureID int64
+}
+
+func (q *Queries) CreateClaimed(ctx context.Context, arg CreateClaimedParams) error {
+	_, err := q.db.Exec(ctx, createClaimed, arg.UserID, arg.TreasureID)
+	return err
+}
+
 const createHabit = `-- name: CreateHabit :one
 INSERT INTO habits (packet_id, name, description, difficulty, locked, weight)
 VALUES ($1, $2, $3, $4, $5, $6)
@@ -402,6 +417,17 @@ func (q *Queries) CreateWeeklyRecap(ctx context.Context, arg CreateWeeklyRecapPa
 	return err
 }
 
+const deactivateTreasure = `-- name: DeactivateTreasure :exec
+UPDATE treasures
+SET claimed = true
+WHERE id = $1
+`
+
+func (q *Queries) DeactivateTreasure(ctx context.Context, id int64) error {
+	_, err := q.db.Exec(ctx, deactivateTreasure, id)
+	return err
+}
+
 const deleteMemory = `-- name: DeleteMemory :one
 DELETE FROM memories
 WHERE id = $1 AND user_id = $2
@@ -478,6 +504,49 @@ func (q *Queries) GetAllChallenges(ctx context.Context) ([]GetAllChallengesRow, 
 	return items, nil
 }
 
+const getAllClaimedTreasure = `-- name: GetAllClaimedTreasure :many
+SELECT 
+  t.id AS id,
+  t.name AS name,
+  c.created_at AS claimed_at,
+  t.point_gain AS point_gain
+FROM claimed c
+JOIN treasures t ON c.treasure_id = t.id
+WHERE c.user_id = $1
+`
+
+type GetAllClaimedTreasureRow struct {
+	ID        int64
+	Name      string
+	ClaimedAt pgtype.Timestamp
+	PointGain int64
+}
+
+func (q *Queries) GetAllClaimedTreasure(ctx context.Context, userID int64) ([]GetAllClaimedTreasureRow, error) {
+	rows, err := q.db.Query(ctx, getAllClaimedTreasure, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GetAllClaimedTreasureRow
+	for rows.Next() {
+		var i GetAllClaimedTreasureRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.Name,
+			&i.ClaimedAt,
+			&i.PointGain,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const getAllPackets = `-- name: GetAllPackets :many
 SELECT id, user_id, name, target, description, completed_task, expected_task, task_per_day, completed, created_at FROM packets
 WHERE user_id = $1
@@ -527,8 +596,7 @@ SELECT
     d.updated_at
 FROM challenges c
 JOIN details d ON c.detail_id = d.id
-WHERE c.id = $1
-LIMIT 1
+ORDER BY created_at DESC
 `
 
 type GetChallengeWithDetailRow struct {
@@ -543,9 +611,55 @@ type GetChallengeWithDetailRow struct {
 	UpdatedAt   pgtype.Timestamp
 }
 
-func (q *Queries) GetChallengeWithDetail(ctx context.Context, id int64) (GetChallengeWithDetailRow, error) {
-	row := q.db.QueryRow(ctx, getChallengeWithDetail, id)
+func (q *Queries) GetChallengeWithDetail(ctx context.Context) (GetChallengeWithDetailRow, error) {
+	row := q.db.QueryRow(ctx, getChallengeWithDetail)
 	var i GetChallengeWithDetailRow
+	err := row.Scan(
+		&i.ChallengeID,
+		&i.Day,
+		&i.Difficulty,
+		&i.DetailID,
+		&i.Name,
+		&i.Description,
+		&i.PointGain,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
+const getChallengeWithDetailById = `-- name: GetChallengeWithDetailById :one
+SELECT 
+    c.id AS challenge_id,
+    c.day,
+    c.difficulty,
+    d.id AS detail_id,
+    d.name,
+    d.description,
+    d.point_gain,
+    d.created_at,
+    d.updated_at
+FROM challenges c
+JOIN details d ON c.detail_id = d.id
+WHERE c.id = $1
+ORDER BY created_at DESC
+`
+
+type GetChallengeWithDetailByIdRow struct {
+	ChallengeID int64
+	Day         int32
+	Difficulty  string
+	DetailID    int64
+	Name        string
+	Description string
+	PointGain   int64
+	CreatedAt   pgtype.Timestamp
+	UpdatedAt   pgtype.Timestamp
+}
+
+func (q *Queries) GetChallengeWithDetailById(ctx context.Context, id int64) (GetChallengeWithDetailByIdRow, error) {
+	row := q.db.QueryRow(ctx, getChallengeWithDetailById, id)
+	var i GetChallengeWithDetailByIdRow
 	err := row.Scan(
 		&i.ChallengeID,
 		&i.Day,
@@ -733,7 +847,7 @@ SELECT
     m.description AS memory_description,
     m.created_at AS memory_created_at,
     u.id AS user_id,
-    u.name AS user_name,
+    u.username AS user_name,
     CASE 
         WHEN p.id IS NOT NULL THEN TRUE 
         ELSE FALSE 
@@ -1030,6 +1144,26 @@ func (q *Queries) GetTodayTasks(ctx context.Context, userID int64) ([]Task, erro
 	return items, nil
 }
 
+const getTreasureByCodeId = `-- name: GetTreasureByCodeId :one
+SELECT id, name, point_gain, code_id, claimed, created_at, updated_at FROM treasures
+WHERE code_id = $1 AND claimed = false
+`
+
+func (q *Queries) GetTreasureByCodeId(ctx context.Context, codeID string) (Treasure, error) {
+	row := q.db.QueryRow(ctx, getTreasureByCodeId, codeID)
+	var i Treasure
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.PointGain,
+		&i.CodeID,
+		&i.Claimed,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
 const getUserActivePackets = `-- name: GetUserActivePackets :one
 SELECT id, user_id, name, target, description, completed_task, expected_task, task_per_day, completed, created_at FROM packets
 WHERE user_id = $1 AND completed = false
@@ -1212,6 +1346,7 @@ func (q *Queries) GetUserStatistic(ctx context.Context, userID int64) (Statistic
 const getWeeklyRecaps = `-- name: GetWeeklyRecaps :many
 SELECT id, user_id, summary, tips, assigned_task, completed_task, completion_rate, growth_rating, type, created_at FROM recaps
 WHERE user_id = $1 AND type = 'weekly'
+ORDER BY created_at DESC
 `
 
 func (q *Queries) GetWeeklyRecaps(ctx context.Context, userID int64) ([]Recap, error) {

@@ -194,7 +194,7 @@ SELECT
     m.description AS memory_description,
     m.created_at AS memory_created_at,
     u.id AS user_id,
-    u.name AS user_name,
+    u.username AS user_name,
     CASE 
         WHEN p.id IS NOT NULL THEN TRUE 
         ELSE FALSE 
@@ -263,8 +263,23 @@ SELECT
     d.updated_at
 FROM challenges c
 JOIN details d ON c.detail_id = d.id
+ORDER BY created_at DESC;
+
+-- name: GetChallengeWithDetailById :one
+SELECT 
+    c.id AS challenge_id,
+    c.day,
+    c.difficulty,
+    d.id AS detail_id,
+    d.name,
+    d.description,
+    d.point_gain,
+    d.created_at,
+    d.updated_at
+FROM challenges c
+JOIN details d ON c.detail_id = d.id
 WHERE c.id = $1
-LIMIT 1;
+ORDER BY created_at DESC;
 
 -- name: IncreaseUserPoints :one
 UPDATE profiles
@@ -347,3 +362,26 @@ JOIN memories m ON p.memory_id = m.id
 JOIN users u ON m.user_id = u.id
 WHERE p.challenge_id = $1
 ORDER BY m.created_at DESC;
+
+-- name: GetTreasureByCodeId :one
+SELECT * FROM treasures
+WHERE code_id = $1 AND claimed = false;
+
+-- name: DeactivateTreasure :exec
+UPDATE treasures
+SET claimed = true
+WHERE id = $1;
+
+-- name: CreateClaimed :exec
+INSERT INTO claimed(user_id, treasure_id)
+VALUES ($1, $2);
+
+-- name: GetAllClaimedTreasure :many
+SELECT 
+  t.id AS id,
+  t.name AS name,
+  c.created_at AS claimed_at,
+  t.point_gain AS point_gain
+FROM claimed c
+JOIN treasures t ON c.treasure_id = t.id
+WHERE c.user_id = $1;
