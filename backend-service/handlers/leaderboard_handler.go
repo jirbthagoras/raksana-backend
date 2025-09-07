@@ -38,6 +38,8 @@ func (h *LeaderboardHandler) handleLeaderboard(c *fiber.Ctx) error {
 	}
 
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
-		"data": leaderboard,
+		"data": fiber.Map{
+			"leaderboard": leaderboard,
+		},
 	})
 }

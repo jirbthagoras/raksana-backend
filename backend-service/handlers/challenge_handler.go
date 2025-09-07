@@ -207,7 +207,9 @@ func (h *ChallengeHandler) handleGetAllChallenges(c *fiber.Ctx) error {
 	}
 
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
-		"data": challenges,
+		"data": fiber.Map{
+			"challenges": challenges,
+		},
 	})
 }
 
@@ -246,6 +248,8 @@ func (h *ChallengeHandler) handleGetChallengeParticipants(c *fiber.Ctx) error {
 	}
 
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
-		"data": challengeMemories,
+		"data": fiber.Map{
+			"participants": challengeMemories,
+		},
 	})
 }

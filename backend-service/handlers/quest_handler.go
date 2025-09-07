@@ -11,6 +11,7 @@ import (
 	"jirbthagoras/raksana-backend/services"
 	"log/slog"
 	"sync"
+	"time"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v2"
@@ -45,9 +46,13 @@ func NewQuestHandler(
 func (h *QuestHandler) RegisterRoutes(router fiber.Router) {
 	g := router.Group("/quest")
 	g.Use(helpers.TokenMiddleware)
+	g.Get("/:id", h.handleGetContributedQuestDetails)
 }
 
 func (h *QuestHandler) handleContribute(c *fiber.Ctx) error {
+	h.Mu.Lock()
+	defer h.Mu.Unlock()
+
 	req := &models.ActivityRequest{}
 
 	err := c.BodyParser(req)
@@ -131,6 +136,58 @@ func (h *QuestHandler) handleContribute(c *fiber.Ctx) error {
 	})
 }
 
-func (h *QuestHandler) handleGetCurrentUserContributions() {
+func (h *QuestHandler) handleGetContributedQuestDetails(c *fiber.Ctx) error {
+	loc, err := time.LoadLocation("Asia/Jakarta")
+	if err != nil {
+		return fmt.Errorf("failed to load timezone: %w", err)
+	}
 
+	contributionId, err := c.ParamsInt("id")
+	if err != nil {
+		slog.Error("Failed to get packet id", "err", err)
+		return err
+	}
+
+	ctx := context.Background()
+	res, err := h.Repository.GetContributionDetails(ctx, int64(contributionId))
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return fiber.NewError(fiber.StatusBadRequest, "Quest Not Found")
+		}
+		slog.Error("Failed to get contribution details", "err", err)
+		return err
+	}
+
+	var quest = models.ResponseQuest{
+		ID:              int(res.ID),
+		Name:            res.Name,
+		Description:     res.Description,
+		Location:        res.Location,
+		Latitude:        res.Latitude,
+		Longitude:       res.Longitude,
+		MaxContributors: int(res.MaxContributors),
+		PointGain:       int(res.PointGain),
+		ContributedAt:   res.ContributionDate.Time.In(loc).Format("2006-01-02 15:04"),
+		CreatedAt:       res.CreatedAt.Time.In(loc).Format("2006-01-02 15:04"),
+	}
+
+	questContributors, err := h.Repository.CountQuestContributors(ctx, res.QuestID)
+	if err != nil {
+		slog.Error("Failed to get quest contributors", "err", err)
+		return err
+	}
+
+	var contributors []models.Contributors
+	for _, contributor := range questContributors {
+		contributors = append(contributors, models.Contributors{
+			ID:       int(contributor.ID),
+			Username: contributor.Username,
+		})
+	}
+
+	quest.Contributors = contributors
+
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"data": quest,
+	})
 }

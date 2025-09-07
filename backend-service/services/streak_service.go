@@ -27,6 +27,7 @@ func NewStreakService(r *redis.Client, rp *repositories.Queries) *StreakService 
 func (s *StreakService) UpdateStreak(ctx context.Context, id int64) error {
 	loc, err := time.LoadLocation("Asia/Jakarta")
 	if err != nil {
+		slog.Error("failed to load timezone")
 		return fmt.Errorf("failed to load timezone: %w", err)
 	}
 

@@ -8,3 +8,12 @@ sql:
         package: "repositories"
         out: "repositories"
         sql_package: "pgx/v5"
+        overrides:
+          - column: "events.latitude"
+            go_type: "float64"
+          - column: "events.longitude"
+            go_type: "float64"
+          - column: "quests.latitude"
+            go_type: "float64"
+          - column: "quests.longitude"
+            go_type: "float64"

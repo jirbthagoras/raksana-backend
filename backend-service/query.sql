@@ -401,7 +401,11 @@ JOIN details d ON q.detail_id = d.id
 WHERE q.code_id = $1;
 
 -- name: CountQuestContributors :many 
-SELECT * FROM contributions
+SELECT
+  u.id AS id,
+  u.username AS username
+FROM contributions c
+JOIN users u ON c.user_id = u.id
 WHERE quest_id = $1;
 
 -- name: CreateContributions :one
@@ -413,7 +417,7 @@ RETURNING *;
 SELECT 
     c.id               AS contribution_id,
     q.latitude,
-    q.longitude,
+    q.longitude
 FROM contributions c
 JOIN quests q ON c.quest_id = q.id
 JOIN details d ON q.detail_id = d.id
@@ -422,20 +426,18 @@ ORDER BY c.created_at DESC;
 
 -- name: GetContributionDetails :one
 SELECT 
-    c.id               AS contribution_id,
+    c.id               AS id,
     c.created_at       AS contribution_date,
-    q.id               AS quest_id,
     q.code_id,
+    q.id AS quest_id,
     q.location,
     q.latitude,
     q.longitude,
     q.max_contributors,
-    d.id               AS detail_id,
-    d.name             AS detail_name,
-    d.description      AS detail_description,
+    d.name             AS name,
+    d.description      AS description,
     d.point_gain,
-    d.created_at       AS detail_created_at,
-    d.updated_at       AS detail_updated_at
+    d.created_at       AS created_at
 FROM contributions c
 JOIN quests q ON c.quest_id = q.id
 JOIN details d ON q.detail_id = d.id
@@ -446,7 +448,7 @@ SELECT
     a.id AS attendance_id,
     a.attended,
     e.latitude,
-    e.longitude,
+    e.longitude
 FROM attendances a
 JOIN events e ON a.event_id = e.id
 JOIN details d ON e.detail_id = d.id

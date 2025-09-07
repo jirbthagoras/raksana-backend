@@ -97,25 +97,29 @@ func (q *Queries) CountPacketTasks(ctx context.Context, arg CountPacketTasksPara
 }
 
 const countQuestContributors = `-- name: CountQuestContributors :many
-SELECT id, quest_id, user_id, created_at FROM contributions
+SELECT
+  u.id AS id,
+  u.username AS username
+FROM contributions c
+JOIN users u ON c.user_id = u.id
 WHERE quest_id = $1
 `
 
-func (q *Queries) CountQuestContributors(ctx context.Context, questID int64) ([]Contribution, error) {
+type CountQuestContributorsRow struct {
+	ID       int64
+	Username string
+}
+
+func (q *Queries) CountQuestContributors(ctx context.Context, questID int64) ([]CountQuestContributorsRow, error) {
 	rows, err := q.db.Query(ctx, countQuestContributors, questID)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []Contribution
+	var items []CountQuestContributorsRow
 	for rows.Next() {
-		var i Contribution
-		if err := rows.Scan(
-			&i.ID,
-			&i.QuestID,
-			&i.UserID,
-			&i.CreatedAt,
-		); err != nil {
+		var i CountQuestContributorsRow
+		if err := rows.Scan(&i.ID, &i.Username); err != nil {
 			return nil, err
 		}
 		items = append(items, i)
@@ -636,6 +640,70 @@ func (q *Queries) GetAllPackets(ctx context.Context, userID int64) ([]Packet, er
 	return items, nil
 }
 
+const getAttendanceDetails = `-- name: GetAttendanceDetails :one
+SELECT 
+    a.id AS attendance_id,
+    a.attended,
+    a.created_at AS attended_at,
+    e.id AS event_id,
+    e.location,
+    e.latitude,
+    e.longitude,
+    e.contact,
+    e.starts_at,
+    e.ends_at,
+    e.cover_key,
+    d.id AS detail_id,
+    d.name AS detail_name,
+    d.description AS detail_description,
+    d.point_gain
+FROM attendances a
+JOIN events e ON a.event_id = e.id
+JOIN details d ON e.detail_id = d.id
+WHERE a.id = $1
+`
+
+type GetAttendanceDetailsRow struct {
+	AttendanceID      int64
+	Attended          bool
+	AttendedAt        pgtype.Timestamp
+	EventID           int64
+	Location          string
+	Latitude          float64
+	Longitude         float64
+	Contact           string
+	StartsAt          pgtype.Date
+	EndsAt            pgtype.Date
+	CoverKey          pgtype.Text
+	DetailID          int64
+	DetailName        string
+	DetailDescription string
+	PointGain         int64
+}
+
+func (q *Queries) GetAttendanceDetails(ctx context.Context, id int64) (GetAttendanceDetailsRow, error) {
+	row := q.db.QueryRow(ctx, getAttendanceDetails, id)
+	var i GetAttendanceDetailsRow
+	err := row.Scan(
+		&i.AttendanceID,
+		&i.Attended,
+		&i.AttendedAt,
+		&i.EventID,
+		&i.Location,
+		&i.Latitude,
+		&i.Longitude,
+		&i.Contact,
+		&i.StartsAt,
+		&i.EndsAt,
+		&i.CoverKey,
+		&i.DetailID,
+		&i.DetailName,
+		&i.DetailDescription,
+		&i.PointGain,
+	)
+	return i, err
+}
+
 const getChallengeWithDetail = `-- name: GetChallengeWithDetail :one
 SELECT 
     c.id AS challenge_id,
@@ -723,6 +791,61 @@ func (q *Queries) GetChallengeWithDetailById(ctx context.Context, id int64) (Get
 		&i.PointGain,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+	)
+	return i, err
+}
+
+const getContributionDetails = `-- name: GetContributionDetails :one
+SELECT 
+    c.id               AS id,
+    c.created_at       AS contribution_date,
+    q.code_id,
+    q.id AS quest_id,
+    q.location,
+    q.latitude,
+    q.longitude,
+    q.max_contributors,
+    d.name             AS name,
+    d.description      AS description,
+    d.point_gain,
+    d.created_at       AS created_at
+FROM contributions c
+JOIN quests q ON c.quest_id = q.id
+JOIN details d ON q.detail_id = d.id
+WHERE c.id = $1
+`
+
+type GetContributionDetailsRow struct {
+	ID               int64
+	ContributionDate pgtype.Timestamp
+	CodeID           string
+	QuestID          int64
+	Location         string
+	Latitude         float64
+	Longitude        float64
+	MaxContributors  int32
+	Name             string
+	Description      string
+	PointGain        int64
+	CreatedAt        pgtype.Timestamp
+}
+
+func (q *Queries) GetContributionDetails(ctx context.Context, id int64) (GetContributionDetailsRow, error) {
+	row := q.db.QueryRow(ctx, getContributionDetails, id)
+	var i GetContributionDetailsRow
+	err := row.Scan(
+		&i.ID,
+		&i.ContributionDate,
+		&i.CodeID,
+		&i.QuestID,
+		&i.Location,
+		&i.Latitude,
+		&i.Longitude,
+		&i.MaxContributors,
+		&i.Name,
+		&i.Description,
+		&i.PointGain,
+		&i.CreatedAt,
 	)
 	return i, err
 }
@@ -1108,8 +1231,8 @@ type GetQuestByCodeIdRow struct {
 	ID              int64
 	Location        string
 	MaxContributors int32
-	Latitude        pgtype.Numeric
-	Longitude       pgtype.Numeric
+	Latitude        float64
+	Longitude       float64
 	Name            string
 	Description     string
 	PointGain       int64
@@ -1286,19 +1409,8 @@ const getUserAttendances = `-- name: GetUserAttendances :many
 SELECT 
     a.id AS attendance_id,
     a.attended,
-    a.created_at AS attended_at,
-    e.id AS event_id,
-    e.location,
     e.latitude,
-    e.longitude,
-    e.contact,
-    e.starts_at,
-    e.ends_at,
-    e.cover_key,
-    d.id AS detail_id,
-    d.name AS detail_name,
-    d.description AS detail_description,
-    d.point_gain
+    e.longitude
 FROM attendances a
 JOIN events e ON a.event_id = e.id
 JOIN details d ON e.detail_id = d.id
@@ -1306,21 +1418,10 @@ WHERE a.user_id = $1
 `
 
 type GetUserAttendancesRow struct {
-	AttendanceID      int64
-	Attended          bool
-	AttendedAt        pgtype.Timestamp
-	EventID           int64
-	Location          string
-	Latitude          pgtype.Numeric
-	Longitude         pgtype.Numeric
-	Contact           string
-	StartsAt          pgtype.Date
-	EndsAt            pgtype.Date
-	CoverKey          pgtype.Text
-	DetailID          int64
-	DetailName        string
-	DetailDescription string
-	PointGain         int64
+	AttendanceID int64
+	Attended     bool
+	Latitude     float64
+	Longitude    float64
 }
 
 func (q *Queries) GetUserAttendances(ctx context.Context, userID int64) ([]GetUserAttendancesRow, error) {
@@ -1335,19 +1436,8 @@ func (q *Queries) GetUserAttendances(ctx context.Context, userID int64) ([]GetUs
 		if err := rows.Scan(
 			&i.AttendanceID,
 			&i.Attended,
-			&i.AttendedAt,
-			&i.EventID,
-			&i.Location,
 			&i.Latitude,
 			&i.Longitude,
-			&i.Contact,
-			&i.StartsAt,
-			&i.EndsAt,
-			&i.CoverKey,
-			&i.DetailID,
-			&i.DetailName,
-			&i.DetailDescription,
-			&i.PointGain,
 		); err != nil {
 			return nil, err
 		}
@@ -1416,19 +1506,8 @@ func (q *Queries) GetUserById(ctx context.Context, id int64) (GetUserByIdRow, er
 const getUserContributions = `-- name: GetUserContributions :many
 SELECT 
     c.id               AS contribution_id,
-    c.created_at       AS contribution_date,
-    q.id               AS quest_id,
-    q.code_id,
-    q.location,
     q.latitude,
-    q.longitude,
-    q.max_contributors,
-    d.id               AS detail_id,
-    d.name             AS detail_name,
-    d.description      AS detail_description,
-    d.point_gain,
-    d.created_at       AS detail_created_at,
-    d.updated_at       AS detail_updated_at
+    q.longitude
 FROM contributions c
 JOIN quests q ON c.quest_id = q.id
 JOIN details d ON q.detail_id = d.id
@@ -1437,20 +1516,9 @@ ORDER BY c.created_at DESC
 `
 
 type GetUserContributionsRow struct {
-	ContributionID    int64
-	ContributionDate  pgtype.Timestamp
-	QuestID           int64
-	CodeID            string
-	Location          string
-	Latitude          pgtype.Numeric
-	Longitude         pgtype.Numeric
-	MaxContributors   int32
-	DetailID          int64
-	DetailName        string
-	DetailDescription string
-	PointGain         int64
-	DetailCreatedAt   pgtype.Timestamp
-	DetailUpdatedAt   pgtype.Timestamp
+	ContributionID int64
+	Latitude       float64
+	Longitude      float64
 }
 
 func (q *Queries) GetUserContributions(ctx context.Context, userID int64) ([]GetUserContributionsRow, error) {
@@ -1462,22 +1530,7 @@ func (q *Queries) GetUserContributions(ctx context.Context, userID int64) ([]Get
 	var items []GetUserContributionsRow
 	for rows.Next() {
 		var i GetUserContributionsRow
-		if err := rows.Scan(
-			&i.ContributionID,
-			&i.ContributionDate,
-			&i.QuestID,
-			&i.CodeID,
-			&i.Location,
-			&i.Latitude,
-			&i.Longitude,
-			&i.MaxContributors,
-			&i.DetailID,
-			&i.DetailName,
-			&i.DetailDescription,
-			&i.PointGain,
-			&i.DetailCreatedAt,
-			&i.DetailUpdatedAt,
-		); err != nil {
+		if err := rows.Scan(&i.ContributionID, &i.Latitude, &i.Longitude); err != nil {
 			return nil, err
 		}
 		items = append(items, i)

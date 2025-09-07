@@ -68,8 +68,8 @@ type Event struct {
 	DetailID  int64
 	CodeID    string
 	Location  string
-	Latitude  pgtype.Numeric
-	Longitude pgtype.Numeric
+	Latitude  float64
+	Longitude float64
 	Contact   string
 	StartsAt  pgtype.Date
 	EndsAt    pgtype.Date
@@ -184,8 +184,8 @@ type Quest struct {
 	DetailID        int64
 	CodeID          string
 	Location        string
-	Latitude        pgtype.Numeric
-	Longitude       pgtype.Numeric
+	Latitude        float64
+	Longitude       float64
 	MaxContributors int32
 }
 

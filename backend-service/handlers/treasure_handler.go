@@ -191,6 +191,8 @@ func (h *TreasureHandler) handleGetUserTreasure(c *fiber.Ctx) error {
 	}
 
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
-		"data": treasures,
+		"data": fiber.Map{
+			"treasures": treasures,
+		},
 	})
 }
