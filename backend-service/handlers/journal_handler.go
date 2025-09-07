@@ -10,7 +10,6 @@ import (
 	"jirbthagoras/raksana-backend/services"
 	"log/slog"
 	"strconv"
-	"time"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v2"
@@ -83,7 +82,6 @@ func (h *JournalHandler) handleAppendJournal(c *fiber.Ctx) error {
 
 func (h *JournalHandler) handleGetLogs(c *fiber.Ctx) error {
 	isPrivateParam := c.Query("is_private", "false")
-	loc, _ := time.LoadLocation("Asia/Jakarta")
 	isPrivate, err := strconv.ParseBool(isPrivateParam)
 	if err != nil {
 		isPrivate = false
@@ -105,7 +103,7 @@ func (h *JournalHandler) handleGetLogs(c *fiber.Ctx) error {
 			Text:      log.Text,
 			IsSystem:  log.IsSystem,
 			IsPrivate: log.IsPrivate,
-			CreatedAt: log.CreatedAt.Time.In(loc).Format("2006-01-02 15:04"),
+			CreatedAt: log.CreatedAt.Time.Format("2006-01-02 15:04"),
 		})
 	}
 

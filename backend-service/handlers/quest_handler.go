@@ -11,7 +11,6 @@ import (
 	"jirbthagoras/raksana-backend/services"
 	"log/slog"
 	"sync"
-	"time"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v2"
@@ -137,11 +136,6 @@ func (h *QuestHandler) handleContribute(c *fiber.Ctx) error {
 }
 
 func (h *QuestHandler) handleGetContributedQuestDetails(c *fiber.Ctx) error {
-	loc, err := time.LoadLocation("Asia/Jakarta")
-	if err != nil {
-		return fmt.Errorf("failed to load timezone: %w", err)
-	}
-
 	contributionId, err := c.ParamsInt("id")
 	if err != nil {
 		slog.Error("Failed to get packet id", "err", err)
@@ -167,8 +161,8 @@ func (h *QuestHandler) handleGetContributedQuestDetails(c *fiber.Ctx) error {
 		Longitude:       res.Longitude,
 		MaxContributors: int(res.MaxContributors),
 		PointGain:       int(res.PointGain),
-		ContributedAt:   res.ContributionDate.Time.In(loc).Format("2006-01-02 15:04"),
-		CreatedAt:       res.CreatedAt.Time.In(loc).Format("2006-01-02 15:04"),
+		ContributedAt:   res.ContributionDate.Time.Format("2006-01-02 15:04"),
+		CreatedAt:       res.CreatedAt.Time.Format("2006-01-02 15:04"),
 	}
 
 	questContributors, err := h.Repository.CountQuestContributors(ctx, res.QuestID)

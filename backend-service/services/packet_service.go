@@ -8,7 +8,6 @@ import (
 	"jirbthagoras/raksana-backend/models"
 	"jirbthagoras/raksana-backend/repositories"
 	"log/slog"
-	"time"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/jackc/pgx/v5"
@@ -28,11 +27,6 @@ func (s *PacketService) GetALlPackets(userId int64) ([]models.ResponseGetPacket,
 	res, err := s.Repository.GetAllPackets(context.Background(), userId)
 	if err != nil {
 		slog.Error("Failed to get all packets", "err", err)
-		return nil, err
-	}
-
-	loc, err := time.LoadLocation("Asia/Jakarta")
-	if err != nil {
 		return nil, err
 	}
 
@@ -64,7 +58,7 @@ func (s *PacketService) GetALlPackets(userId int64) ([]models.ResponseGetPacket,
 			CompletionRate: stringCompletionRate,
 			AssignedTask:   int32(packetTask.AssignedTask),
 			TaskPerDay:     packet.TaskPerDay,
-			CreatedAt:      packet.CreatedAt.Time.In(loc).Format("2006-01-02 15:04"),
+			CreatedAt:      packet.CreatedAt.Time.Format("2006-01-02 15:04"),
 		})
 	}
 
@@ -75,10 +69,6 @@ func (s *PacketService) GetPacketDetail(id int) (models.ResponsePacketDetail, er
 	ctx := context.Background()
 
 	var habitDetail models.ResponsePacketDetail
-	loc, err := time.LoadLocation("Asia/Jakarta")
-	if err != nil {
-		return habitDetail, err
-	}
 
 	packetDetails, err := s.Repository.GetPacketDetail(ctx, int64(id))
 	if err != nil {
@@ -139,7 +129,7 @@ func (s *PacketService) GetPacketDetail(id int) (models.ResponsePacketDetail, er
 		TaskPerDay:         packetDetails.TaskPerDay,
 		TaskCompletionRate: stringCompletionRate,
 		Completed:          packetDetails.Completed,
-		CreatedAt:          packetDetails.CreatedAt.Time.In(loc).Format("2006-01-02 15:04"),
+		CreatedAt:          packetDetails.CreatedAt.Time.Format("2006-01-02 15:04"),
 		Habits:             packetHabits,
 	}
 

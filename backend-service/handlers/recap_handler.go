@@ -59,11 +59,6 @@ func (h *RecapHandler) handleCreateWeeklyRecap(c *fiber.Ctx) error {
 		return err
 	}
 
-	// today := time.Now().In(loc).Weekday()
-	// if today != time.Sunday {
-	// 	return fiber.NewError(fiber.StatusBadRequest, "Hari ini bukan waktu yang tepat untuk weekly recap")
-	// }
-
 	cnf := helpers.NewConfig()
 	aiModel, err := configs.InitModel(h.AIClient.Genai, cnf, configs.RecapWeekly)
 	if err != nil {
@@ -80,8 +75,8 @@ func (h *RecapHandler) handleCreateWeeklyRecap(c *fiber.Ctx) error {
 
 	var tasks []models.InputTask
 	for _, task := range res {
-		var completedAt string = task.UpdatedAt.Time.In(loc).Format("2006-01-02 15:04:05")
-		var createdAt string = task.CreatedAt.Time.In(loc).Format("2006-01-02 15:04:05")
+		var completedAt string = task.UpdatedAt.Time.Format("2006-01-02 15:04:05")
+		var createdAt string = task.CreatedAt.Time.Format("2006-01-02 15:04:05")
 		tasks = append(tasks, models.InputTask{
 			Name:        task.Name,
 			Description: task.Description,

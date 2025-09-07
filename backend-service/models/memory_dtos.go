@@ -3,7 +3,6 @@ package models
 import (
 	"jirbthagoras/raksana-backend/helpers"
 	"jirbthagoras/raksana-backend/repositories"
-	"time"
 )
 
 type ResponseMemory struct {
@@ -31,12 +30,11 @@ func ToResponseMemory(row repositories.GetMemoryWithParticipationRow) ResponseMe
 
 	cnf := helpers.NewConfig()
 	bucketUrl := cnf.GetString("AWS_URL")
-	loc, _ := time.LoadLocation("Asia/Jakarta")
 	resp := ResponseMemory{
 		MemoryID:        row.MemoryID,
 		FileURL:         bucketUrl + row.FileKey,
 		Description:     row.MemoryDescription,
-		CreatedAt:       row.MemoryCreatedAt.Time.In(loc).Format("2006-01-02 15:04"),
+		CreatedAt:       row.MemoryCreatedAt.Time.Format("2006-01-02 15:04"),
 		UserID:          row.UserID,
 		UserName:        row.UserName,
 		IsParticipation: row.IsParticipation,

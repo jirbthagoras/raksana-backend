@@ -8,6 +8,7 @@ import (
 	"jirbthagoras/raksana-backend/models"
 	"jirbthagoras/raksana-backend/repositories"
 	"log/slog"
+	"strconv"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/jackc/pgx/v5"
@@ -16,15 +17,18 @@ import (
 type UserService struct {
 	Repository *repositories.Queries
 	*StreakService
+	*LeaderboardService
 }
 
 func NewUserService(
 	r *repositories.Queries,
 	ss *StreakService,
+	ls *LeaderboardService,
 ) *UserService {
 	return &UserService{
-		Repository:    r,
-		StreakService: ss,
+		Repository:         r,
+		StreakService:      ss,
+		LeaderboardService: ls,
 	}
 }
 
@@ -57,12 +61,21 @@ func (s *UserService) GetUserDetail(id int) (models.ResponseGetUserProfileStatis
 	bucketUrl := cnf.GetString("AWS_URL")
 
 	streak, err := s.StreakService.GetCurrentStreak(int(res.UserID))
+	if err != nil {
+		return profile, err
+	}
+
+	rank, err := s.LeaderboardService.GetUserRank(strconv.Itoa(int(res.UserID)))
+	if err != nil {
+		return profile, err
+	}
 
 	profile = models.ResponseGetUserProfileStatistic{
 		Id:                 int(res.UserID),
 		Name:               res.Name,
 		Username:           res.Username,
 		Email:              res.Email,
+		Rank:               int(rank),
 		CurrentExp:         res.CurrentExp,
 		ExpNeeded:          res.ExpNeeded,
 		Level:              res.Level,

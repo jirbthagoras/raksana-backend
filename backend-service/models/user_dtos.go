@@ -20,6 +20,7 @@ type ResponseGetUserProfileStatistic struct {
 	CompletedTask      int32   `json:"completed_task"`
 	AssignedTask       int32   `json:"assigend_task"`
 	TaskCompletionRate string  `json:"task_completion_rate"`
+	Rank               int     `json:"rank"`
 	Badges             []Badge `json:"badges"`
 }
 

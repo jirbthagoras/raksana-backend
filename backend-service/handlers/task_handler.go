@@ -70,7 +70,7 @@ func (h *TaskHandler) handleGetTodayTask(c *fiber.Ctx) error {
 				Description: task.Description,
 				Difficulty:  task.Difficulty,
 				Completed:   task.Completed,
-				CreatedAt:   task.CreatedAt.Time,
+				CreatedAt:   task.CreatedAt.Time.Format("2006-01-02 15:04"),
 			})
 		}
 		return c.Status(fiber.StatusOK).JSON(fiber.Map{
@@ -123,7 +123,7 @@ func (h *TaskHandler) handleGetTodayTask(c *fiber.Ctx) error {
 			Description: task.Description,
 			Difficulty:  task.Difficulty,
 			Completed:   task.Completed,
-			CreatedAt:   task.CreatedAt.Time,
+			CreatedAt:   task.CreatedAt.Time.Format("2006-01-02 15:04"),
 		})
 	}
 

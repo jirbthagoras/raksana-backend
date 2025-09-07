@@ -10,7 +10,6 @@ import (
 	"jirbthagoras/raksana-backend/repositories"
 	"jirbthagoras/raksana-backend/services"
 	"log/slog"
-	"time"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v2"
@@ -139,11 +138,6 @@ func (h *TreasureHandler) handlGetCurrentUserTreasures(c *fiber.Ctx) error {
 		return err
 	}
 
-	loc, err := time.LoadLocation("Asia/Jakarta")
-	if err != nil {
-		return fmt.Errorf("failed to load timezone: %w", err)
-	}
-
 	res, err := h.Repository.GetAllClaimedTreasure(context.Background(), int64(userId))
 	if err != nil {
 		slog.Error("Failed to get claimed treasure", "err", err)
@@ -155,7 +149,7 @@ func (h *TreasureHandler) handlGetCurrentUserTreasures(c *fiber.Ctx) error {
 		treasures = append(treasures, models.ResponseTreasure{
 			Name:      treasure.Name,
 			PointGain: int(treasure.PointGain),
-			ClaimedAt: treasure.ClaimedAt.Time.In(loc).Format("2006-01-02 15:04"),
+			ClaimedAt: treasure.ClaimedAt.Time.Format("2006-01-02 15:04"),
 		})
 	}
 
@@ -170,11 +164,6 @@ func (h *TreasureHandler) handleGetUserTreasure(c *fiber.Ctx) error {
 		slog.Error("Failed to get packet id", "err", err)
 	}
 
-	loc, err := time.LoadLocation("Asia/Jakarta")
-	if err != nil {
-		return fmt.Errorf("failed to load timezone: %w", err)
-	}
-
 	res, err := h.Repository.GetAllClaimedTreasure(context.Background(), int64(userId))
 	if err != nil {
 		slog.Error("Failed to get claimed treasure", "err", err)
@@ -186,7 +175,7 @@ func (h *TreasureHandler) handleGetUserTreasure(c *fiber.Ctx) error {
 		treasures = append(treasures, models.ResponseTreasure{
 			Name:      treasure.Name,
 			PointGain: int(treasure.PointGain),
-			ClaimedAt: treasure.ClaimedAt.Time.In(loc).Format("2006-01-02 15:04"),
+			ClaimedAt: treasure.ClaimedAt.Time.Format("2006-01-02 15:04"),
 		})
 	}
 

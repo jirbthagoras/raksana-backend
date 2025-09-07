@@ -8,7 +8,7 @@ type ResponseQuest struct {
 	ContributedAt   string         `json:"contributed_at"`
 	Location        string         `json:"location"`
 	Latitude        float64        `json:"latitude"`
-	Longitude       float64        `json:"Longitude"`
+	Longitude       float64        `json:"longitude"`
 	MaxContributors int            `json:"max_contributors"`
 	CreatedAt       string         `json:"created_at"`
 	Contributors    []Contributors `json:"contributors"`
