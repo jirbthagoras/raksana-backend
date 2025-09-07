@@ -22,7 +22,7 @@ class EventResource extends Resource
     {
         return $form
             ->schema([
-                Forms\Components\Section::make('Event Detail')
+                Forms\Components\Section::make('Event Details')
                     ->schema([
                         Forms\Components\TextInput::make('detail_name')
                             ->label('Name')
@@ -44,8 +44,9 @@ class EventResource extends Resource
                     ->schema([
                         Forms\Components\TextInput::make('location')->required(),
                         Forms\Components\TextInput::make('contact')->required(),
-                        Forms\Components\DatePicker::make('starts_at')->required(),
-                        Forms\Components\DatePicker::make('ends_at')->required(),
+                        Forms\Components\Textarea::make('clue')->required(),
+                        Forms\Components\DateTimePicker::make('starts_at')->required(),
+                        Forms\Components\DateTimePicker::make('ends_at')->required(),
 
                         Forms\Components\FileUpload::make('cover_key')
                             ->label('Cover Image')

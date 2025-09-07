@@ -9,11 +9,13 @@ import (
 )
 
 type Attendance struct {
-	ID        int64
-	UserID    int64
-	EventID   int64
-	Attended  bool
-	CreatedAt pgtype.Timestamp
+	ID            int64
+	UserID        int64
+	EventID       int64
+	Attended      bool
+	ContactNumber string
+	CreatedAt     pgtype.Timestamp
+	AttendedAt    pgtype.Timestamp
 }
 
 type Cache struct {
@@ -71,8 +73,8 @@ type Event struct {
 	Latitude  float64
 	Longitude float64
 	Contact   string
-	StartsAt  pgtype.Date
-	EndsAt    pgtype.Date
+	StartsAt  pgtype.Timestamp
+	EndsAt    pgtype.Timestamp
 	CoverKey  pgtype.Text
 }
 
@@ -187,6 +189,8 @@ type Quest struct {
 	Latitude        float64
 	Longitude       float64
 	MaxContributors int32
+	Finished        bool
+	Clue            pgtype.Text
 }
 
 type Recap struct {

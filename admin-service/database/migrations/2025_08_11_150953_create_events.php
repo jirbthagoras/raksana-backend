@@ -19,8 +19,8 @@ return new class extends Migration
             $table->decimal('latitude', 10, 7)->nullable();
             $table->decimal('longitude', 10, 7)->nullable();
             $table->string("contact");
-            $table->date("starts_at");
-            $table->date("ends_at");
+            $table->timestamp("starts_at");
+            $table->timestamp("ends_at");
             $table->string("cover_key")->nullable(true);
             $table->foreign("code_id")->references("id")->on("codes");
         });

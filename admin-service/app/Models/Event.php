@@ -24,7 +24,8 @@ class Event extends Model
     'contact',
     'starts_at',
     'ends_at',
-    'cover_url',
+    'cover_key',
+    'clue',
     ];
 
     public function code(): BelongsTo

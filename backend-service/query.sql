@@ -384,9 +384,10 @@ SELECT
   t.point_gain AS point_gain
 FROM claimed c
 JOIN treasures t ON c.treasure_id = t.id
-WHERE c.user_id = $1;
+WHERE c.user_id = $1
+ORDER BY c.created_at DESC;
 
--- name: GetQuestByCodeId :one
+-- name: GetUncompletedQuestByCodeId :one
 SELECT 
   q.id AS id,
   q.location AS location,
@@ -398,7 +399,27 @@ SELECT
   d.point_gain AS point_gain
 FROM quests q
 JOIN details d ON q.detail_id = d.id
+WHERE code_id = $1 AND finished = false;
+
+-- name: GetQuestByCodeId :one
+SELECT 
+  q.id AS id,
+  q.location AS location,
+  q.max_contributors AS max_contributors,
+  q.latitude AS latitude,
+  q.longitude AS longitude,
+  d.name AS name,
+  d.description AS description,
+  d.point_gain AS point_gain,
+  q.finished
+FROM quests q
+JOIN details d ON q.detail_id = d.id
 WHERE q.code_id = $1;
+
+-- name: FinsihQuest :exec
+UPDATE quests
+SET finished = true
+WHERE id = $1;
 
 -- name: CountQuestContributors :many 
 SELECT
@@ -446,19 +467,53 @@ WHERE c.id = $1;
 -- name: GetUserAttendances :many
 SELECT 
     a.id AS attendance_id,
-    a.attended,
+    a.created_at AS attended_at,
+    a.contact_number,
+    e.id AS event_id,
+    e.location,
     e.latitude,
-    e.longitude
+    e.longitude,
+    e.contact,
+    e.starts_at,
+    e.ends_at,
+    a.attended,
+    e.cover_key,
+    d.id AS detail_id,
+    d.name AS detail_name,
+    d.description AS detail_description,
+    d.point_gain
 FROM attendances a
 JOIN events e ON a.event_id = e.id
 JOIN details d ON e.detail_id = d.id
 WHERE a.user_id = $1;
+
+-- name: GetUserPendingAttendances :many
+SELECT 
+    a.id AS attendance_id,
+    e.id AS event_id,
+    a.created_at AS registered_at,
+    a.contact_number,
+    e.location,
+    e.latitude,
+    e.longitude,
+    e.contact,
+    e.starts_at,
+    e.ends_at,
+    e.cover_key,
+    d.name AS detail_name,
+    d.description AS detail_description,
+    d.point_gain
+FROM attendances a
+JOIN events e ON a.event_id = e.id
+JOIN details d ON e.detail_id = d.id
+WHERE a.user_id = $1 AND a.attended = false;
 
 -- name: GetAttendanceDetails :one
 SELECT 
     a.id AS attendance_id,
     a.attended,
     a.created_at AS attended_at,
+    a.contact_number,
     e.id AS event_id,
     e.location,
     e.latitude,
@@ -475,3 +530,48 @@ FROM attendances a
 JOIN events e ON a.event_id = e.id
 JOIN details d ON e.detail_id = d.id
 WHERE a.id = $1;
+
+-- name: CreateAttendance :one
+INSERT INTO attendances(user_id, event_id, contact_number)
+VALUES ($1, $2, $3)
+RETURNING *;
+
+-- name: GetEventByCodeId :one
+SELECT
+  e.id,
+  d.name AS name,
+  d.description AS description
+FROM events e
+JOIN details d ON e.detail_id = d.id
+WHERE e.code_id = $1;
+
+-- name: GetEventById :one
+SELECT 
+  e.id,
+  d.name AS name,
+  d.description AS description
+FROM events e
+JOIN details d ON e.detail_id = d.id
+WHERE e.id = $1;
+
+-- name: GetAllEvents :many
+SELECT 
+    e.id,
+    e.detail_id,
+    e.code_id,
+    e.location,
+    e.latitude,
+    e.longitude,
+    e.contact,
+    e.starts_at,
+    e.ends_at,
+    e.cover_key,
+    d.name AS detail_name,
+    d.description AS detail_description,
+    d.point_gain,
+    d.created_at AS detail_created_at,
+    d.updated_at AS detail_updated_at,
+    (e.ends_at < NOW()) AS ended
+FROM events e
+JOIN details d ON e.detail_id = d.id
+ORDER BY e.starts_at ASC;

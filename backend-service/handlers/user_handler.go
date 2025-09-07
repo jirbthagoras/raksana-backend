@@ -77,6 +77,7 @@ func (h *UserHandler) handleGetProfileById(c *fiber.Ctx) error {
 	if err != nil {
 		slog.Error("Failed to get packet id", "err", err)
 	}
+
 	profile, err := h.UserService.GetUserDetail(userId)
 	if err != nil {
 		return err

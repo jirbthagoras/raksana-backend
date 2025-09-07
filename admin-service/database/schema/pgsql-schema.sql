@@ -1,4 +1,3 @@
-
 --
 -- PostgreSQL database dump
 --
@@ -1515,4 +1514,3 @@ SELECT pg_catalog.setval('public.migrations_id_seq', 22, true);
 --
 -- PostgreSQL database dump complete
 --
-

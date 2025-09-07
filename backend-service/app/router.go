@@ -25,6 +25,7 @@ type AppRouter struct {
 	*handlers.ChallengeHandler
 	*handlers.TreasureHandler
 	*handlers.QuestHandler
+	*handlers.EventHandler
 	*handlers.ScanHandler
 }
 
@@ -50,6 +51,7 @@ func NewAppRouter(
 
 	treasureHandler := handlers.NewTreasureHandler(v, r, pointService, journalService, streakService)
 	questHandler := handlers.NewQuestHandler(v, r, pointService, journalService, streakService)
+	eventHandler := handlers.NewEventHandler(v, r, pointService, journalService, streakService)
 
 	return &AppRouter{
 		AuthHandler:        handlers.NewAuthHandler(v, r, leaderboardService),
@@ -64,6 +66,7 @@ func NewAppRouter(
 		ChallengeHandler:   handlers.NewChallengeHandler(v, r, memoryService, pointService, journalService, fileService, streakService),
 		TreasureHandler:    treasureHandler,
 		QuestHandler:       questHandler,
+		EventHandler:       eventHandler,
 		ScanHandler:        handlers.NewScanHandler(v, treasureHandler, questHandler),
 	}
 }
@@ -81,5 +84,6 @@ func (r *AppRouter) RegisterRoute(router fiber.Router) {
 	r.ChallengeHandler.RegisterRoutes(router)
 	r.TreasureHandler.RegisterRoutes(router)
 	r.QuestHandler.RegisterRoutes(router)
+	r.EventHandler.RegisterRoutes(router)
 	r.ScanHandler.RegisterRoutes(router)
 }

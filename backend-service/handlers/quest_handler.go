@@ -78,10 +78,10 @@ func (h *QuestHandler) handleContribute(c *fiber.Ctx) error {
 
 	ctx := context.Background()
 
-	quest, err := h.Repository.GetQuestByCodeId(ctx, payload.Subject)
+	quest, err := h.Repository.GetUncompletedQuestByCodeId(ctx, payload.Subject)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return fiber.NewError(fiber.StatusBadRequest, "Quest tidak ditemukan")
+			return fiber.NewError(fiber.StatusBadRequest, "Quest tidak ditemukan atau mungkin sudah diselesaikan")
 		}
 		slog.Error("Failed to get quest", "err", err)
 		return err
@@ -93,7 +93,8 @@ func (h *QuestHandler) handleContribute(c *fiber.Ctx) error {
 		return err
 	}
 
-	if len(contributors) >= int(quest.MaxContributors) {
+	var contributorAmount int = len(contributors)
+	if contributorAmount >= int(quest.MaxContributors) {
 		return fiber.NewError(fiber.StatusBadRequest, fmt.Sprintf("Maksimal kontributor dari quest ini adalah %v orang", quest.MaxContributors))
 	}
 
@@ -104,6 +105,10 @@ func (h *QuestHandler) handleContribute(c *fiber.Ctx) error {
 	if err != nil {
 		slog.Error("Failed to count", "err", err)
 		return err
+	}
+
+	if contributorAmount+1 == int(quest.MaxContributors) {
+		h.Repository.FinsihQuest(ctx, quest.ID)
 	}
 
 	_, err = h.PointService.UpdateUserPoint(int64(userId), quest.PointGain)

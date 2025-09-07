@@ -19,6 +19,8 @@ return new class extends Migration
             $table->decimal('latitude', 10, 7)->nullable();
             $table->decimal('longitude', 10, 7)->nullable();
             $table->integer("max_contributors");
+            $table->boolean("finished")->default(false);
+            $table->text("clue")->nullable(true); 
             $table->foreign("code_id")->references("id")->on("codes");
         });
     }
