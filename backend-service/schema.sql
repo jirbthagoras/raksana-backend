@@ -322,6 +322,41 @@ ALTER SEQUENCE public.habits_id_seq OWNED BY public.habits.id;
 
 
 --
+-- Name: histories; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.histories (
+    id bigint NOT NULL,
+    user_id bigint NOT NULL,
+    name character varying(255) NOT NULL,
+    type character varying(255) NOT NULL,
+    category character varying(255) NOT NULL,
+    amount integer NOT NULL,
+    created_at timestamp(0) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    CONSTRAINT histories_type_check CHECK (((type)::text = ANY ((ARRAY['input'::character varying, 'output'::character varying])::text[])))
+);
+
+
+--
+-- Name: histories_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.histories_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: histories_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.histories_id_seq OWNED BY public.histories.id;
+
+
+--
 -- Name: job_batches; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -907,6 +942,13 @@ ALTER TABLE ONLY public.habits ALTER COLUMN id SET DEFAULT nextval('public.habit
 
 
 --
+-- Name: histories id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.histories ALTER COLUMN id SET DEFAULT nextval('public.histories_id_seq'::regclass);
+
+
+--
 -- Name: jobs id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -1098,6 +1140,14 @@ ALTER TABLE ONLY public.failed_jobs
 
 ALTER TABLE ONLY public.habits
     ADD CONSTRAINT habits_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: histories histories_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.histories
+    ADD CONSTRAINT histories_pkey PRIMARY KEY (id);
 
 
 --
@@ -1354,6 +1404,14 @@ ALTER TABLE ONLY public.habits
 
 
 --
+-- Name: histories histories_user_id_foreign; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.histories
+    ADD CONSTRAINT histories_user_id_foreign FOREIGN KEY (user_id) REFERENCES public.users(id);
+
+
+--
 -- Name: logs logs_user_id_foreign; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -1485,34 +1543,4 @@ ALTER TABLE ONLY public.treasures
 -- PostgreSQL database dump complete
 --
 
--- Dumped from database version 17.6 (Debian 17.6-1.pgdg13+1)
--- Dumped by pg_dump version 17.6 (Ubuntu 17.6-1.pgdg24.04+1)
-
-SET statement_timeout = 0;
-SET lock_timeout = 0;
-SET idle_in_transaction_session_timeout = 0;
-SET transaction_timeout = 0;
-SET client_encoding = 'UTF8';
-SET standard_conforming_strings = on;
-SELECT pg_catalog.set_config('search_path', '', false);
-SET check_function_bodies = false;
-SET xmloption = content;
-SET client_min_messages = warning;
-SET row_security = off;
-
---
--- Data for Name: migrations; Type: TABLE DATA; Schema: public; Owner: -
---
-
-
---
--- Name: migrations_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
---
-
-SELECT pg_catalog.setval('public.migrations_id_seq', 22, true);
-
-
---
--- PostgreSQL database dump complete
---
 

@@ -15,17 +15,20 @@ type ScanHandler struct {
 	Validator *validator.Validate
 	*TreasureHandler
 	*QuestHandler
+	*EventHandler
 }
 
 func NewScanHandler(
 	v *validator.Validate,
 	th *TreasureHandler,
 	qh *QuestHandler,
+	eh *EventHandler,
 ) *ScanHandler {
 	return &ScanHandler{
 		Validator:       v,
 		TreasureHandler: th,
 		QuestHandler:    qh,
+		EventHandler:    eh,
 	}
 }
 
@@ -60,6 +63,8 @@ func (h *ScanHandler) handleScan(c *fiber.Ctx) error {
 		return h.TreasureHandler.handleClaimTreasure(c)
 	case "quest":
 		return h.QuestHandler.handleContribute(c)
+	case "event":
+		return h.EventHandler.handleAttend(c)
 	default:
 		return fiber.ErrBadRequest
 	}

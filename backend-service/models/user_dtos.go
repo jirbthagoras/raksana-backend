@@ -47,3 +47,12 @@ type PutUserEditProfile struct {
 	Filename    string `json:"filename" validate:"required"`
 	ContentType string `json:"content_type"`
 }
+
+type ResponseUser struct {
+	ID         int    `json:"id"`
+	Level      int    `json:"id"`
+	ProfileUrl string `json:"id"`
+	Username   string `json:"username"`
+	Email      string `json:"email"`
+	Streak     int    `json:"streak"`
+}

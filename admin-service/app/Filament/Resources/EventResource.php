@@ -44,7 +44,6 @@ class EventResource extends Resource
                     ->schema([
                         Forms\Components\TextInput::make('location')->required(),
                         Forms\Components\TextInput::make('contact')->required(),
-                        Forms\Components\Textarea::make('clue')->required(),
                         Forms\Components\DateTimePicker::make('starts_at')->required(),
                         Forms\Components\DateTimePicker::make('ends_at')->required(),
 

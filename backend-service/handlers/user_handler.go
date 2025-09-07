@@ -48,6 +48,7 @@ func NewUserHandler(
 func (h *UserHandler) RegisterRoutes(router fiber.Router) {
 	g1 := router.Group("/user")
 	g1.Use(helpers.TokenMiddleware)
+	g1.Get("/", h.handleGetAllUsers)
 
 	g2 := router.Group("/profile")
 	g2.Use(helpers.TokenMiddleware)
@@ -140,6 +141,40 @@ func (h *UserHandler) handleUpdateProfilePicture(c *fiber.Ctx) error {
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"data": fiber.Map{
 			"presigned_url": presignedUrl,
+		},
+	})
+}
+
+func (h *UserHandler) handleGetAllUsers(c *fiber.Ctx) error {
+	ctx := context.Background()
+	res, err := h.Repository.GetAllUser(ctx)
+	if err != nil {
+		slog.Error("Failed to get all users", "err", err)
+		return err
+	}
+
+	cnf := helpers.NewConfig()
+	bucketUrl := cnf.GetString("AWS_URL")
+
+	var users []models.ResponseUser
+	for _, user := range res {
+		streak, err := h.StreakService.GetCurrentStreak(int(user.UserID))
+		if err != nil {
+			return err
+		}
+		users = append(users, models.ResponseUser{
+			ID:         int(user.UserID),
+			Level:      int(user.Level),
+			Username:   user.Username,
+			Email:      user.Email,
+			ProfileUrl: bucketUrl + user.ProfileKey,
+			Streak:     streak,
+		})
+	}
+
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"data": fiber.Map{
+			"users": users,
 		},
 	})
 }

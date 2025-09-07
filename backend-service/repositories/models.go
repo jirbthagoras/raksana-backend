@@ -98,6 +98,16 @@ type Habit struct {
 	Weight      int32
 }
 
+type History struct {
+	ID        int64
+	UserID    int64
+	Name      string
+	Type      string
+	Category  string
+	Amount    int32
+	CreatedAt pgtype.Timestamp
+}
+
 type Job struct {
 	ID          int64
 	Queue       string

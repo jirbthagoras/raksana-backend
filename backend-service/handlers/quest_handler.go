@@ -111,7 +111,8 @@ func (h *QuestHandler) handleContribute(c *fiber.Ctx) error {
 		h.Repository.FinsihQuest(ctx, quest.ID)
 	}
 
-	_, err = h.PointService.UpdateUserPoint(int64(userId), quest.PointGain)
+	historyMsg := fmt.Sprintf("Mendapatkan poin quest: %s", quest.Name)
+	_, err = h.PointService.UpdateUserPoint(int64(userId), quest.PointGain, historyMsg, "quest")
 	if err != nil {
 		slog.Error("Failed to count", "err", err)
 		return err
@@ -129,6 +130,12 @@ func (h *QuestHandler) handleContribute(c *fiber.Ctx) error {
 
 	err = h.StreakService.UpdateStreak(ctx, int64(userId))
 	if err != nil {
+		return err
+	}
+
+	_, err = h.Repository.IncreaseQuestsFieldByOne(ctx, int64(userId))
+	if err != nil {
+		slog.Error("Failed to update quest row", "err", err)
 		return err
 	}
 

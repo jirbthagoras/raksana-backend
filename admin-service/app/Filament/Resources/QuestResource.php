@@ -8,6 +8,8 @@ use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
 use Cheesegrits\FilamentGoogleMaps\Fields\Map;
 use Filament\Forms;
+use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\TextInput;
 use Filament\Tables;
 use Filament\Forms\Form;
 use Filament\Tables\Table;
@@ -53,6 +55,8 @@ class QuestResource extends Resource
                         Forms\Components\TextInput::make('max_contributors')
                             ->numeric()
                             ->required(),
+                        Textarea::make("clue")
+                            ->required()
                     ]),
 
                     Map::make('map_picker')

@@ -134,7 +134,8 @@ func (h *ChallengeHandler) handleParticipate(c *fiber.Ctx) error {
 		return err
 	}
 
-	_, err = h.PointService.UpdateUserPoint(int64(userId), challenge.PointGain)
+	historyMsg := fmt.Sprintf("Mendapat poin challenge %s", challenge.Name)
+	_, err = h.PointService.UpdateUserPoint(int64(userId), challenge.PointGain, historyMsg, "challenge")
 	if err != nil {
 		return err
 	}

@@ -23,7 +23,7 @@ type RequestRegisterAttendance struct {
 
 type ResponseAttendance struct {
 	ID                int64   `json:"id"`
-	RegisteredAt      string  `json:"regustered_at"`
+	RegisteredAt      string  `json:"registered_at"`
 	ContactNumber     string  `json:"contact_number"`
 	Location          string  `json:"location"`
 	Latitude          float64 `json:"latitude"`
@@ -35,4 +35,5 @@ type ResponseAttendance struct {
 	DetailName        string  `json:"name"`
 	DetailDescription string  `json:"description"`
 	PointGain         int64   `json:"point_gain"`
+	AttendedAt        string  `json:"attended_at,omitempty"`
 }

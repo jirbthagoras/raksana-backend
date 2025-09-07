@@ -22,7 +22,7 @@ func NewPointService(
 	}
 }
 
-func (s *PointService) UpdateUserPoint(userId int64, pointGain int64) (repositories.Profile, error) {
+func (s *PointService) UpdateUserPoint(userId int64, pointGain int64, name string, category string) (repositories.Profile, error) {
 	ctx := context.Background()
 	profile, err := s.Repository.IncreaseUserPoints(ctx, repositories.IncreaseUserPointsParams{
 		UserID: userId,
@@ -37,6 +37,14 @@ func (s *PointService) UpdateUserPoint(userId int64, pointGain int64) (repositor
 	if err != nil {
 		return profile, err
 	}
+
+	err = s.Repository.AppendHistory(ctx, repositories.AppendHistoryParams{
+		UserID:   userId,
+		Amount:   int32(pointGain),
+		Type:     "input",
+		Category: category,
+		Name:     name,
+	})
 
 	return profile, nil
 }

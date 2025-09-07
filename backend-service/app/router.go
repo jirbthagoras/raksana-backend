@@ -27,6 +27,8 @@ type AppRouter struct {
 	*handlers.QuestHandler
 	*handlers.EventHandler
 	*handlers.ScanHandler
+	*handlers.ActivityHandler
+	*handlers.HistoryHandler
 }
 
 func NewAppRouter(
@@ -67,7 +69,9 @@ func NewAppRouter(
 		TreasureHandler:    treasureHandler,
 		QuestHandler:       questHandler,
 		EventHandler:       eventHandler,
-		ScanHandler:        handlers.NewScanHandler(v, treasureHandler, questHandler),
+		ScanHandler:        handlers.NewScanHandler(v, treasureHandler, questHandler, eventHandler),
+		ActivityHandler:    handlers.NewActivityHandler(v, r),
+		HistoryHandler:     handlers.NewHistoryHandler(r),
 	}
 }
 
@@ -86,4 +90,6 @@ func (r *AppRouter) RegisterRoute(router fiber.Router) {
 	r.QuestHandler.RegisterRoutes(router)
 	r.EventHandler.RegisterRoutes(router)
 	r.ScanHandler.RegisterRoutes(router)
+	r.ActivityHandler.RegisterRoutes(router)
+	r.HistoryHandler.RegisterRoutes(router)
 }

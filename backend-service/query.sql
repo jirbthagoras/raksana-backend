@@ -437,8 +437,11 @@ RETURNING *;
 -- name: GetUserContributions :many
 SELECT 
     c.id               AS contribution_id,
+    d.name As name,
+    d.description AS description,
     q.latitude,
-    q.longitude
+    q.longitude,
+    d.point_gain AS point_gain
 FROM contributions c
 JOIN quests q ON c.quest_id = q.id
 JOIN details d ON q.detail_id = d.id
@@ -485,7 +488,8 @@ SELECT
 FROM attendances a
 JOIN events e ON a.event_id = e.id
 JOIN details d ON e.detail_id = d.id
-WHERE a.user_id = $1;
+WHERE a.user_id = $1
+ORDER BY a.created_at DESC;
 
 -- name: GetUserPendingAttendances :many
 SELECT 
@@ -508,8 +512,88 @@ JOIN events e ON a.event_id = e.id
 JOIN details d ON e.detail_id = d.id
 WHERE a.user_id = $1 AND a.attended = false;
 
--- name: GetAttendanceDetails :one
+-- name: Attend :exec
+UPDATE attendances
+SET attended = true
+WHERE id = $1;
+
+-- name: GetUserAttendanceByUserId :one
 SELECT 
+    a.id AS attendance_id,
+    a.created_at AS attended_at,
+    a.contact_number,
+    e.id AS event_id,
+    e.location,
+    e.latitude,
+    e.longitude,
+    e.contact,
+    e.starts_at,
+    e.ends_at,
+    a.attended,
+    e.cover_key,
+    d.id AS detail_id,
+    d.name AS detail_name,
+    d.description AS detail_description,
+    d.point_gain,
+    a.created_at
+FROM attendances a
+JOIN events e ON a.event_id = e.id
+JOIN details d ON e.detail_id = d.id
+WHERE a.user_id = $1 AND e.id = $2;
+
+-- name: GetUserAttendance :one
+SELECT 
+    a.id AS attendance_id,
+    a.created_at AS attended_at,
+    a.contact_number,
+    e.id AS event_id,
+    e.location,
+    e.latitude,
+    e.longitude,
+    e.contact,
+    e.starts_at,
+    e.ends_at,
+    a.attended,
+    e.cover_key,
+    d.id AS detail_id,
+    d.name AS detail_name,
+    d.description AS detail_description,
+    d.point_gain,
+    a.created_at
+FROM attendances a
+JOIN events e ON a.event_id = e.id
+JOIN details d ON e.detail_id = d.id
+WHERE a.id = $1;
+
+-- name: UpdaAttendedAt :exec
+UPDATE attendances
+SET attended_at = CURRENT_TIMESTAMP
+WHERE id = $1;
+
+-- name: GetUserAttendanceById :one
+SELECT 
+    a.id AS attendance_id,
+    a.created_at AS attended_at,
+    a.contact_number,
+    e.id AS event_id,
+    e.location,
+    e.latitude,
+    e.longitude,
+    e.contact,
+    e.starts_at,
+    e.ends_at,
+    a.attended,
+    e.cover_key,
+    d.name AS name,
+    d.description AS description,
+    d.point_gain
+FROM attendances a
+JOIN events e ON a.event_id = e.id
+JOIN details d ON e.detail_id = d.id
+WHERE a.id = $1;
+
+-- name: GetAttendanceDetails :one
+SELECT
     a.id AS attendance_id,
     a.attended,
     a.created_at AS attended_at,
@@ -540,7 +624,8 @@ RETURNING *;
 SELECT
   e.id,
   d.name AS name,
-  d.description AS description
+  d.description AS description,
+  d.point_gain AS point_gain
 FROM events e
 JOIN details d ON e.detail_id = d.id
 WHERE e.code_id = $1;
@@ -575,3 +660,23 @@ SELECT
 FROM events e
 JOIN details d ON e.detail_id = d.id
 ORDER BY e.starts_at ASC;
+
+-- name: GetAllUser :many
+SELECT
+  u.id AS user_id,
+  p.level AS level,
+  p.profile_key AS profile_key,
+  u.username AS username,
+  u.email AS email
+FROM profiles p
+JOIN users u ON p.user_id = u.id
+WHERE u.is_admin = false;
+
+-- name: AppendHistory :exec
+INSERT INTO histories(user_id, name, category, type, amount)
+VALUES($1, $2, $3, $4, $5);
+
+-- name: GetUserHistories :many
+SELECT * FROM histories
+WHERE user_id = $1
+ORDER BY created_at DESC;

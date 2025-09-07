@@ -2,6 +2,8 @@
 -- PostgreSQL database dump
 --
 
+\restrict eLtFYjTYiBar69Xli8hsaNLf9Iwpe0RAU8MbFgLRv3uo74LeREBldIoegftAHhU
+
 -- Dumped from database version 17.6 (Debian 17.6-1.pgdg13+1)
 -- Dumped by pg_dump version 17.6 (Ubuntu 17.6-1.pgdg24.04+1)
 
@@ -318,6 +320,41 @@ CREATE SEQUENCE public.habits_id_seq
 --
 
 ALTER SEQUENCE public.habits_id_seq OWNED BY public.habits.id;
+
+
+--
+-- Name: histories; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.histories (
+    id bigint NOT NULL,
+    user_id bigint NOT NULL,
+    name character varying(255) NOT NULL,
+    type character varying(255) NOT NULL,
+    category character varying(255) NOT NULL,
+    amount integer NOT NULL,
+    created_at timestamp(0) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    CONSTRAINT histories_type_check CHECK (((type)::text = ANY ((ARRAY['input'::character varying, 'output'::character varying])::text[])))
+);
+
+
+--
+-- Name: histories_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.histories_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: histories_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.histories_id_seq OWNED BY public.histories.id;
 
 
 --
@@ -906,6 +943,13 @@ ALTER TABLE ONLY public.habits ALTER COLUMN id SET DEFAULT nextval('public.habit
 
 
 --
+-- Name: histories id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.histories ALTER COLUMN id SET DEFAULT nextval('public.histories_id_seq'::regclass);
+
+
+--
 -- Name: jobs id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -1097,6 +1141,14 @@ ALTER TABLE ONLY public.failed_jobs
 
 ALTER TABLE ONLY public.habits
     ADD CONSTRAINT habits_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: histories histories_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.histories
+    ADD CONSTRAINT histories_pkey PRIMARY KEY (id);
 
 
 --
@@ -1353,6 +1405,14 @@ ALTER TABLE ONLY public.habits
 
 
 --
+-- Name: histories histories_user_id_foreign; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.histories
+    ADD CONSTRAINT histories_user_id_foreign FOREIGN KEY (user_id) REFERENCES public.users(id);
+
+
+--
 -- Name: logs logs_user_id_foreign; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -1484,6 +1544,14 @@ ALTER TABLE ONLY public.treasures
 -- PostgreSQL database dump complete
 --
 
+\unrestrict eLtFYjTYiBar69Xli8hsaNLf9Iwpe0RAU8MbFgLRv3uo74LeREBldIoegftAHhU
+
+--
+-- PostgreSQL database dump
+--
+
+\restrict X20olBXQpLlE4LQu2tz5qt7M2ylWTtjHV0Lu0hbZa2cMyejEcEjPDAhlCj2l15N
+
 -- Dumped from database version 17.6 (Debian 17.6-1.pgdg13+1)
 -- Dumped by pg_dump version 17.6 (Ubuntu 17.6-1.pgdg24.04+1)
 
@@ -1503,14 +1571,44 @@ SET row_security = off;
 -- Data for Name: migrations; Type: TABLE DATA; Schema: public; Owner: -
 --
 
+COPY public.migrations (id, migration, batch) FROM stdin;
+1	0001_01_01_000000_create_users_table	1
+2	0001_01_01_000001_create_cache_table	1
+3	0001_01_01_000002_create_jobs_table	1
+4	2025_08_11_142816_create_profiles	1
+5	2025_08_11_143332_create_statistics	1
+6	2025_08_11_143910_create_details_table	1
+7	2025_08_11_145842_create_challenges_table	1
+8	2025_08_11_150400_create_codes_table	1
+9	2025_08_11_150805_create_quests	1
+10	2025_08_11_150953_create_events	1
+11	2025_08_11_151106_create_contributions	1
+12	2025_08_11_151352_create_memories	1
+13	2025_08_11_151540_create_participations	1
+14	2025_08_11_151644_create_attendances	1
+15	2025_08_11_151803_create_treasures_table	1
+16	2025_08_11_152019_create_claimed	1
+17	2025_08_11_152127_create_logs	1
+18	2025_08_20_124603_create_recaps	1
+19	2025_08_26_141537_create_packets	1
+20	2025_08_26_141543_create_habits	1
+21	2025_08_26_141550_create_routines	1
+22	2025_09_03_162511_create_recap_details	1
+23	2025_09_07_210635_create_history	1
+24	2025_09_07_211214_add_timestamp_to_histories	1
+\.
+
 
 --
 -- Name: migrations_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
 --
 
-SELECT pg_catalog.setval('public.migrations_id_seq', 22, true);
+SELECT pg_catalog.setval('public.migrations_id_seq', 24, true);
 
 
 --
 -- PostgreSQL database dump complete
 --
+
+\unrestrict X20olBXQpLlE4LQu2tz5qt7M2ylWTtjHV0Lu0hbZa2cMyejEcEjPDAhlCj2l15N
+

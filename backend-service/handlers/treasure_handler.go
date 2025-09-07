@@ -98,7 +98,8 @@ func (h *TreasureHandler) handleClaimTreasure(c *fiber.Ctx) error {
 		return err
 	}
 
-	_, err = h.PointService.UpdateUserPoint(int64(userId), treasure.PointGain)
+	historyMsg := fmt.Sprintf("Mendapatkan poin treasure: %s", treasure.Name)
+	_, err = h.PointService.UpdateUserPoint(int64(userId), treasure.PointGain, historyMsg, "treasure")
 	if err != nil {
 		return err
 	}
