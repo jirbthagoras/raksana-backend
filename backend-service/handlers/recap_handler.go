@@ -44,9 +44,9 @@ func (h *RecapHandler) RegisterRoutes(router fiber.Router) {
 	g.Use(helpers.TokenMiddleware)
 	g.Post("/weekly", h.handleCreateWeeklyRecap)
 	g.Get("/weekly/me", h.handleGetWeeklyRecap)
-	g.Get("/weekly/:id", h.handleCreateWeeklyRecap)
 
 	g.Post("/monthly", h.handleCreateMonthlyRecap)
+	g.Get("/monthly/me", h.handleGetMonthlyRecap)
 }
 
 func (h *RecapHandler) handleCreateWeeklyRecap(c *fiber.Ctx) error {
@@ -120,6 +120,9 @@ func (h *RecapHandler) handleCreateWeeklyRecap(c *fiber.Ctx) error {
 	completionRate = float64(userTasks.CompletedTask) * 100.0 / float64(userTasks.AssignedTask)
 	stringCompletionRate := fmt.Sprintf("%v", completionRate) + "%"
 
+	if userTasks.AssignedTask == 0 {
+		stringCompletionRate = "0%"
+	}
 	var inputRecap = models.InputRecap{
 		Date:               todayDate,
 		AssignedTask:       int(userTasks.AssignedTask),
@@ -352,6 +355,10 @@ func (h *RecapHandler) handleCreateMonthlyRecap(c *fiber.Ctx) error {
 	completionRate = float64(userTasks.CompletedTask) * 100.0 / float64(userTasks.AssignedTask)
 	stringCompletionRate := fmt.Sprintf("%v", completionRate) + "%"
 
+	if userTasks.AssignedTask == 0 {
+		stringCompletionRate = "0%"
+	}
+
 	recapId, err := h.Repository.CreateMonthlyRecap(ctx, repositories.CreateMonthlyRecapParams{
 		UserID:         int64(userId),
 		Summary:        modelResponse.Summary,
@@ -402,8 +409,62 @@ func (h *RecapHandler) handleCreateMonthlyRecap(c *fiber.Ctx) error {
 		return err
 	}
 
-	return c.Status(fiber.StatusCreated).JSON(fiber.Map{
-		"data": modelResponse,
-	})
+	var response = models.ResponseMonthlyRecap{
+		Summary:        modelResponse.Summary,
+		Tips:           modelResponse.Tips,
+		AssignedTask:   int32(userTasks.AssignedTask),
+		CompletedTask:  int32(userTasks.CompletedTask),
+		CompletionRate: stringCompletionRate,
+		GrowthRating:   modelResponse.GrowthRating,
+		Type:           "monthly",
+		CreatedAt:      todayDate,
+		Challenges:     int(statistics.Challenges),
+		Quests:         int(statistics.Quests),
+		Events:         int(statistics.Events),
+		Treasures:      int(statistics.Treasures),
+		LongestStreak:  int(statistics.LongestStreak),
+	}
 
+	return c.Status(fiber.StatusCreated).JSON(fiber.Map{
+		"data": response,
+	})
+}
+
+func (h *RecapHandler) handleGetMonthlyRecap(c *fiber.Ctx) error {
+	userId, err := helpers.GetSubjectFromToken(c)
+	if err != nil {
+		return err
+	}
+
+	ctx := context.Background()
+
+	res, err := h.Repository.GetAllMonthlyRecapsWithDetails(ctx, int64(userId))
+	if err != nil {
+		slog.Error("Failed to get recaps", "err", err)
+		return err
+	}
+
+	var monthlyRecaps []models.ResponseMonthlyRecap
+	for _, r := range res {
+		monthlyRecaps = append(monthlyRecaps, models.ResponseMonthlyRecap{
+			Summary:        r.Summary,
+			Tips:           r.Tips,
+			CreatedAt:      r.RecapCreatedAt.Time.Format("2006-01-02 15:04"),
+			AssignedTask:   r.AssignedTask,
+			CompletedTask:  r.CompletedTask,
+			CompletionRate: r.CompletionRate,
+			GrowthRating:   r.GrowthRating,
+			Challenges:     int(r.Challenges.Int32),
+			Events:         int(r.Events.Int32),
+			Treasures:      int(r.Treasures.Int32),
+			Quests:         int(r.Quests.Int32),
+			LongestStreak:  int(r.LongestStreak.Int32),
+		})
+	}
+
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"data": fiber.Map{
+			"monthly_recaps": monthlyRecaps,
+		},
+	})
 }

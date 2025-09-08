@@ -814,6 +814,90 @@ func (q *Queries) GetAllEvents(ctx context.Context) ([]GetAllEventsRow, error) {
 	return items, nil
 }
 
+const getAllMonthlyRecapsWithDetails = `-- name: GetAllMonthlyRecapsWithDetails :many
+SELECT r.id            AS recap_id,
+       r.user_id,
+       r.summary,
+       r.tips,
+       r.assigned_task,
+       r.completed_task,
+       r.completion_rate,
+       r.growth_rating,
+       r.type,
+       r.created_at    AS recap_created_at,
+       d.id            AS detail_id,
+       d.challenges,
+       d.events,
+       d.quests,
+       d.treasures,
+       d.longest_streak,
+       d.created_at    AS detail_created_at
+FROM recaps r
+LEFT JOIN recap_details d 
+       ON d.monthly_recap_id = r.id
+WHERE r.user_id = $1
+  AND r.type = 'monthly'
+ORDER BY r.created_at DESC
+`
+
+type GetAllMonthlyRecapsWithDetailsRow struct {
+	RecapID         int64
+	UserID          int64
+	Summary         string
+	Tips            string
+	AssignedTask    int32
+	CompletedTask   int32
+	CompletionRate  string
+	GrowthRating    string
+	Type            string
+	RecapCreatedAt  pgtype.Timestamp
+	DetailID        pgtype.Int8
+	Challenges      pgtype.Int4
+	Events          pgtype.Int4
+	Quests          pgtype.Int4
+	Treasures       pgtype.Int4
+	LongestStreak   pgtype.Int4
+	DetailCreatedAt pgtype.Timestamp
+}
+
+func (q *Queries) GetAllMonthlyRecapsWithDetails(ctx context.Context, userID int64) ([]GetAllMonthlyRecapsWithDetailsRow, error) {
+	rows, err := q.db.Query(ctx, getAllMonthlyRecapsWithDetails, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GetAllMonthlyRecapsWithDetailsRow
+	for rows.Next() {
+		var i GetAllMonthlyRecapsWithDetailsRow
+		if err := rows.Scan(
+			&i.RecapID,
+			&i.UserID,
+			&i.Summary,
+			&i.Tips,
+			&i.AssignedTask,
+			&i.CompletedTask,
+			&i.CompletionRate,
+			&i.GrowthRating,
+			&i.Type,
+			&i.RecapCreatedAt,
+			&i.DetailID,
+			&i.Challenges,
+			&i.Events,
+			&i.Quests,
+			&i.Treasures,
+			&i.LongestStreak,
+			&i.DetailCreatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const getAllPackets = `-- name: GetAllPackets :many
 SELECT id, user_id, name, target, description, completed_task, expected_task, task_per_day, completed, created_at FROM packets
 WHERE user_id = $1
@@ -1513,6 +1597,53 @@ func (q *Queries) GetMemoryWithParticipation(ctx context.Context, userID int64) 
 		return nil, err
 	}
 	return items, nil
+}
+
+const getNearestQuest = `-- name: GetNearestQuest :one
+SELECT 
+    id,
+    clue,
+    location,
+    latitude,
+    longitude,
+    (
+        6371 * acos(
+            cos(radians($1)) * cos(radians(latitude)) * cos(radians(longitude) - radians($2))
+            + sin(radians($1)) * sin(radians(latitude))
+        )
+    ) AS distance_km
+FROM quests
+WHERE finished = false
+ORDER BY distance_km
+LIMIT 1
+`
+
+type GetNearestQuestParams struct {
+	Radians   float64
+	Radians_2 float64
+}
+
+type GetNearestQuestRow struct {
+	ID         int64
+	Clue       pgtype.Text
+	Location   string
+	Latitude   float64
+	Longitude  float64
+	DistanceKm int32
+}
+
+func (q *Queries) GetNearestQuest(ctx context.Context, arg GetNearestQuestParams) (GetNearestQuestRow, error) {
+	row := q.db.QueryRow(ctx, getNearestQuest, arg.Radians, arg.Radians_2)
+	var i GetNearestQuestRow
+	err := row.Scan(
+		&i.ID,
+		&i.Clue,
+		&i.Location,
+		&i.Latitude,
+		&i.Longitude,
+		&i.DistanceKm,
+	)
+	return i, err
 }
 
 const getPacketDetail = `-- name: GetPacketDetail :one

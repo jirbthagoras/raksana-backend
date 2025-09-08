@@ -38,3 +38,20 @@ type RequestGetMonthlyRecap struct {
 	Logs       []ResponseGetLogs
 	Histories  []ResponseHistory
 }
+
+type ResponseMonthlyRecap struct {
+	RecapID        int64  `json:"recap_id,omitempty"`
+	Summary        string `json:"summary,omitempty"`
+	Tips           string `json:"tips,omitempty"`
+	AssignedTask   int32  `json:"assigned_task,omitempty"`
+	CompletedTask  int32  `json:"completed_task,omitempty"`
+	CompletionRate string `json:"completion_rate,omitempty"`
+	GrowthRating   string `json:"growth_rating,omitempty"`
+	Type           string `json:"type,omitempty"`
+	CreatedAt      string `json:"created_at,omitempty"`
+	Challenges     int    `json:"challenges"`
+	Events         int    `json:"events"`
+	Quests         int    `json:"quests"`
+	Treasures      int    `json:"treasures"`
+	LongestStreak  int    `json:"longest_streak"`
+}

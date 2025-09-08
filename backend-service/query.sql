@@ -711,3 +711,46 @@ FROM recaps
 WHERE user_id = $1 AND type = 'monthly'
 ORDER BY created_at DESC
 LIMIT 1;
+
+-- name: GetAllMonthlyRecapsWithDetails :many
+SELECT r.id            AS recap_id,
+       r.user_id,
+       r.summary,
+       r.tips,
+       r.assigned_task,
+       r.completed_task,
+       r.completion_rate,
+       r.growth_rating,
+       r.type,
+       r.created_at    AS recap_created_at,
+       d.id            AS detail_id,
+       d.challenges,
+       d.events,
+       d.quests,
+       d.treasures,
+       d.longest_streak,
+       d.created_at    AS detail_created_at
+FROM recaps r
+LEFT JOIN recap_details d 
+       ON d.monthly_recap_id = r.id
+WHERE r.user_id = $1
+  AND r.type = 'monthly'
+ORDER BY r.created_at DESC;
+
+-- name: GetNearestQuest :one
+SELECT 
+    id,
+    clue,
+    location,
+    latitude,
+    longitude,
+    (
+        6371 * acos(
+            cos(radians($1)) * cos(radians(latitude)) * cos(radians(longitude) - radians($2))
+            + sin(radians($1)) * sin(radians(latitude))
+        )
+    ) AS distance_km
+FROM quests
+WHERE finished = false
+ORDER BY distance_km
+LIMIT 1;
