@@ -45,6 +45,8 @@ func (h *RecapHandler) RegisterRoutes(router fiber.Router) {
 	g.Post("/weekly", h.handleCreateWeeklyRecap)
 	g.Get("/weekly/me", h.handleGetWeeklyRecap)
 	g.Get("/weekly/:id", h.handleCreateWeeklyRecap)
+
+	g.Post("/monthly", h.handleCreateMonthlyRecap)
 }
 
 func (h *RecapHandler) handleCreateWeeklyRecap(c *fiber.Ctx) error {
@@ -151,7 +153,7 @@ func (h *RecapHandler) handleCreateWeeklyRecap(c *fiber.Ctx) error {
 		responseMsg += fmt.Sprintf("%v\n", part)
 	}
 
-	var recapResponse models.AIResponsWeeklyRecap
+	var recapResponse models.AIResponseRecap
 	err = json.Unmarshal([]byte(responseMsg), &recapResponse)
 	if err != nil {
 		slog.Error("Failed to parse Gemini response content", "err", err)
@@ -235,4 +237,173 @@ func (h *RecapHandler) handleGetWeeklyRecap(c *fiber.Ctx) error {
 			"recaps": recaps,
 		},
 	})
+}
+
+func (h *RecapHandler) handleCreateMonthlyRecap(c *fiber.Ctx) error {
+	userId, err := helpers.GetSubjectFromToken(c)
+	if err != nil {
+		return err
+	}
+
+	ctx := context.Background()
+
+	now := time.Now()
+	nextDay := now.AddDate(0, 0, 1)
+	if now.Month() != nextDay.Month() {
+		return fiber.NewError(fiber.StatusBadRequest, "Hari ini bukan akhir bulan")
+	}
+
+	resLogs, err := h.Repository.GetLastMonthUserLogs(ctx, int64(userId))
+	if err != nil {
+		slog.Error("Failed to get last month logs", "err", err)
+		return err
+	}
+
+	var logs []models.ResponseGetLogs
+	for _, l := range resLogs {
+		logs = append(logs, models.ResponseGetLogs{
+			Text:      l.Text,
+			IsSystem:  l.IsSystem,
+			CreatedAt: l.CreatedAt.Time.Format("2006-01-02 15:04"),
+		})
+	}
+
+	resHist, err := h.Repository.GetLastMonthUserHistories(ctx, int64(userId))
+	if err != nil {
+		slog.Error("Failed to get last month histories", "err", err)
+		return err
+	}
+
+	var hists []models.ResponseHistory
+	for _, h := range resHist {
+		hists = append(hists, models.ResponseHistory{
+			Name:      h.Name,
+			Type:      h.Type,
+			Category:  h.Category,
+			Amount:    int(h.Amount),
+			CreatedAt: h.CreatedAt.Time.Format("2006-01-02 15:04"),
+		})
+	}
+
+	statistics, err := h.Repository.GetUserStatistic(ctx, int64(userId))
+	if err != nil {
+		slog.Error("Failed to get statistics", "err", err)
+		return err
+	}
+
+	req := models.RequestGetMonthlyRecap{
+		Statistics: models.RequestStatistics{
+			Challenges:    int(statistics.Challenges),
+			Quests:        int(statistics.Quests),
+			Events:        int(statistics.Events),
+			Treasures:     int(statistics.Treasures),
+			LongestStreak: int(statistics.LongestStreak),
+		},
+		Logs:      logs,
+		Histories: hists,
+	}
+
+	reqMsg, err := json.Marshal(req)
+	if err != nil {
+		slog.Error("Something wrong while marshaling", "err", err)
+		return err
+	}
+
+	cnf := helpers.NewConfig()
+	model, err := configs.InitModel(h.AIClient.Genai, cnf, configs.RecapMonthly)
+
+	session := model.StartChat()
+	session.History = []*genai.Content{}
+
+	resp, err := session.SendMessage(ctx, genai.Text(reqMsg))
+	if err != nil {
+		slog.Error("Something error while sending message to GenAI", "err", err)
+		return err
+	}
+
+	latestRecap, err := h.Repository.GetLatestMonhtlyRecap(ctx, int64(userId))
+	if err != nil {
+		slog.Error("Failed to get latest recap", "err", err)
+	}
+
+	if latestRecap.IsThisMonth {
+		return fiber.NewError(fiber.StatusBadRequest, "Kamu sudah merekap bulan ini")
+	}
+
+	responseMsg := ""
+	for _, part := range resp.Candidates[0].Content.Parts {
+		responseMsg += fmt.Sprintf("%v\n", part)
+	}
+
+	var modelResponse models.AIResponseRecap
+	err = json.Unmarshal([]byte(responseMsg), &modelResponse)
+	if err != nil {
+		slog.Error("Failed to parse Gemini response content", "err", err)
+		return err
+	}
+
+	userTasks, err := h.Repository.CountUserTask(ctx, int64(userId))
+	if err != nil {
+		slog.Error("Failed to count user tasks", "err", err)
+		return err
+	}
+	var completionRate float64 = 0.0
+
+	completionRate = float64(userTasks.CompletedTask) * 100.0 / float64(userTasks.AssignedTask)
+	stringCompletionRate := fmt.Sprintf("%v", completionRate) + "%"
+
+	recapId, err := h.Repository.CreateMonthlyRecap(ctx, repositories.CreateMonthlyRecapParams{
+		UserID:         int64(userId),
+		Summary:        modelResponse.Summary,
+		Tips:           modelResponse.Tips,
+		GrowthRating:   modelResponse.GrowthRating,
+		AssignedTask:   int32(userTasks.AssignedTask),
+		CompletedTask:  int32(userTasks.CompletedTask),
+		CompletionRate: stringCompletionRate,
+	})
+	if err != nil {
+		slog.Error("Failed to create monthly recap", "err", err)
+		return err
+	}
+
+	err = h.Repository.CreateRecapDetails(ctx, repositories.CreateRecapDetailsParams{
+		MonthlyRecapID: recapId,
+		Challenges:     statistics.Challenges,
+		Quests:         statistics.Quests,
+		Events:         statistics.Events,
+		Treasures:      statistics.Treasures,
+		LongestStreak:  statistics.LongestStreak,
+	})
+	if err != nil {
+		slog.Error("Failed to create recap detail", "err", err)
+		return err
+	}
+
+	loc, err := time.LoadLocation("Asia/Jakarta")
+	if err != nil {
+		slog.Error("failed to load timezone")
+		return fmt.Errorf("failed to load timezone: %w", err)
+	}
+	todayDate := time.Now().In(loc).Format("2006-01")
+	if modelResponse.GrowthRating == "5" || modelResponse.GrowthRating == "4" {
+		logMsg := fmt.Sprintf("Saya baru saja mendapatkan growth rating %s di monthly recap %s milik saya!", modelResponse.GrowthRating, todayDate)
+		err := h.JournalService.AppendLog(&models.PostLogAppend{
+			Text:      logMsg,
+			IsSystem:  true,
+			IsPrivate: false,
+		}, userId)
+		if err != nil {
+			return err
+		}
+	}
+
+	err = h.StreakService.UpdateStreak(ctx, int64(userId))
+	if err != nil {
+		return err
+	}
+
+	return c.Status(fiber.StatusCreated).JSON(fiber.Map{
+		"data": modelResponse,
+	})
+
 }

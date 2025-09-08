@@ -11,12 +11,12 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
-const appendHistory = `-- name: AppendHistory :exec
+const appendHistry = `-- name: AppendHistry :exec
 INSERT INTO histories(user_id, name, category, type, amount)
 VALUES($1, $2, $3, $4, $5)
 `
 
-type AppendHistoryParams struct {
+type AppendHistryParams struct {
 	UserID   int64
 	Name     string
 	Category string
@@ -24,8 +24,8 @@ type AppendHistoryParams struct {
 	Amount   int32
 }
 
-func (q *Queries) AppendHistory(ctx context.Context, arg AppendHistoryParams) error {
-	_, err := q.db.Exec(ctx, appendHistory,
+func (q *Queries) AppendHistry(ctx context.Context, arg AppendHistryParams) error {
+	_, err := q.db.Exec(ctx, appendHistry,
 		arg.UserID,
 		arg.Name,
 		arg.Category,
@@ -347,6 +347,37 @@ func (q *Queries) CreateMemory(ctx context.Context, arg CreateMemoryParams) (int
 	return id, err
 }
 
+const createMonthlyRecap = `-- name: CreateMonthlyRecap :one
+INSERT INTO recaps(user_id, summary, tips, assigned_task, completed_task, completion_rate, growth_rating, type)
+VALUES ($1, $2, $3, $4, $5, $6, $7, 'monthly')
+RETURNING id
+`
+
+type CreateMonthlyRecapParams struct {
+	UserID         int64
+	Summary        string
+	Tips           string
+	AssignedTask   int32
+	CompletedTask  int32
+	CompletionRate string
+	GrowthRating   string
+}
+
+func (q *Queries) CreateMonthlyRecap(ctx context.Context, arg CreateMonthlyRecapParams) (int64, error) {
+	row := q.db.QueryRow(ctx, createMonthlyRecap,
+		arg.UserID,
+		arg.Summary,
+		arg.Tips,
+		arg.AssignedTask,
+		arg.CompletedTask,
+		arg.CompletionRate,
+		arg.GrowthRating,
+	)
+	var id int64
+	err := row.Scan(&id)
+	return id, err
+}
+
 const createPacket = `-- name: CreatePacket :one
 INSERT INTO packets  (user_id, name, target, description, expected_task, task_per_day)
 VALUES ($1, $2, $3, $4, $5, $6)
@@ -425,6 +456,32 @@ func (q *Queries) CreateProfile(ctx context.Context, arg CreateProfileParams) (P
 		&i.ProfileKey,
 	)
 	return i, err
+}
+
+const createRecapDetails = `-- name: CreateRecapDetails :exec
+INSERT INTO recap_details(monthly_recap_id, challenges, events, quests, treasures, longest_streak)
+VALUES ($1, $2, $3, $4, $5, $6)
+`
+
+type CreateRecapDetailsParams struct {
+	MonthlyRecapID int64
+	Challenges     int32
+	Events         int32
+	Quests         int32
+	Treasures      int32
+	LongestStreak  int32
+}
+
+func (q *Queries) CreateRecapDetails(ctx context.Context, arg CreateRecapDetailsParams) error {
+	_, err := q.db.Exec(ctx, createRecapDetails,
+		arg.MonthlyRecapID,
+		arg.Challenges,
+		arg.Events,
+		arg.Quests,
+		arg.Treasures,
+		arg.LongestStreak,
+	)
+	return err
 }
 
 const createStatistics = `-- name: CreateStatistics :exec
@@ -1105,6 +1162,75 @@ func (q *Queries) GetEventById(ctx context.Context, id int64) (GetEventByIdRow, 
 	return i, err
 }
 
+const getLastMonthUserHistories = `-- name: GetLastMonthUserHistories :many
+SELECT id, user_id, name, type, category, amount, created_at FROM histories
+WHERE user_id = $1
+AND date_trunc('month', created_at) = date_trunc('month', CURRENT_DATE)
+ORDER BY created_at DESC
+`
+
+func (q *Queries) GetLastMonthUserHistories(ctx context.Context, userID int64) ([]History, error) {
+	rows, err := q.db.Query(ctx, getLastMonthUserHistories, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []History
+	for rows.Next() {
+		var i History
+		if err := rows.Scan(
+			&i.ID,
+			&i.UserID,
+			&i.Name,
+			&i.Type,
+			&i.Category,
+			&i.Amount,
+			&i.CreatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getLastMonthUserLogs = `-- name: GetLastMonthUserLogs :many
+SELECT id, user_id, text, is_system, is_private, created_at FROM logs
+WHERE user_id =  $1
+AND date_trunc('month', created_at) = date_trunc('month', CURRENT_DATE)
+ORDER BY created_at DESC
+`
+
+func (q *Queries) GetLastMonthUserLogs(ctx context.Context, userID int64) ([]Log, error) {
+	rows, err := q.db.Query(ctx, getLastMonthUserLogs, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Log
+	for rows.Next() {
+		var i Log
+		if err := rows.Scan(
+			&i.ID,
+			&i.UserID,
+			&i.Text,
+			&i.IsSystem,
+			&i.IsPrivate,
+			&i.CreatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const getLastWeekTasks = `-- name: GetLastWeekTasks :many
 SELECT id, habit_id, user_id, packet_id, name, description, difficulty, completed, created_at, updated_at
 FROM tasks
@@ -1141,6 +1267,50 @@ func (q *Queries) GetLastWeekTasks(ctx context.Context, userID int64) ([]Task, e
 		return nil, err
 	}
 	return items, nil
+}
+
+const getLatestMonhtlyRecap = `-- name: GetLatestMonhtlyRecap :one
+SELECT 
+  id, user_id, summary, tips, assigned_task, completed_task, completion_rate, growth_rating, type, created_at,
+  (date_trunc('month', created_at) = date_trunc('month', CURRENT_DATE)) 
+           AS is_this_month
+FROM recaps
+WHERE user_id = $1 AND type = 'monthly'
+ORDER BY created_at DESC
+LIMIT 1
+`
+
+type GetLatestMonhtlyRecapRow struct {
+	ID             int64
+	UserID         int64
+	Summary        string
+	Tips           string
+	AssignedTask   int32
+	CompletedTask  int32
+	CompletionRate string
+	GrowthRating   string
+	Type           string
+	CreatedAt      pgtype.Timestamp
+	IsThisMonth    bool
+}
+
+func (q *Queries) GetLatestMonhtlyRecap(ctx context.Context, userID int64) (GetLatestMonhtlyRecapRow, error) {
+	row := q.db.QueryRow(ctx, getLatestMonhtlyRecap, userID)
+	var i GetLatestMonhtlyRecapRow
+	err := row.Scan(
+		&i.ID,
+		&i.UserID,
+		&i.Summary,
+		&i.Tips,
+		&i.AssignedTask,
+		&i.CompletedTask,
+		&i.CompletionRate,
+		&i.GrowthRating,
+		&i.Type,
+		&i.CreatedAt,
+		&i.IsThisMonth,
+	)
+	return i, err
 }
 
 const getLatestRecap = `-- name: GetLatestRecap :one

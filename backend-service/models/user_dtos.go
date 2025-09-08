@@ -50,9 +50,17 @@ type PutUserEditProfile struct {
 
 type ResponseUser struct {
 	ID         int    `json:"id"`
-	Level      int    `json:"id"`
-	ProfileUrl string `json:"id"`
+	Level      int    `json:"level"`
+	ProfileUrl string `json:"profile_url"`
 	Username   string `json:"username"`
 	Email      string `json:"email"`
 	Streak     int    `json:"streak"`
+}
+
+type RequestStatistics struct {
+	Challenges    int `json:"challenges"`
+	Events        int `json:"events"`
+	Quests        int `json:"quests"`
+	Treasures     int `json:"treasures"`
+	LongestStreak int `json:"longest_streak"`
 }

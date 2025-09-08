@@ -9,6 +9,6 @@ type PostLogAppend struct {
 type ResponseGetLogs struct {
 	Text      string `json:"text"`
 	IsSystem  bool   `json:"is_system"`
-	IsPrivate bool   `json:"is_private"`
+	IsPrivate bool   `json:"is_private,"`
 	CreatedAt string `json:"created_at"`
 }

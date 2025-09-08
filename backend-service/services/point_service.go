@@ -38,7 +38,7 @@ func (s *PointService) UpdateUserPoint(userId int64, pointGain int64, name strin
 		return profile, err
 	}
 
-	err = s.Repository.AppendHistory(ctx, repositories.AppendHistoryParams{
+	err = s.Repository.AppendHistry(ctx, repositories.AppendHistryParams{
 		UserID:   userId,
 		Amount:   int32(pointGain),
 		Type:     "input",

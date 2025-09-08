@@ -672,7 +672,7 @@ FROM profiles p
 JOIN users u ON p.user_id = u.id
 WHERE u.is_admin = false;
 
--- name: AppendHistory :exec
+-- name: AppendHistry :exec
 INSERT INTO histories(user_id, name, category, type, amount)
 VALUES($1, $2, $3, $4, $5);
 
@@ -680,3 +680,34 @@ VALUES($1, $2, $3, $4, $5);
 SELECT * FROM histories
 WHERE user_id = $1
 ORDER BY created_at DESC;
+
+-- name: GetLastMonthUserLogs :many
+SELECT * FROM logs
+WHERE user_id =  $1
+AND date_trunc('month', created_at) = date_trunc('month', CURRENT_DATE)
+ORDER BY created_at DESC;
+
+-- name: GetLastMonthUserHistories :many
+SELECT * FROM histories
+WHERE user_id = $1
+AND date_trunc('month', created_at) = date_trunc('month', CURRENT_DATE)
+ORDER BY created_at DESC;
+
+-- name: CreateMonthlyRecap :one
+INSERT INTO recaps(user_id, summary, tips, assigned_task, completed_task, completion_rate, growth_rating, type)
+VALUES ($1, $2, $3, $4, $5, $6, $7, 'monthly')
+RETURNING id;
+
+-- name: CreateRecapDetails :exec
+INSERT INTO recap_details(monthly_recap_id, challenges, events, quests, treasures, longest_streak)
+VALUES ($1, $2, $3, $4, $5, $6);
+
+-- name: GetLatestMonhtlyRecap :one
+SELECT 
+  *,
+  (date_trunc('month', created_at) = date_trunc('month', CURRENT_DATE)) 
+           AS is_this_month
+FROM recaps
+WHERE user_id = $1 AND type = 'monthly'
+ORDER BY created_at DESC
+LIMIT 1;

@@ -17,7 +17,7 @@ type RequestGetRecap struct {
 	InputRecap    InputRecap         `json:"current_recap"`
 }
 
-type AIResponsWeeklyRecap struct {
+type AIResponseRecap struct {
 	GrowthRating string `json:"growth_rating"`
 	Summary      string `json:"summary"`
 	Tips         string `json:"tips"`
@@ -31,4 +31,10 @@ type ResponseRecap struct {
 	TaskCompletionRate string `json:"completion_rate"`
 	GrowthRating       string `json:"growth_rating"`
 	CreatedAt          string `json:"created_at"`
+}
+
+type RequestGetMonthlyRecap struct {
+	Statistics RequestStatistics
+	Logs       []ResponseGetLogs
+	Histories  []ResponseHistory
 }
