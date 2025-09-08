@@ -737,20 +737,22 @@ WHERE r.user_id = $1
   AND r.type = 'monthly'
 ORDER BY r.created_at DESC;
 
--- name: GetNearestQuest :one
+-- name: GetNearestQuestWithinRadius :one
 SELECT 
     id,
     clue,
     location,
     latitude,
     longitude,
-    (
-        6371 * acos(
-            cos(radians($1)) * cos(radians(latitude)) * cos(radians(longitude) - radians($2))
-            + sin(radians($1)) * sin(radians(latitude))
-        )
-    ) AS distance_km
+    earth_distance(
+        ll_to_earth($1, $2),
+        ll_to_earth(latitude, longitude)
+    ) AS distance_meters
 FROM quests
 WHERE finished = false
-ORDER BY distance_km
+  AND earth_distance(
+        ll_to_earth($1, $2),
+        ll_to_earth(latitude, longitude)
+    ) <= $3
+ORDER BY distance_meters
 LIMIT 1;

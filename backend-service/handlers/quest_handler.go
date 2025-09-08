@@ -45,6 +45,7 @@ func NewQuestHandler(
 func (h *QuestHandler) RegisterRoutes(router fiber.Router) {
 	g := router.Group("/quest")
 	g.Use(helpers.TokenMiddleware)
+	g.Get("/nearest", h.handleGetNearestQuest)
 	g.Get("/:id", h.handleGetContributedQuestDetails)
 }
 
@@ -195,5 +196,41 @@ func (h *QuestHandler) handleGetContributedQuestDetails(c *fiber.Ctx) error {
 
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"data": quest,
+	})
+}
+
+func (h *QuestHandler) handleGetNearestQuest(c *fiber.Ctx) error {
+	req := &models.GetNearestQuest{}
+
+	err := c.BodyParser(req)
+	if err != nil {
+		slog.Error("Failed to parse payload", "err", err)
+		return err
+	}
+
+	err = h.Validator.Struct(req)
+	if err != nil && errors.As(err, &validator.ValidationErrors{}) {
+		return exceptions.NewFailedValidationError(*req, err.(validator.ValidationErrors))
+	}
+
+	nearestQuest, err := h.Repository.GetNearestQuestWithinRadius(context.Background(), repositories.GetNearestQuestWithinRadiusParams{
+		LlToEarth:   req.Latitude,
+		LlToEarth_2: req.Longitude,
+		Latitude:    1000,
+	})
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return fiber.NewError(fiber.StatusNoContent, "Untuk sekarang tidak ada quest terdekat dalam radius 1km")
+		}
+		slog.Error("Failed to get nearest", "err", err)
+		return err
+	}
+
+	slog.Info(fmt.Sprintf("%+v", nearestQuest.Clue))
+
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"data": fiber.Map{
+			"clue": nearestQuest.Clue.String,
+		},
 	})
 }

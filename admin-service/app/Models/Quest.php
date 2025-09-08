@@ -14,6 +14,7 @@ class Quest extends Model
             'latitude',
             'longitude',
             'max_contributors',
+            'clue'
         ];
 
     public $timestamps = false;

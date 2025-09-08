@@ -1599,49 +1599,52 @@ func (q *Queries) GetMemoryWithParticipation(ctx context.Context, userID int64) 
 	return items, nil
 }
 
-const getNearestQuest = `-- name: GetNearestQuest :one
+const getNearestQuestWithinRadius = `-- name: GetNearestQuestWithinRadius :one
 SELECT 
     id,
     clue,
     location,
     latitude,
     longitude,
-    (
-        6371 * acos(
-            cos(radians($1)) * cos(radians(latitude)) * cos(radians(longitude) - radians($2))
-            + sin(radians($1)) * sin(radians(latitude))
-        )
-    ) AS distance_km
+    earth_distance(
+        ll_to_earth($1, $2),
+        ll_to_earth(latitude, longitude)
+    ) AS distance_meters
 FROM quests
 WHERE finished = false
-ORDER BY distance_km
+  AND earth_distance(
+        ll_to_earth($1, $2),
+        ll_to_earth(latitude, longitude)
+    ) <= $3
+ORDER BY distance_meters
 LIMIT 1
 `
 
-type GetNearestQuestParams struct {
-	Radians   float64
-	Radians_2 float64
+type GetNearestQuestWithinRadiusParams struct {
+	LlToEarth   interface{}
+	LlToEarth_2 interface{}
+	Latitude    float64
 }
 
-type GetNearestQuestRow struct {
-	ID         int64
-	Clue       pgtype.Text
-	Location   string
-	Latitude   float64
-	Longitude  float64
-	DistanceKm int32
+type GetNearestQuestWithinRadiusRow struct {
+	ID             int64
+	Clue           pgtype.Text
+	Location       string
+	Latitude       float64
+	Longitude      float64
+	DistanceMeters interface{}
 }
 
-func (q *Queries) GetNearestQuest(ctx context.Context, arg GetNearestQuestParams) (GetNearestQuestRow, error) {
-	row := q.db.QueryRow(ctx, getNearestQuest, arg.Radians, arg.Radians_2)
-	var i GetNearestQuestRow
+func (q *Queries) GetNearestQuestWithinRadius(ctx context.Context, arg GetNearestQuestWithinRadiusParams) (GetNearestQuestWithinRadiusRow, error) {
+	row := q.db.QueryRow(ctx, getNearestQuestWithinRadius, arg.LlToEarth, arg.LlToEarth_2, arg.Latitude)
+	var i GetNearestQuestWithinRadiusRow
 	err := row.Scan(
 		&i.ID,
 		&i.Clue,
 		&i.Location,
 		&i.Latitude,
 		&i.Longitude,
-		&i.DistanceKm,
+		&i.DistanceMeters,
 	)
 	return i, err
 }

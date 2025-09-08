@@ -18,3 +18,8 @@ type Contributors struct {
 	Username string `json:"username"`
 	ID       int    `json:"id"`
 }
+
+type GetNearestQuest struct {
+	Latitude  float64 `json:"latitude"`
+	Longitude float64 `json:"longitude"`
+}
