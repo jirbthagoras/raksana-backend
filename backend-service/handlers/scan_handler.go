@@ -1,12 +1,18 @@
 package handlers
 
 import (
+	"context"
 	"errors"
+	"io"
+	"jirbthagoras/raksana-backend/configs"
 	"jirbthagoras/raksana-backend/exceptions"
 	"jirbthagoras/raksana-backend/helpers"
 	"jirbthagoras/raksana-backend/models"
 	"log/slog"
 
+	"github.com/aws/aws-sdk-go-v2/aws"
+	"github.com/aws/aws-sdk-go-v2/service/rekognition"
+	"github.com/aws/aws-sdk-go-v2/service/rekognition/types"
 	"github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v2"
 )
@@ -16,6 +22,7 @@ type ScanHandler struct {
 	*TreasureHandler
 	*QuestHandler
 	*EventHandler
+	*configs.AWSClient
 }
 
 func NewScanHandler(
@@ -23,12 +30,14 @@ func NewScanHandler(
 	th *TreasureHandler,
 	qh *QuestHandler,
 	eh *EventHandler,
+	aws *configs.AWSClient,
 ) *ScanHandler {
 	return &ScanHandler{
 		Validator:       v,
 		TreasureHandler: th,
 		QuestHandler:    qh,
 		EventHandler:    eh,
+		AWSClient:       aws,
 	}
 }
 
@@ -36,6 +45,7 @@ func (h *ScanHandler) RegisterRoutes(router fiber.Router) {
 	g := router.Group("/scan")
 	g.Use(helpers.TokenMiddleware)
 	g.Post("/", h.handleScan)
+	g.Post("/trash", h.handleScanTrash)
 }
 
 func (h *ScanHandler) handleScan(c *fiber.Ctx) error {
@@ -68,4 +78,42 @@ func (h *ScanHandler) handleScan(c *fiber.Ctx) error {
 	default:
 		return fiber.ErrBadRequest
 	}
+}
+
+func (h *ScanHandler) handleScanTrash(c *fiber.Ctx) error {
+	file, err := c.FormFile("image")
+	if err != nil {
+		slog.Error("Failed to take image", "err", err)
+		return err
+	}
+
+	src, err := file.Open()
+	if err != nil {
+		slog.Error("Failed to open the image", "err", err)
+		return err
+	}
+
+	fileBytes, err := io.ReadAll(src)
+	if err != nil {
+		return err
+	}
+
+	ctx := context.Background()
+
+	output, err := h.AWSClient.RekognitionClient.DetectLabels(ctx, &rekognition.DetectLabelsInput{
+		Image: &types.Image{
+			Bytes: fileBytes,
+		},
+		MaxLabels:     aws.Int32(10),
+		MinConfidence: aws.Float32(75.0),
+	})
+	if err != nil {
+		slog.Error("Something wrong with the image scanning", "err", err)
+		return err
+	}
+
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"data": output,
+	})
+
 }

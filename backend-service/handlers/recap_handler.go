@@ -251,8 +251,9 @@ func (h *RecapHandler) handleCreateMonthlyRecap(c *fiber.Ctx) error {
 	ctx := context.Background()
 
 	now := time.Now()
-	nextDay := now.AddDate(0, 0, 1)
-	if now.Month() != nextDay.Month() {
+	lastDay := time.Date(now.Year(), now.Month()+1, 0, 0, 0, 0, 0, now.Location()).Day()
+
+	if now.Day() != lastDay {
 		return fiber.NewError(fiber.StatusBadRequest, "Hari ini bukan akhir bulan")
 	}
 

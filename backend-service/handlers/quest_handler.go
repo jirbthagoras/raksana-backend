@@ -226,8 +226,6 @@ func (h *QuestHandler) handleGetNearestQuest(c *fiber.Ctx) error {
 		return err
 	}
 
-	slog.Info(fmt.Sprintf("%+v", nearestQuest.Clue))
-
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"data": fiber.Map{
 			"clue": nearestQuest.Clue.String,

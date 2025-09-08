@@ -69,7 +69,7 @@ func NewAppRouter(
 		TreasureHandler:    treasureHandler,
 		QuestHandler:       questHandler,
 		EventHandler:       eventHandler,
-		ScanHandler:        handlers.NewScanHandler(v, treasureHandler, questHandler, eventHandler),
+		ScanHandler:        handlers.NewScanHandler(v, treasureHandler, questHandler, eventHandler, awsClient),
 		ActivityHandler:    handlers.NewActivityHandler(v, r),
 		HistoryHandler:     handlers.NewHistoryHandler(r),
 	}

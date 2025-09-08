@@ -14,6 +14,7 @@ const (
 	Ecoach       int8 = 1
 	RecapMonthly int8 = 2
 	RecapWeekly  int8 = 3
+	GreenPrint   int8 = 4
 )
 
 type AIClient struct {
@@ -53,6 +54,9 @@ func InitModel(client *genai.Client, cnf *viper.Viper, modelType int8) (*genai.G
 	case Ecoach:
 		systemInstruction = cnf.GetString("ECOACH_SYSTEM_INSTRUCTION")
 		ecoachConfig(generativeModel)
+	case GreenPrint:
+		systemInstruction = cnf.GetString("GREENPRINT_SYSTEM_INSTRUCTION")
+		greenprintConfig(generativeModel)
 	default:
 		return nil, fiber.NewError(fiber.StatusInternalServerError, "Internal server error")
 	}
@@ -166,5 +170,81 @@ func recapConfig(generativeModel *genai.GenerativeModel) {
 				Type: genai.TypeString,
 			},
 		},
+		Required: []string{"expected_task", "task_per_day"},
+	}
+}
+
+func greenprintConfig(generativeModel *genai.GenerativeModel) {
+	generativeModel.SetTemperature(1.6)
+	generativeModel.SetTopK(40)
+	generativeModel.SetTopP(0.95)
+	generativeModel.SetMaxOutputTokens(8192)
+	generativeModel.ResponseMIMEType = "application/json"
+	generativeModel.ResponseSchema = &genai.Schema{
+		Type: genai.TypeObject,
+		Properties: map[string]*genai.Schema{
+			"title": {
+				Type: genai.TypeString,
+			},
+			"description": {
+				Type: genai.TypeString,
+			},
+			"sustainability_score": {
+				Type: genai.TypeString,
+				Enum: []string{"1", "2", "3", "4", "5"},
+			},
+			"estimated_time": {
+				Type: genai.TypeString,
+			},
+			"materials": {
+				Type: genai.TypeArray,
+				Items: &genai.Schema{
+					Type: genai.TypeObject,
+					Properties: map[string]*genai.Schema{
+						"name": {
+							Type: genai.TypeString,
+						},
+						"description": {
+							Type: genai.TypeString,
+						},
+						"price": {
+							Type: genai.TypeInteger,
+						},
+						"quantity": {
+							Type: genai.TypeInteger,
+						},
+					},
+				},
+			},
+			"tools": {
+				Type: genai.TypeArray,
+				Items: &genai.Schema{
+					Type: genai.TypeObject,
+					Properties: map[string]*genai.Schema{
+						"name": {
+							Type: genai.TypeString,
+						},
+						"description": {
+							Type: genai.TypeString,
+						},
+						"price": {
+							Type: genai.TypeInteger,
+						},
+					},
+				},
+			},
+			"steps": {
+				Type: genai.TypeArray,
+				Items: &genai.Schema{
+					Type: genai.TypeObject,
+					Properties: map[string]*genai.Schema{
+						"description": {
+							Type: genai.TypeString,
+						},
+					},
+				},
+			},
+		},
+		Required: []string{"title", "description", "sustainability_score", "estimated_time", "materials", "tools", "steps"},
 	}
 }
