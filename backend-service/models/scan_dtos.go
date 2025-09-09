@@ -8,3 +8,15 @@ type RequestScannedObject struct {
 type Category struct {
 	Name string `json:"name"`
 }
+
+type AIResponseScan struct {
+	Title       string          `json:"title"`
+	Description string          `json:"description"`
+	Items       []ResponseItems `json:"items"`
+}
+
+type ResponseItems struct {
+	Name        string `json:"name"`
+	Description string `json:"description"`
+	Value       string `json:"value"`
+}

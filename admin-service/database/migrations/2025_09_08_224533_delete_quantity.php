@@ -11,10 +11,9 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('histories', function (Blueprint $table) {
-            //
+        Schema::table('tools', function (Blueprint $table) {
+            $table->dropColumn('quantity'); // misalnya kamu mau hapus field clue
         });
-        
     }
 
     /**
@@ -22,8 +21,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('histories', function (Blueprint $table) {
-            //
-        });
+        //
     }
 };

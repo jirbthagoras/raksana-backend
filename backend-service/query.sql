@@ -756,3 +756,33 @@ WHERE finished = false
     ) <= $3
 ORDER BY distance_meters
 LIMIT 1;
+
+-- name: CreateScans :one
+INSERT INTO scans(user_id, title, description)
+VALUES($1, $2, $3)
+RETURNING *;
+
+-- name: CreateItems :one
+INSERT INTO items(scan_id, name, description, value)
+VALUES ($1, $2, $3, $4)
+RETURNING *;
+
+-- name: CreateGreenprint :one
+INSERT INTO greenprints(image_key, description, sustainability_score, estimated_time)
+VALUES ($1, $2, $3, $4)
+RETURNING *;
+
+-- name: CreateMaterials :one
+INSERT INTO materials(greenprint_id,name, description, price, quantity)
+VALUES ($1, $2, $3, $4, $5)
+RETURNING *;
+
+-- name: CreateSteps :one
+INSERT INTO steps(greenprint_id, description)
+VALUES ($1, $2)
+RETURNING *;
+
+-- name: CreateTools :one
+INSERT INTO tools(greenprint_id, name, description, price)
+VALUES($1, $2, $3, $4)
+RETURNING *;

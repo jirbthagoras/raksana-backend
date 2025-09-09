@@ -262,6 +262,39 @@ func (q *Queries) CreateContributions(ctx context.Context, arg CreateContributio
 	return i, err
 }
 
+const createGreenprint = `-- name: CreateGreenprint :one
+INSERT INTO greenprints(image_key, description, sustainability_score, estimated_time)
+VALUES ($1, $2, $3, $4)
+RETURNING id, image_key, title, description, sustainability_score, estimated_time, created_at
+`
+
+type CreateGreenprintParams struct {
+	ImageKey            string
+	Description         string
+	SustainabilityScore string
+	EstimatedTime       string
+}
+
+func (q *Queries) CreateGreenprint(ctx context.Context, arg CreateGreenprintParams) (Greenprint, error) {
+	row := q.db.QueryRow(ctx, createGreenprint,
+		arg.ImageKey,
+		arg.Description,
+		arg.SustainabilityScore,
+		arg.EstimatedTime,
+	)
+	var i Greenprint
+	err := row.Scan(
+		&i.ID,
+		&i.ImageKey,
+		&i.Title,
+		&i.Description,
+		&i.SustainabilityScore,
+		&i.EstimatedTime,
+		&i.CreatedAt,
+	)
+	return i, err
+}
+
 const createHabit = `-- name: CreateHabit :one
 INSERT INTO habits (packet_id, name, description, difficulty, locked, weight)
 VALUES ($1, $2, $3, $4, $5, $6)
@@ -289,6 +322,38 @@ func (q *Queries) CreateHabit(ctx context.Context, arg CreateHabitParams) (int64
 	var id int64
 	err := row.Scan(&id)
 	return id, err
+}
+
+const createItems = `-- name: CreateItems :one
+INSERT INTO items(scan_id, name, description, value)
+VALUES ($1, $2, $3, $4)
+RETURNING id, scan_id, name, description, value, created_at
+`
+
+type CreateItemsParams struct {
+	ScanID      int64
+	Name        string
+	Description string
+	Value       string
+}
+
+func (q *Queries) CreateItems(ctx context.Context, arg CreateItemsParams) (Item, error) {
+	row := q.db.QueryRow(ctx, createItems,
+		arg.ScanID,
+		arg.Name,
+		arg.Description,
+		arg.Value,
+	)
+	var i Item
+	err := row.Scan(
+		&i.ID,
+		&i.ScanID,
+		&i.Name,
+		&i.Description,
+		&i.Value,
+		&i.CreatedAt,
+	)
+	return i, err
 }
 
 const createLog = `-- name: CreateLog :one
@@ -324,6 +389,40 @@ func (q *Queries) CreateLog(ctx context.Context, arg CreateLogParams) (CreateLog
 		&i.Text,
 		&i.IsSystem,
 		&i.IsPrivate,
+	)
+	return i, err
+}
+
+const createMaterials = `-- name: CreateMaterials :one
+INSERT INTO materials(greenprint_id,name, description, price, quantity)
+VALUES ($1, $2, $3, $4, $5)
+RETURNING id, name, description, price, quantity, greenprint_id
+`
+
+type CreateMaterialsParams struct {
+	GreenprintID int64
+	Name         string
+	Description  string
+	Price        int32
+	Quantity     int32
+}
+
+func (q *Queries) CreateMaterials(ctx context.Context, arg CreateMaterialsParams) (Material, error) {
+	row := q.db.QueryRow(ctx, createMaterials,
+		arg.GreenprintID,
+		arg.Name,
+		arg.Description,
+		arg.Price,
+		arg.Quantity,
+	)
+	var i Material
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.Description,
+		&i.Price,
+		&i.Quantity,
+		&i.GreenprintID,
 	)
 	return i, err
 }
@@ -484,6 +583,31 @@ func (q *Queries) CreateRecapDetails(ctx context.Context, arg CreateRecapDetails
 	return err
 }
 
+const createScans = `-- name: CreateScans :one
+INSERT INTO scans(user_id, title, description)
+VALUES($1, $2, $3)
+RETURNING id, user_id, title, description, created_at
+`
+
+type CreateScansParams struct {
+	UserID      int64
+	Title       string
+	Description string
+}
+
+func (q *Queries) CreateScans(ctx context.Context, arg CreateScansParams) (Scan, error) {
+	row := q.db.QueryRow(ctx, createScans, arg.UserID, arg.Title, arg.Description)
+	var i Scan
+	err := row.Scan(
+		&i.ID,
+		&i.UserID,
+		&i.Title,
+		&i.Description,
+		&i.CreatedAt,
+	)
+	return i, err
+}
+
 const createStatistics = `-- name: CreateStatistics :exec
 INSERT INTO statistics (user_id)
 VALUES ($1)
@@ -492,6 +616,29 @@ VALUES ($1)
 func (q *Queries) CreateStatistics(ctx context.Context, userID int64) error {
 	_, err := q.db.Exec(ctx, createStatistics, userID)
 	return err
+}
+
+const createSteps = `-- name: CreateSteps :one
+INSERT INTO steps(greenprint_id, description)
+VALUES ($1, $2)
+RETURNING id, greenprint_id, description, created_at
+`
+
+type CreateStepsParams struct {
+	GreenprintID int64
+	Description  string
+}
+
+func (q *Queries) CreateSteps(ctx context.Context, arg CreateStepsParams) (Step, error) {
+	row := q.db.QueryRow(ctx, createSteps, arg.GreenprintID, arg.Description)
+	var i Step
+	err := row.Scan(
+		&i.ID,
+		&i.GreenprintID,
+		&i.Description,
+		&i.CreatedAt,
+	)
+	return i, err
 }
 
 const createTask = `-- name: CreateTask :one
@@ -530,6 +677,38 @@ func (q *Queries) CreateTask(ctx context.Context, arg CreateTaskParams) (Task, e
 		&i.Completed,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+	)
+	return i, err
+}
+
+const createTools = `-- name: CreateTools :one
+INSERT INTO tools(greenprint_id, name, description, price)
+VALUES($1, $2, $3, $4)
+RETURNING id, greenprint_id, name, description, price, created_at
+`
+
+type CreateToolsParams struct {
+	GreenprintID int64
+	Name         string
+	Description  string
+	Price        int32
+}
+
+func (q *Queries) CreateTools(ctx context.Context, arg CreateToolsParams) (Tool, error) {
+	row := q.db.QueryRow(ctx, createTools,
+		arg.GreenprintID,
+		arg.Name,
+		arg.Description,
+		arg.Price,
+	)
+	var i Tool
+	err := row.Scan(
+		&i.ID,
+		&i.GreenprintID,
+		&i.Name,
+		&i.Description,
+		&i.Price,
+		&i.CreatedAt,
 	)
 	return i, err
 }
@@ -1621,8 +1800,8 @@ LIMIT 1
 `
 
 type GetNearestQuestWithinRadiusParams struct {
-	LlToEarth   interface{}
-	LlToEarth_2 interface{}
+	LlToEarth   float64
+	LlToEarth_2 float64
 	Latitude    float64
 }
 
@@ -1632,7 +1811,7 @@ type GetNearestQuestWithinRadiusRow struct {
 	Location       string
 	Latitude       float64
 	Longitude      float64
-	DistanceMeters interface{}
+	DistanceMeters float64
 }
 
 func (q *Queries) GetNearestQuestWithinRadius(ctx context.Context, arg GetNearestQuestWithinRadiusParams) (GetNearestQuestWithinRadiusRow, error) {

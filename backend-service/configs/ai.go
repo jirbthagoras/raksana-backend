@@ -84,7 +84,7 @@ func trashScannerConfig(generativeModel *genai.GenerativeModel) {
 			},
 			"description": {
 				Type: genai.TypeString},
-			"recycling_ideas": {
+			"items": {
 				Type: genai.TypeArray,
 				Items: &genai.Schema{
 					Type: genai.TypeObject,
@@ -100,11 +100,11 @@ func trashScannerConfig(generativeModel *genai.GenerativeModel) {
 							Enum: []string{"high", "mid", "low"},
 						},
 					},
-					Required: []string{"name", "type", "description", "value"},
+					Required: []string{"name", "description", "value"},
 				},
 			},
 		},
-		Required: []string{"title", "description", "recycling_ideas"},
+		Required: []string{"title", "description", "items"},
 	}
 }
 

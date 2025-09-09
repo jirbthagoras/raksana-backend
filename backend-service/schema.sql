@@ -18,6 +18,34 @@ SET xmloption = content;
 SET client_min_messages = warning;
 SET row_security = off;
 
+--
+-- Name: cube; Type: EXTENSION; Schema: -; Owner: -
+--
+
+CREATE EXTENSION IF NOT EXISTS cube WITH SCHEMA public;
+
+
+--
+-- Name: EXTENSION cube; Type: COMMENT; Schema: -; Owner: -
+--
+
+COMMENT ON EXTENSION cube IS 'data type for multidimensional cubes';
+
+
+--
+-- Name: earthdistance; Type: EXTENSION; Schema: -; Owner: -
+--
+
+CREATE EXTENSION IF NOT EXISTS earthdistance WITH SCHEMA public;
+
+
+--
+-- Name: EXTENSION earthdistance; Type: COMMENT; Schema: -; Owner: -
+--
+
+COMMENT ON EXTENSION earthdistance IS 'calculate great-circle distances on the surface of the Earth';
+
+
 SET default_tablespace = '';
 
 SET default_table_access_method = heap;
@@ -287,6 +315,40 @@ ALTER SEQUENCE public.failed_jobs_id_seq OWNED BY public.failed_jobs.id;
 
 
 --
+-- Name: greenprints; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.greenprints (
+    id bigint NOT NULL,
+    image_key character varying(255) NOT NULL,
+    title character varying(255) NOT NULL,
+    description character varying(255) NOT NULL,
+    sustainability_score character varying(255) NOT NULL,
+    estimated_time character varying(255) NOT NULL,
+    created_at timestamp(0) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL
+);
+
+
+--
+-- Name: greenprints_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.greenprints_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: greenprints_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.greenprints_id_seq OWNED BY public.greenprints.id;
+
+
+--
 -- Name: habits; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -354,6 +416,40 @@ CREATE SEQUENCE public.histories_id_seq
 --
 
 ALTER SEQUENCE public.histories_id_seq OWNED BY public.histories.id;
+
+
+--
+-- Name: items; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.items (
+    id bigint NOT NULL,
+    scan_id bigint NOT NULL,
+    name character varying(255) NOT NULL,
+    description character varying(255) NOT NULL,
+    value character varying(255) NOT NULL,
+    created_at timestamp(0) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    CONSTRAINT items_value_check CHECK (((value)::text = ANY ((ARRAY['high'::character varying, 'mid'::character varying, 'low'::character varying])::text[])))
+);
+
+
+--
+-- Name: items_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.items_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: items_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.items_id_seq OWNED BY public.items.id;
 
 
 --
@@ -439,6 +535,39 @@ CREATE SEQUENCE public.logs_id_seq
 --
 
 ALTER SEQUENCE public.logs_id_seq OWNED BY public.logs.id;
+
+
+--
+-- Name: materials; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.materials (
+    id bigint NOT NULL,
+    name character varying(255) NOT NULL,
+    description character varying(255) NOT NULL,
+    price integer NOT NULL,
+    quantity integer NOT NULL,
+    greenprint_id bigint NOT NULL
+);
+
+
+--
+-- Name: materials_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.materials_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: materials_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.materials_id_seq OWNED BY public.materials.id;
 
 
 --
@@ -728,6 +857,38 @@ ALTER SEQUENCE public.recaps_id_seq OWNED BY public.recaps.id;
 
 
 --
+-- Name: scans; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.scans (
+    id bigint NOT NULL,
+    user_id bigint NOT NULL,
+    title character varying(255) NOT NULL,
+    description character varying(255) NOT NULL,
+    created_at timestamp(0) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL
+);
+
+
+--
+-- Name: scans_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.scans_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: scans_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.scans_id_seq OWNED BY public.scans.id;
+
+
+--
 -- Name: sessions; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -777,6 +938,37 @@ ALTER SEQUENCE public.statistics_id_seq OWNED BY public.statistics.id;
 
 
 --
+-- Name: steps; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.steps (
+    id bigint NOT NULL,
+    greenprint_id bigint NOT NULL,
+    description character varying(255) NOT NULL,
+    created_at timestamp(0) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL
+);
+
+
+--
+-- Name: steps_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.steps_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: steps_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.steps_id_seq OWNED BY public.steps.id;
+
+
+--
 -- Name: tasks; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -812,6 +1004,39 @@ CREATE SEQUENCE public.tasks_id_seq
 --
 
 ALTER SEQUENCE public.tasks_id_seq OWNED BY public.tasks.id;
+
+
+--
+-- Name: tools; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.tools (
+    id bigint NOT NULL,
+    greenprint_id bigint NOT NULL,
+    name character varying(255) NOT NULL,
+    description character varying(255) NOT NULL,
+    price integer NOT NULL,
+    created_at timestamp(0) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL
+);
+
+
+--
+-- Name: tools_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.tools_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: tools_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.tools_id_seq OWNED BY public.tools.id;
 
 
 --
@@ -935,6 +1160,13 @@ ALTER TABLE ONLY public.failed_jobs ALTER COLUMN id SET DEFAULT nextval('public.
 
 
 --
+-- Name: greenprints id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.greenprints ALTER COLUMN id SET DEFAULT nextval('public.greenprints_id_seq'::regclass);
+
+
+--
 -- Name: habits id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -949,6 +1181,13 @@ ALTER TABLE ONLY public.histories ALTER COLUMN id SET DEFAULT nextval('public.hi
 
 
 --
+-- Name: items id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.items ALTER COLUMN id SET DEFAULT nextval('public.items_id_seq'::regclass);
+
+
+--
 -- Name: jobs id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -960,6 +1199,13 @@ ALTER TABLE ONLY public.jobs ALTER COLUMN id SET DEFAULT nextval('public.jobs_id
 --
 
 ALTER TABLE ONLY public.logs ALTER COLUMN id SET DEFAULT nextval('public.logs_id_seq'::regclass);
+
+
+--
+-- Name: materials id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.materials ALTER COLUMN id SET DEFAULT nextval('public.materials_id_seq'::regclass);
 
 
 --
@@ -1019,6 +1265,13 @@ ALTER TABLE ONLY public.recaps ALTER COLUMN id SET DEFAULT nextval('public.recap
 
 
 --
+-- Name: scans id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.scans ALTER COLUMN id SET DEFAULT nextval('public.scans_id_seq'::regclass);
+
+
+--
 -- Name: statistics id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -1026,10 +1279,24 @@ ALTER TABLE ONLY public.statistics ALTER COLUMN id SET DEFAULT nextval('public.s
 
 
 --
+-- Name: steps id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.steps ALTER COLUMN id SET DEFAULT nextval('public.steps_id_seq'::regclass);
+
+
+--
 -- Name: tasks id; Type: DEFAULT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.tasks ALTER COLUMN id SET DEFAULT nextval('public.tasks_id_seq'::regclass);
+
+
+--
+-- Name: tools id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.tools ALTER COLUMN id SET DEFAULT nextval('public.tools_id_seq'::regclass);
 
 
 --
@@ -1135,6 +1402,14 @@ ALTER TABLE ONLY public.failed_jobs
 
 
 --
+-- Name: greenprints greenprints_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.greenprints
+    ADD CONSTRAINT greenprints_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: habits habits_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -1148,6 +1423,14 @@ ALTER TABLE ONLY public.habits
 
 ALTER TABLE ONLY public.histories
     ADD CONSTRAINT histories_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: items items_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.items
+    ADD CONSTRAINT items_pkey PRIMARY KEY (id);
 
 
 --
@@ -1172,6 +1455,14 @@ ALTER TABLE ONLY public.jobs
 
 ALTER TABLE ONLY public.logs
     ADD CONSTRAINT logs_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: materials materials_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.materials
+    ADD CONSTRAINT materials_pkey PRIMARY KEY (id);
 
 
 --
@@ -1247,6 +1538,14 @@ ALTER TABLE ONLY public.recaps
 
 
 --
+-- Name: scans scans_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.scans
+    ADD CONSTRAINT scans_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: sessions sessions_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -1263,11 +1562,27 @@ ALTER TABLE ONLY public.statistics
 
 
 --
+-- Name: steps steps_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.steps
+    ADD CONSTRAINT steps_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: tasks tasks_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.tasks
     ADD CONSTRAINT tasks_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: tools tools_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.tools
+    ADD CONSTRAINT tools_pkey PRIMARY KEY (id);
 
 
 --
@@ -1412,11 +1727,27 @@ ALTER TABLE ONLY public.histories
 
 
 --
+-- Name: items items_scan_id_foreign; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.items
+    ADD CONSTRAINT items_scan_id_foreign FOREIGN KEY (scan_id) REFERENCES public.scans(id);
+
+
+--
 -- Name: logs logs_user_id_foreign; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.logs
     ADD CONSTRAINT logs_user_id_foreign FOREIGN KEY (user_id) REFERENCES public.users(id);
+
+
+--
+-- Name: materials materials_greenprint_id_foreign; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.materials
+    ADD CONSTRAINT materials_greenprint_id_foreign FOREIGN KEY (greenprint_id) REFERENCES public.greenprints(id);
 
 
 --
@@ -1500,11 +1831,27 @@ ALTER TABLE ONLY public.recaps
 
 
 --
+-- Name: scans scans_user_id_foreign; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.scans
+    ADD CONSTRAINT scans_user_id_foreign FOREIGN KEY (user_id) REFERENCES public.users(id);
+
+
+--
 -- Name: statistics statistics_user_id_foreign; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.statistics
     ADD CONSTRAINT statistics_user_id_foreign FOREIGN KEY (user_id) REFERENCES public.users(id);
+
+
+--
+-- Name: steps steps_greenprint_id_foreign; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.steps
+    ADD CONSTRAINT steps_greenprint_id_foreign FOREIGN KEY (greenprint_id) REFERENCES public.greenprints(id);
 
 
 --
@@ -1532,11 +1879,53 @@ ALTER TABLE ONLY public.tasks
 
 
 --
+-- Name: tools tools_greenprint_id_foreign; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.tools
+    ADD CONSTRAINT tools_greenprint_id_foreign FOREIGN KEY (greenprint_id) REFERENCES public.greenprints(id);
+
+
+--
 -- Name: treasures treasures_code_id_foreign; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.treasures
     ADD CONSTRAINT treasures_code_id_foreign FOREIGN KEY (code_id) REFERENCES public.codes(id);
+
+
+--
+-- PostgreSQL database dump complete
+--
+
+--
+-- PostgreSQL database dump
+--
+
+-- Dumped from database version 17.6 (Debian 17.6-1.pgdg13+1)
+-- Dumped by pg_dump version 17.6 (Ubuntu 17.6-1.pgdg24.04+1)
+
+SET statement_timeout = 0;
+SET lock_timeout = 0;
+SET idle_in_transaction_session_timeout = 0;
+SET transaction_timeout = 0;
+SET client_encoding = 'UTF8';
+SET standard_conforming_strings = on;
+SELECT pg_catalog.set_config('search_path', '', false);
+SET check_function_bodies = false;
+SET xmloption = content;
+SET client_min_messages = warning;
+SET row_security = off;
+
+--
+-- Data for Name: migrations; Type: TABLE DATA; Schema: public; Owner: -
+--
+
+--
+-- Name: migrations_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+--
+
+SELECT pg_catalog.setval('public.migrations_id_seq', 32, true);
 
 
 --

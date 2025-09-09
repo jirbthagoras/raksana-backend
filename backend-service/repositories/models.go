@@ -88,6 +88,16 @@ type FailedJob struct {
 	FailedAt   pgtype.Timestamp
 }
 
+type Greenprint struct {
+	ID                  int64
+	ImageKey            string
+	Title               string
+	Description         string
+	SustainabilityScore string
+	EstimatedTime       string
+	CreatedAt           pgtype.Timestamp
+}
+
 type Habit struct {
 	ID          int64
 	PacketID    int64
@@ -106,6 +116,15 @@ type History struct {
 	Category  string
 	Amount    int32
 	CreatedAt pgtype.Timestamp
+}
+
+type Item struct {
+	ID          int64
+	ScanID      int64
+	Name        string
+	Description string
+	Value       string
+	CreatedAt   pgtype.Timestamp
 }
 
 type Job struct {
@@ -138,6 +157,15 @@ type Log struct {
 	IsSystem  bool
 	IsPrivate bool
 	CreatedAt pgtype.Timestamp
+}
+
+type Material struct {
+	ID           int64
+	Name         string
+	Description  string
+	Price        int32
+	Quantity     int32
+	GreenprintID int64
 }
 
 type Memory struct {
@@ -227,6 +255,14 @@ type RecapDetail struct {
 	CreatedAt      pgtype.Timestamp
 }
 
+type Scan struct {
+	ID          int64
+	UserID      int64
+	Title       string
+	Description string
+	CreatedAt   pgtype.Timestamp
+}
+
 type Session struct {
 	ID           string
 	UserID       pgtype.Int8
@@ -247,6 +283,13 @@ type Statistic struct {
 	TreeGrown     int32
 }
 
+type Step struct {
+	ID           int64
+	GreenprintID int64
+	Description  string
+	CreatedAt    pgtype.Timestamp
+}
+
 type Task struct {
 	ID          int64
 	HabitID     int64
@@ -258,6 +301,15 @@ type Task struct {
 	Completed   bool
 	CreatedAt   pgtype.Timestamp
 	UpdatedAt   pgtype.Timestamp
+}
+
+type Tool struct {
+	ID           int64
+	GreenprintID int64
+	Name         string
+	Description  string
+	Price        int32
+	CreatedAt    pgtype.Timestamp
 }
 
 type Treasure struct {
