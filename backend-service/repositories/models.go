@@ -90,13 +90,13 @@ type FailedJob struct {
 
 type Greenprint struct {
 	ID                  int64
+	ItemID              int64
 	ImageKey            string
 	Title               string
 	Description         string
 	SustainabilityScore string
 	EstimatedTime       string
 	CreatedAt           pgtype.Timestamp
-	ItemID              int64
 }
 
 type Habit struct {
@@ -121,12 +121,12 @@ type History struct {
 
 type Item struct {
 	ID          int64
+	UserID      int64
 	ScanID      int64
 	Name        string
 	Description string
 	Value       string
 	CreatedAt   pgtype.Timestamp
-	UserID      int64
 }
 
 type Job struct {
@@ -262,8 +262,8 @@ type Scan struct {
 	UserID      int64
 	Title       string
 	Description string
+	ImageKey    string
 	CreatedAt   pgtype.Timestamp
-	ImageKey    pgtype.Text
 }
 
 type Session struct {

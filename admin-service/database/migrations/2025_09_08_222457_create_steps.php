@@ -15,7 +15,7 @@ return new class extends Migration
         Schema::create('steps', function (Blueprint $table) {
             $table->id();
             $table->foreignId("greenprint_id")->references("id")->on("greenprints");
-            $table->string("description");
+            $table->text("description");
             $table->timestamp('created_at')->default(DB::raw('CURRENT_TIMESTAMP'));
         });
     }

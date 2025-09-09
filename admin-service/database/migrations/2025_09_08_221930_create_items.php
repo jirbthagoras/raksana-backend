@@ -14,9 +14,10 @@ return new class extends Migration
     {
         Schema::create('items', function (Blueprint $table) {
             $table->id();
+            $table->foreignId("user_id")->references("id")->on("users");
             $table->foreignId("scan_id")->references("id")->on("scans");
             $table->string("name");
-            $table->string("description");
+            $table->text("description");
             $table->enum("value", ["high", "mid", "low"]);
             $table->timestamp('created_at')->default(DB::raw('CURRENT_TIMESTAMP'));
         });

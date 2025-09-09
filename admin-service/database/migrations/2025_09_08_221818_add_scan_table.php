@@ -16,8 +16,8 @@ return new class extends Migration
             $table->id();
             $table->foreignId("user_id")->references("id")->on("users");
             $table->string("title");
-            $table->string("description");
-            $table->integer("amount");
+            $table->text("description");
+            $table->string("image_key");
             $table->timestamp('created_at')->default(DB::raw('CURRENT_TIMESTAMP'));
         });
     }

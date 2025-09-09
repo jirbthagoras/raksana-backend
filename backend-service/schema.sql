@@ -320,13 +320,13 @@ ALTER SEQUENCE public.failed_jobs_id_seq OWNED BY public.failed_jobs.id;
 
 CREATE TABLE public.greenprints (
     id bigint NOT NULL,
+    item_id bigint NOT NULL,
     image_key character varying(255) NOT NULL,
     title character varying(255) NOT NULL,
-    description character varying(255) NOT NULL,
+    description text NOT NULL,
     sustainability_score character varying(255) NOT NULL,
     estimated_time character varying(255) NOT NULL,
-    created_at timestamp(0) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
-    item_id bigint NOT NULL
+    created_at timestamp(0) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL
 );
 
 
@@ -425,12 +425,12 @@ ALTER SEQUENCE public.histories_id_seq OWNED BY public.histories.id;
 
 CREATE TABLE public.items (
     id bigint NOT NULL,
+    user_id bigint NOT NULL,
     scan_id bigint NOT NULL,
     name character varying(255) NOT NULL,
-    description character varying(255) NOT NULL,
+    description text NOT NULL,
     value character varying(255) NOT NULL,
     created_at timestamp(0) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
-    user_id bigint NOT NULL,
     CONSTRAINT items_value_check CHECK (((value)::text = ANY ((ARRAY['high'::character varying, 'mid'::character varying, 'low'::character varying])::text[])))
 );
 
@@ -546,7 +546,7 @@ ALTER SEQUENCE public.logs_id_seq OWNED BY public.logs.id;
 CREATE TABLE public.materials (
     id bigint NOT NULL,
     name character varying(255) NOT NULL,
-    description character varying(255) NOT NULL,
+    description text NOT NULL,
     price integer NOT NULL,
     quantity integer NOT NULL,
     greenprint_id bigint NOT NULL
@@ -866,9 +866,9 @@ CREATE TABLE public.scans (
     id bigint NOT NULL,
     user_id bigint NOT NULL,
     title character varying(255) NOT NULL,
-    description character varying(255) NOT NULL,
-    created_at timestamp(0) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
-    image_key character varying(255)
+    description text NOT NULL,
+    image_key character varying(255) NOT NULL,
+    created_at timestamp(0) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL
 );
 
 
@@ -947,7 +947,7 @@ ALTER SEQUENCE public.statistics_id_seq OWNED BY public.statistics.id;
 CREATE TABLE public.steps (
     id bigint NOT NULL,
     greenprint_id bigint NOT NULL,
-    description character varying(255) NOT NULL,
+    description text NOT NULL,
     created_at timestamp(0) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL
 );
 
@@ -1017,7 +1017,7 @@ CREATE TABLE public.tools (
     id bigint NOT NULL,
     greenprint_id bigint NOT NULL,
     name character varying(255) NOT NULL,
-    description character varying(255) NOT NULL,
+    description text NOT NULL,
     price integer NOT NULL,
     created_at timestamp(0) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL
 );
@@ -1917,39 +1917,4 @@ ALTER TABLE ONLY public.treasures
 -- PostgreSQL database dump complete
 --
 
---
--- PostgreSQL database dump
---
-
-
--- Dumped from database version 17.6 (Debian 17.6-1.pgdg13+1)
--- Dumped by pg_dump version 17.6 (Ubuntu 17.6-1.pgdg24.04+1)
-
-SET statement_timeout = 0;
-SET lock_timeout = 0;
-SET idle_in_transaction_session_timeout = 0;
-SET transaction_timeout = 0;
-SET client_encoding = 'UTF8';
-SET standard_conforming_strings = on;
-SELECT pg_catalog.set_config('search_path', '', false);
-SET check_function_bodies = false;
-SET xmloption = content;
-SET client_min_messages = warning;
-SET row_security = off;
-
---
--- Data for Name: migrations; Type: TABLE DATA; Schema: public; Owner: -
---
-
-
---
--- Name: migrations_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
---
-
-SELECT pg_catalog.setval('public.migrations_id_seq', 35, true);
-
-
---
--- PostgreSQL database dump complete
---
 

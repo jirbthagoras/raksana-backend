@@ -263,12 +263,13 @@ func (q *Queries) CreateContributions(ctx context.Context, arg CreateContributio
 }
 
 const createGreenprint = `-- name: CreateGreenprint :one
-INSERT INTO greenprints(item_id, image_key, description, sustainability_score, estimated_time)
-VALUES ($1, $2, $3, $4, $5)
-RETURNING id, image_key, title, description, sustainability_score, estimated_time, created_at, item_id
+INSERT INTO greenprints(title, item_id, image_key, description, sustainability_score, estimated_time)
+VALUES ($1, $2, $3, $4, $5, $6)
+RETURNING id, item_id, image_key, title, description, sustainability_score, estimated_time, created_at
 `
 
 type CreateGreenprintParams struct {
+	Title               string
 	ItemID              int64
 	ImageKey            string
 	Description         string
@@ -278,6 +279,7 @@ type CreateGreenprintParams struct {
 
 func (q *Queries) CreateGreenprint(ctx context.Context, arg CreateGreenprintParams) (Greenprint, error) {
 	row := q.db.QueryRow(ctx, createGreenprint,
+		arg.Title,
 		arg.ItemID,
 		arg.ImageKey,
 		arg.Description,
@@ -287,13 +289,13 @@ func (q *Queries) CreateGreenprint(ctx context.Context, arg CreateGreenprintPara
 	var i Greenprint
 	err := row.Scan(
 		&i.ID,
+		&i.ItemID,
 		&i.ImageKey,
 		&i.Title,
 		&i.Description,
 		&i.SustainabilityScore,
 		&i.EstimatedTime,
 		&i.CreatedAt,
-		&i.ItemID,
 	)
 	return i, err
 }
@@ -330,7 +332,7 @@ func (q *Queries) CreateHabit(ctx context.Context, arg CreateHabitParams) (int64
 const createItems = `-- name: CreateItems :one
 INSERT INTO items(scan_id, user_id, name, description, value)
 VALUES ($1, $2, $3, $4, $5)
-RETURNING id, scan_id, name, description, value, created_at, user_id
+RETURNING id, user_id, scan_id, name, description, value, created_at
 `
 
 type CreateItemsParams struct {
@@ -352,12 +354,12 @@ func (q *Queries) CreateItems(ctx context.Context, arg CreateItemsParams) (Item,
 	var i Item
 	err := row.Scan(
 		&i.ID,
+		&i.UserID,
 		&i.ScanID,
 		&i.Name,
 		&i.Description,
 		&i.Value,
 		&i.CreatedAt,
-		&i.UserID,
 	)
 	return i, err
 }
@@ -592,14 +594,14 @@ func (q *Queries) CreateRecapDetails(ctx context.Context, arg CreateRecapDetails
 const createScans = `-- name: CreateScans :one
 INSERT INTO scans(user_id, title, description, image_key)
 VALUES($1, $2, $3, $4)
-RETURNING id, user_id, title, description, created_at, image_key
+RETURNING id, user_id, title, description, image_key, created_at
 `
 
 type CreateScansParams struct {
 	UserID      int64
 	Title       string
 	Description string
-	ImageKey    pgtype.Text
+	ImageKey    string
 }
 
 func (q *Queries) CreateScans(ctx context.Context, arg CreateScansParams) (Scan, error) {
@@ -615,8 +617,8 @@ func (q *Queries) CreateScans(ctx context.Context, arg CreateScansParams) (Scan,
 		&i.UserID,
 		&i.Title,
 		&i.Description,
-		&i.CreatedAt,
 		&i.ImageKey,
+		&i.CreatedAt,
 	)
 	return i, err
 }
@@ -1173,7 +1175,7 @@ func (q *Queries) GetAllUser(ctx context.Context) ([]GetAllUserRow, error) {
 }
 
 const getAllUserScans = `-- name: GetAllUserScans :many
-SELECT id, user_id, title, description, created_at, image_key FROM scans WHERE user_id = $1
+SELECT id, user_id, title, description, image_key, created_at FROM scans WHERE user_id = $1
 `
 
 func (q *Queries) GetAllUserScans(ctx context.Context, userID int64) ([]Scan, error) {
@@ -1190,8 +1192,8 @@ func (q *Queries) GetAllUserScans(ctx context.Context, userID int64) ([]Scan, er
 			&i.UserID,
 			&i.Title,
 			&i.Description,
-			&i.CreatedAt,
 			&i.ImageKey,
+			&i.CreatedAt,
 		); err != nil {
 			return nil, err
 		}
@@ -1470,7 +1472,7 @@ func (q *Queries) GetEventById(ctx context.Context, id int64) (GetEventByIdRow, 
 }
 
 const getGreenprints = `-- name: GetGreenprints :one
-SELECT id, image_key, title, description, sustainability_score, estimated_time, created_at, item_id FROM greenprints
+SELECT id, item_id, image_key, title, description, sustainability_score, estimated_time, created_at FROM greenprints
 WHERE item_id = $1
 `
 
@@ -1479,19 +1481,40 @@ func (q *Queries) GetGreenprints(ctx context.Context, itemID int64) (Greenprint,
 	var i Greenprint
 	err := row.Scan(
 		&i.ID,
+		&i.ItemID,
 		&i.ImageKey,
 		&i.Title,
 		&i.Description,
 		&i.SustainabilityScore,
 		&i.EstimatedTime,
 		&i.CreatedAt,
+	)
+	return i, err
+}
+
+const getGreenprintsById = `-- name: GetGreenprintsById :one
+SELECT id, item_id, image_key, title, description, sustainability_score, estimated_time, created_at FROM greenprints
+WHERE id = $1
+`
+
+func (q *Queries) GetGreenprintsById(ctx context.Context, id int64) (Greenprint, error) {
+	row := q.db.QueryRow(ctx, getGreenprintsById, id)
+	var i Greenprint
+	err := row.Scan(
+		&i.ID,
 		&i.ItemID,
+		&i.ImageKey,
+		&i.Title,
+		&i.Description,
+		&i.SustainabilityScore,
+		&i.EstimatedTime,
+		&i.CreatedAt,
 	)
 	return i, err
 }
 
 const getItemsById = `-- name: GetItemsById :one
-SELECT id, scan_id, name, description, value, created_at, user_id FROM items WHERE id = $1
+SELECT id, user_id, scan_id, name, description, value, created_at FROM items WHERE id = $1
 `
 
 func (q *Queries) GetItemsById(ctx context.Context, id int64) (Item, error) {
@@ -1499,18 +1522,18 @@ func (q *Queries) GetItemsById(ctx context.Context, id int64) (Item, error) {
 	var i Item
 	err := row.Scan(
 		&i.ID,
+		&i.UserID,
 		&i.ScanID,
 		&i.Name,
 		&i.Description,
 		&i.Value,
 		&i.CreatedAt,
-		&i.UserID,
 	)
 	return i, err
 }
 
 const getItemsByScanId = `-- name: GetItemsByScanId :many
-SELECT id, scan_id, name, description, value, created_at, user_id FROM items WHERE scan_id = $1
+SELECT id, user_id, scan_id, name, description, value, created_at FROM items WHERE scan_id = $1
 `
 
 func (q *Queries) GetItemsByScanId(ctx context.Context, scanID int64) ([]Item, error) {
@@ -1524,12 +1547,12 @@ func (q *Queries) GetItemsByScanId(ctx context.Context, scanID int64) ([]Item, e
 		var i Item
 		if err := rows.Scan(
 			&i.ID,
+			&i.UserID,
 			&i.ScanID,
 			&i.Name,
 			&i.Description,
 			&i.Value,
 			&i.CreatedAt,
-			&i.UserID,
 		); err != nil {
 			return nil, err
 		}

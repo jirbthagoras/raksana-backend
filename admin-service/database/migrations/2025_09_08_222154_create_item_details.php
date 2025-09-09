@@ -15,9 +15,10 @@ return new class extends Migration
     {
         Schema::create('greenprints', function (Blueprint $table) {
             $table->id();
+            $table->foreignId("item_id")->references("id")->on("items");
             $table->string("image_key");
             $table->string("title");
-            $table->string("description");
+            $table->text("description");
             $table->string("sustainability_score");
             $table->string("estimated_time");
             $table->timestamp('created_at')->default(FacadesDB::raw('CURRENT_TIMESTAMP'));

@@ -16,7 +16,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId("greenprint_id")->references("id")->on("greenprints");
             $table->string("name");
-            $table->string("description");
+            $table->text("description");
             $table->integer("price");
             $table->timestamp('created_at')->default(DB::raw('CURRENT_TIMESTAMP'));
         });

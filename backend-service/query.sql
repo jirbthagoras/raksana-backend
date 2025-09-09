@@ -768,8 +768,8 @@ VALUES ($1, $2, $3, $4, $5)
 RETURNING *;
 
 -- name: CreateGreenprint :one
-INSERT INTO greenprints(item_id, image_key, description, sustainability_score, estimated_time)
-VALUES ($1, $2, $3, $4, $5)
+INSERT INTO greenprints(title, item_id, image_key, description, sustainability_score, estimated_time)
+VALUES ($1, $2, $3, $4, $5, $6)
 RETURNING *;
 
 -- name: CreateMaterials :one
@@ -811,3 +811,7 @@ SELECT * FROM items WHERE id = $1;
 -- name: GetGreenprints :one
 SELECT * FROM greenprints
 WHERE item_id = $1;
+
+-- name: GetGreenprintsById :one
+SELECT * FROM greenprints
+WHERE id = $1;

@@ -13,6 +13,7 @@ import (
 	awsConfig "github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/credentials"
 	"github.com/aws/aws-sdk-go-v2/feature/s3/manager"
+	"github.com/aws/aws-sdk-go-v2/service/lambda"
 	"github.com/aws/aws-sdk-go-v2/service/rekognition"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/aws/smithy-go"
@@ -24,6 +25,7 @@ type AWSClient struct {
 	S3Client          *s3.Client
 	RekognitionClient *rekognition.Client
 	PsClient          *s3.PresignClient
+	LambdaClient      *lambda.Client
 	Uploader          *manager.Uploader
 }
 
@@ -50,6 +52,7 @@ func InitAWSClient(cnf *viper.Viper) *AWSClient {
 	s3Client := s3.NewFromConfig(awsCnf)
 	psClient := s3.NewPresignClient(s3Client)
 	rekognitionClient := rekognition.NewFromConfig(awsCnf)
+	lambdaClient := lambda.NewFromConfig(awsCnf)
 	uploader := manager.NewUploader(s3Client)
 
 	slog.Debug("Established connection to AWS")
@@ -57,6 +60,7 @@ func InitAWSClient(cnf *viper.Viper) *AWSClient {
 		S3Client:          s3Client,
 		RekognitionClient: rekognitionClient,
 		PsClient:          psClient,
+		LambdaClient:      lambdaClient,
 		Uploader:          uploader,
 	}
 }

@@ -22,7 +22,6 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/generative-ai-go/genai"
 	"github.com/jackc/pgx/v5"
-	"github.com/jackc/pgx/v5/pgtype"
 )
 
 type ScanHandler struct {
@@ -61,6 +60,8 @@ func (h *ScanHandler) RegisterRoutes(router fiber.Router) {
 	g.Post("/", h.handleScan)
 	g.Post("/trash", h.handleScanTrash)
 	g.Get("/trash", h.handleGetAllScans)
+	g.Post("/greenprint/:id", h.handleGenerateGreenprint)
+	g.Get("/greenprint/:id", h.handleGetGreenprint)
 }
 
 func (h *ScanHandler) handleScan(c *fiber.Ctx) error {
@@ -186,10 +187,7 @@ func (h *ScanHandler) handleScanTrash(c *fiber.Ctx) error {
 		UserID:      int64(userId),
 		Title:       modelResponse.Title,
 		Description: modelResponse.Description,
-		ImageKey: pgtype.Text{
-			String: key,
-			Valid:  true,
-		},
+		ImageKey:    key,
 	})
 	if err != nil {
 		slog.Error("Failed to insert scan", "err", err)
@@ -210,7 +208,9 @@ func (h *ScanHandler) handleScanTrash(c *fiber.Ctx) error {
 		}
 	}
 
-	modelResponse.ImageKey = scan.ImageKey.String
+	bucketUrl := cnf.GetString("AWS_URL")
+
+	modelResponse.ImageKey = bucketUrl + scan.ImageKey
 
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"data": modelResponse,
@@ -255,6 +255,7 @@ func (h *ScanHandler) handleGetAllScans(c *fiber.Ctx) error {
 			}
 
 			items = append(items, models.ResponseItems{
+				Id:               int(i.ID),
 				Name:             i.Name,
 				Description:      i.Description,
 				Value:            i.Value,
@@ -268,7 +269,7 @@ func (h *ScanHandler) handleGetAllScans(c *fiber.Ctx) error {
 		scans = append(scans, models.AIResponseScan{
 			Title:       s.Title,
 			Description: s.Description,
-			ImageKey:    bucketUrl + s.ImageKey.String,
+			ImageKey:    bucketUrl + s.ImageKey,
 			Items:       items,
 		})
 	}
@@ -284,6 +285,7 @@ func (h *ScanHandler) handleGenerateGreenprint(c *fiber.Ctx) error {
 	itemId, err := c.ParamsInt("id")
 	if err != nil {
 		slog.Error("Failed to get packet id", "err", err)
+		return err
 	}
 
 	userId, err := helpers.GetSubjectFromToken(c)
@@ -307,5 +309,154 @@ func (h *ScanHandler) handleGenerateGreenprint(c *fiber.Ctx) error {
 		return fiber.NewError(fiber.StatusBadRequest, "Item not found")
 	}
 
-	return nil
+	cnf := helpers.NewConfig()
+
+	// Generate greeprint
+	model, err := configs.InitModel(h.AIClient.Genai, cnf, configs.GreenPrint)
+	if err != nil {
+		return err
+	}
+
+	session := model.StartChat()
+	session.History = []*genai.Content{}
+
+	aiMsg := fmt.Sprintf("Saya hendak membuat sebuah tutorial atau langkah-langkah terperinci untuk membuat: %s, dengan deskripsi sebagai berikut: %s", resItem.Name, resItem.Description)
+	resp, err := session.SendMessage(ctx, genai.Text(aiMsg))
+	if err != nil {
+		slog.Error("Failed to send message", "err", err)
+	}
+
+	responseMsg := ""
+	for _, part := range resp.Candidates[0].Content.Parts {
+		responseMsg += fmt.Sprintf("%v\n", part)
+	}
+
+	var greenprintRes models.AIResponseGreenprint
+	err = json.Unmarshal([]byte(responseMsg), &greenprintRes)
+	if err != nil {
+		slog.Error("Failed to parse Gemini response content", "err", err)
+		return err
+	}
+
+	gp, err := h.Repository.CreateGreenprint(ctx, repositories.CreateGreenprintParams{
+		ItemID:              int64(itemId),
+		ImageKey:            "anjas kelas",
+		Description:         greenprintRes.Description,
+		Title:               greenprintRes.Title,
+		SustainabilityScore: greenprintRes.SustainabilityScore,
+	})
+	if err != nil {
+		slog.Error("Failed to create greenprint", "err", err)
+		return err
+	}
+
+	for _, s := range greenprintRes.Steps {
+		_, err := h.Repository.CreateSteps(ctx, repositories.CreateStepsParams{
+			GreenprintID: gp.ID,
+			Description:  s.Description,
+		})
+		if err != nil {
+			slog.Error("Failed to create greenprint", "err", err)
+			return err
+		}
+	}
+
+	for _, m := range greenprintRes.Materials {
+		_, err = h.Repository.CreateMaterials(ctx, repositories.CreateMaterialsParams{
+			GreenprintID: gp.ID,
+			Name:         m.Name,
+			Description:  m.Description,
+			Price:        m.Price,
+			Quantity:     m.Quantity,
+		})
+	}
+
+	for _, t := range greenprintRes.Tools {
+		_, err = h.Repository.CreateTools(ctx, repositories.CreateToolsParams{
+			GreenprintID: gp.ID,
+			Name:         t.Name,
+			Description:  t.Description,
+			Price:        t.Price,
+		})
+	}
+
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"data": greenprintRes,
+	})
+}
+
+func (h *ScanHandler) handleGetGreenprint(c *fiber.Ctx) error {
+	itemId, err := c.ParamsInt("id")
+	if err != nil {
+		slog.Error("Failed to get packet id", "err", err)
+	}
+
+	ctx := context.Background()
+
+	greenprintRes, err := h.Repository.GetGreenprints(ctx, int64(itemId))
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return fiber.NewError(fiber.StatusBadRequest, "Greenprint not found")
+		}
+		slog.Error("Failed to get greenprint", "err", err)
+		return err
+	}
+
+	materialsRes, err := h.Repository.GetMaterials(ctx, greenprintRes.ID)
+	if err != nil {
+		slog.Error("Failed to get materials", "err", err)
+		return err
+	}
+
+	toolsRes, err := h.Repository.GetTools(ctx, greenprintRes.ID)
+	if err != nil {
+		slog.Error("Failed to get tools", "err", err)
+		return err
+	}
+
+	stepsRes, err := h.Repository.GetSteps(ctx, greenprintRes.ID)
+	if err != nil {
+		slog.Error("Failed to get tools", "err", err)
+		return err
+	}
+
+	var res = models.AIResponseGreenprint{
+		Title:               greenprintRes.Title,
+		Description:         greenprintRes.Description,
+		EstimatedTime:       greenprintRes.EstimatedTime,
+		SustainabilityScore: greenprintRes.SustainabilityScore,
+		CreatedAt:           greenprintRes.CreatedAt.Time.Format("2006-01-02 15:04"),
+		Tools:               []models.ResponseTool{},
+		Materials:           []models.ResponseMaterial{},
+		Steps:               []models.ResponseStep{},
+		Text:                "",
+	}
+
+	for _, m := range materialsRes {
+		res.Materials = append(res.Materials, models.ResponseMaterial{
+			Name:        m.Name,
+			Description: m.Description,
+			Price:       m.Price,
+			Quantity:    m.Quantity,
+		})
+	}
+
+	for _, t := range toolsRes {
+		res.Tools = append(res.Tools, models.ResponseTool{
+			Name:        t.Name,
+			Description: t.Description,
+			Price:       t.Price,
+		})
+	}
+
+	for _, s := range stepsRes {
+		res.Steps = append(res.Steps, models.ResponseStep{
+			Description: s.Description,
+		})
+	}
+
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"data": res,
+	})
+
 }

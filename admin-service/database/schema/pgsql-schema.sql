@@ -319,13 +319,13 @@ ALTER SEQUENCE public.failed_jobs_id_seq OWNED BY public.failed_jobs.id;
 
 CREATE TABLE public.greenprints (
     id bigint NOT NULL,
+    item_id bigint NOT NULL,
     image_key character varying(255) NOT NULL,
     title character varying(255) NOT NULL,
-    description character varying(255) NOT NULL,
+    description text NOT NULL,
     sustainability_score character varying(255) NOT NULL,
     estimated_time character varying(255) NOT NULL,
-    created_at timestamp(0) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
-    item_id bigint NOT NULL
+    created_at timestamp(0) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL
 );
 
 
@@ -424,12 +424,12 @@ ALTER SEQUENCE public.histories_id_seq OWNED BY public.histories.id;
 
 CREATE TABLE public.items (
     id bigint NOT NULL,
+    user_id bigint NOT NULL,
     scan_id bigint NOT NULL,
     name character varying(255) NOT NULL,
-    description character varying(255) NOT NULL,
+    description text NOT NULL,
     value character varying(255) NOT NULL,
     created_at timestamp(0) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
-    user_id bigint NOT NULL,
     CONSTRAINT items_value_check CHECK (((value)::text = ANY ((ARRAY['high'::character varying, 'mid'::character varying, 'low'::character varying])::text[])))
 );
 
@@ -545,7 +545,7 @@ ALTER SEQUENCE public.logs_id_seq OWNED BY public.logs.id;
 CREATE TABLE public.materials (
     id bigint NOT NULL,
     name character varying(255) NOT NULL,
-    description character varying(255) NOT NULL,
+    description text NOT NULL,
     price integer NOT NULL,
     quantity integer NOT NULL,
     greenprint_id bigint NOT NULL
@@ -865,9 +865,9 @@ CREATE TABLE public.scans (
     id bigint NOT NULL,
     user_id bigint NOT NULL,
     title character varying(255) NOT NULL,
-    description character varying(255) NOT NULL,
-    created_at timestamp(0) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
-    image_key character varying(255)
+    description text NOT NULL,
+    image_key character varying(255) NOT NULL,
+    created_at timestamp(0) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL
 );
 
 
@@ -946,7 +946,7 @@ ALTER SEQUENCE public.statistics_id_seq OWNED BY public.statistics.id;
 CREATE TABLE public.steps (
     id bigint NOT NULL,
     greenprint_id bigint NOT NULL,
-    description character varying(255) NOT NULL,
+    description text NOT NULL,
     created_at timestamp(0) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL
 );
 
@@ -1016,7 +1016,7 @@ CREATE TABLE public.tools (
     id bigint NOT NULL,
     greenprint_id bigint NOT NULL,
     name character varying(255) NOT NULL,
-    description character varying(255) NOT NULL,
+    description text NOT NULL,
     price integer NOT NULL,
     created_at timestamp(0) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL
 );
@@ -1920,6 +1920,7 @@ ALTER TABLE ONLY public.treasures
 -- PostgreSQL database dump
 --
 
+\restrict 66nf0oMd6XsNg2tElFm19jwK7KDoYAZMfT6lcU7lmxemoaO9CDISCcthvqSrjN6
 
 -- Dumped from database version 17.6 (Debian 17.6-1.pgdg13+1)
 -- Dumped by pg_dump version 17.6 (Ubuntu 17.6-1.pgdg24.04+1)
@@ -1940,14 +1941,49 @@ SET row_security = off;
 -- Data for Name: migrations; Type: TABLE DATA; Schema: public; Owner: -
 --
 
+COPY public.migrations (id, migration, batch) FROM stdin;
+1	0001_01_01_000000_create_users_table	1
+2	0001_01_01_000001_create_cache_table	1
+3	0001_01_01_000002_create_jobs_table	1
+4	2025_08_11_142816_create_profiles	1
+5	2025_08_11_143332_create_statistics	1
+6	2025_08_11_143910_create_details_table	1
+7	2025_08_11_145842_create_challenges_table	1
+8	2025_08_11_150400_create_codes_table	1
+9	2025_08_11_150805_create_quests	1
+10	2025_08_11_150953_create_events	1
+11	2025_08_11_151106_create_contributions	1
+12	2025_08_11_151352_create_memories	1
+13	2025_08_11_151540_create_participations	1
+14	2025_08_11_151644_create_attendances	1
+15	2025_08_11_151803_create_treasures_table	1
+16	2025_08_11_152019_create_claimed	1
+17	2025_08_11_152127_create_logs	1
+18	2025_08_20_124603_create_recaps	1
+19	2025_08_26_141537_create_packets	1
+20	2025_08_26_141543_create_habits	1
+21	2025_08_26_141550_create_routines	1
+22	2025_09_03_162511_create_recap_details	1
+23	2025_09_07_210635_create_history	1
+24	2025_09_08_221818_add_scan_table	1
+25	2025_09_08_221930_create_items	1
+26	2025_09_08_222154_create_item_details	1
+27	2025_09_08_222452_create_materials	1
+28	2025_09_08_222457_create_steps	1
+29	2025_09_08_222554_create_tools	1
+\.
+
 
 --
 -- Name: migrations_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
 --
 
-SELECT pg_catalog.setval('public.migrations_id_seq', 35, true);
+SELECT pg_catalog.setval('public.migrations_id_seq', 29, true);
 
 
 --
 -- PostgreSQL database dump complete
 --
+
+\unrestrict 66nf0oMd6XsNg2tElFm19jwK7KDoYAZMfT6lcU7lmxemoaO9CDISCcthvqSrjN6
+
