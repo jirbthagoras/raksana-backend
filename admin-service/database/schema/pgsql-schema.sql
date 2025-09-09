@@ -324,7 +324,8 @@ CREATE TABLE public.greenprints (
     description character varying(255) NOT NULL,
     sustainability_score character varying(255) NOT NULL,
     estimated_time character varying(255) NOT NULL,
-    created_at timestamp(0) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL
+    created_at timestamp(0) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    item_id bigint NOT NULL
 );
 
 
@@ -428,6 +429,7 @@ CREATE TABLE public.items (
     description character varying(255) NOT NULL,
     value character varying(255) NOT NULL,
     created_at timestamp(0) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    user_id bigint NOT NULL,
     CONSTRAINT items_value_check CHECK (((value)::text = ANY ((ARRAY['high'::character varying, 'mid'::character varying, 'low'::character varying])::text[])))
 );
 
@@ -864,7 +866,8 @@ CREATE TABLE public.scans (
     user_id bigint NOT NULL,
     title character varying(255) NOT NULL,
     description character varying(255) NOT NULL,
-    created_at timestamp(0) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL
+    created_at timestamp(0) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    image_key character varying(255)
 );
 
 
@@ -1710,6 +1713,14 @@ ALTER TABLE ONLY public.events
 
 
 --
+-- Name: greenprints greenprints_item_id_foreign; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.greenprints
+    ADD CONSTRAINT greenprints_item_id_foreign FOREIGN KEY (item_id) REFERENCES public.items(id);
+
+
+--
 -- Name: habits habits_packet_id_foreign; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -1731,6 +1742,14 @@ ALTER TABLE ONLY public.histories
 
 ALTER TABLE ONLY public.items
     ADD CONSTRAINT items_scan_id_foreign FOREIGN KEY (scan_id) REFERENCES public.scans(id);
+
+
+--
+-- Name: items items_user_id_foreign; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.items
+    ADD CONSTRAINT items_user_id_foreign FOREIGN KEY (user_id) REFERENCES public.users(id);
 
 
 --
@@ -1901,6 +1920,7 @@ ALTER TABLE ONLY public.treasures
 -- PostgreSQL database dump
 --
 
+
 -- Dumped from database version 17.6 (Debian 17.6-1.pgdg13+1)
 -- Dumped by pg_dump version 17.6 (Ubuntu 17.6-1.pgdg24.04+1)
 
@@ -1920,14 +1940,14 @@ SET row_security = off;
 -- Data for Name: migrations; Type: TABLE DATA; Schema: public; Owner: -
 --
 
+
 --
 -- Name: migrations_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
 --
 
-SELECT pg_catalog.setval('public.migrations_id_seq', 32, true);
+SELECT pg_catalog.setval('public.migrations_id_seq', 35, true);
 
 
 --
 -- PostgreSQL database dump complete
 --
-

@@ -12,11 +12,13 @@ type Category struct {
 type AIResponseScan struct {
 	Title       string          `json:"title"`
 	Description string          `json:"description"`
+	ImageKey    string          `json:"image_key"`
 	Items       []ResponseItems `json:"items"`
 }
 
 type ResponseItems struct {
-	Name        string `json:"name"`
-	Description string `json:"description"`
-	Value       string `json:"value"`
+	Name             string `json:"name"`
+	Description      string `json:"description"`
+	Value            string `json:"value"`
+	HavingGreenprint bool   `json:"having_greenprint"`
 }

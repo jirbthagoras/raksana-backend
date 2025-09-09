@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
@@ -16,9 +17,12 @@ import (
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/rekognition"
 	"github.com/aws/aws-sdk-go-v2/service/rekognition/types"
+	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/generative-ai-go/genai"
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 type ScanHandler struct {
@@ -56,7 +60,7 @@ func (h *ScanHandler) RegisterRoutes(router fiber.Router) {
 	g.Use(helpers.TokenMiddleware)
 	g.Post("/", h.handleScan)
 	g.Post("/trash", h.handleScanTrash)
-	g.Get("/", h.handleGetAllScans)
+	g.Get("/trash", h.handleGetAllScans)
 }
 
 func (h *ScanHandler) handleScan(c *fiber.Ctx) error {
@@ -109,6 +113,7 @@ func (h *ScanHandler) handleScanTrash(c *fiber.Ctx) error {
 		slog.Error("Failed to open the image", "err", err)
 		return err
 	}
+	defer src.Close()
 
 	fileBytes, err := io.ReadAll(src)
 	if err != nil {
@@ -116,6 +121,21 @@ func (h *ScanHandler) handleScanTrash(c *fiber.Ctx) error {
 	}
 
 	ctx := context.Background()
+
+	cnf := helpers.NewConfig()
+	bucketName := cnf.GetString("AWS_BUCKET")
+	key := fmt.Sprintf("scans/%v/%s", userId, file.Filename)
+
+	_, err = h.AWSClient.S3Client.PutObject(ctx, &s3.PutObjectInput{
+		Bucket:      aws.String(bucketName),
+		Key:         aws.String(key),
+		Body:        bytes.NewReader(fileBytes),
+		ContentType: aws.String(file.Header.Get("Content-Type")),
+	})
+	if err != nil {
+		slog.Error("Failed to upload to S3", "err", err)
+		return err
+	}
 
 	output, err := h.AWSClient.RekognitionClient.DetectLabels(ctx, &rekognition.DetectLabelsInput{
 		Image: &types.Image{
@@ -129,7 +149,6 @@ func (h *ScanHandler) handleScanTrash(c *fiber.Ctx) error {
 		return err
 	}
 
-	cnf := helpers.NewConfig()
 	model, err := configs.InitModel(h.AIClient.Genai, cnf, configs.TrashScanner)
 	if err != nil {
 		slog.Error("Failed to init model", "err", err)
@@ -167,6 +186,10 @@ func (h *ScanHandler) handleScanTrash(c *fiber.Ctx) error {
 		UserID:      int64(userId),
 		Title:       modelResponse.Title,
 		Description: modelResponse.Description,
+		ImageKey: pgtype.Text{
+			String: key,
+			Valid:  true,
+		},
 	})
 	if err != nil {
 		slog.Error("Failed to insert scan", "err", err)
@@ -176,6 +199,7 @@ func (h *ScanHandler) handleScanTrash(c *fiber.Ctx) error {
 	for _, i := range modelResponse.Items {
 		_, err := h.Repository.CreateItems(ctx, repositories.CreateItemsParams{
 			ScanID:      scan.ID,
+			UserID:      int64(userId),
 			Name:        i.Name,
 			Description: i.Description,
 			Value:       i.Value,
@@ -184,8 +208,9 @@ func (h *ScanHandler) handleScanTrash(c *fiber.Ctx) error {
 			slog.Error("Failed to insert items", "err", err)
 			return err
 		}
-
 	}
+
+	modelResponse.ImageKey = scan.ImageKey.String
 
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"data": modelResponse,
@@ -217,16 +242,33 @@ func (h *ScanHandler) handleGetAllScans(c *fiber.Ctx) error {
 
 		var items []models.ResponseItems
 		for _, i := range resItem {
+			var isHavingGreenPrint bool = true
+
+			_, err := h.Repository.GetGreenprints(ctx, i.ID)
+			if err != nil {
+				if errors.Is(err, pgx.ErrNoRows) {
+					isHavingGreenPrint = false
+				} else {
+					slog.Error("Failed to get greenprint", "err", err)
+					return err
+				}
+			}
+
 			items = append(items, models.ResponseItems{
-				Name:        i.Name,
-				Description: i.Description,
-				Value:       i.Value,
+				Name:             i.Name,
+				Description:      i.Description,
+				Value:            i.Value,
+				HavingGreenprint: isHavingGreenPrint,
 			})
 		}
+
+		cnf := helpers.NewConfig()
+		bucketUrl := cnf.GetString("AWS_URL")
 
 		scans = append(scans, models.AIResponseScan{
 			Title:       s.Title,
 			Description: s.Description,
+			ImageKey:    bucketUrl + s.ImageKey.String,
 			Items:       items,
 		})
 	}
@@ -236,4 +278,34 @@ func (h *ScanHandler) handleGetAllScans(c *fiber.Ctx) error {
 			"scans": scans,
 		},
 	})
+}
+
+func (h *ScanHandler) handleGenerateGreenprint(c *fiber.Ctx) error {
+	itemId, err := c.ParamsInt("id")
+	if err != nil {
+		slog.Error("Failed to get packet id", "err", err)
+	}
+
+	userId, err := helpers.GetSubjectFromToken(c)
+	if err != nil {
+		slog.Error("Failed to get the subject", "err", err)
+		return fiber.ErrUnauthorized
+	}
+
+	ctx := context.Background()
+
+	resItem, err := h.Repository.GetItemsById(ctx, int64(itemId))
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return fiber.NewError(fiber.StatusBadRequest, "Item not found")
+		}
+		slog.Error("Failed to get item by id")
+		return err
+	}
+
+	if userId != int(resItem.UserID) {
+		return fiber.NewError(fiber.StatusBadRequest, "Item not found")
+	}
+
+	return nil
 }

@@ -758,18 +758,18 @@ ORDER BY distance_meters
 LIMIT 1;
 
 -- name: CreateScans :one
-INSERT INTO scans(user_id, title, description)
-VALUES($1, $2, $3)
+INSERT INTO scans(user_id, title, description, image_key)
+VALUES($1, $2, $3, $4)
 RETURNING *;
 
 -- name: CreateItems :one
-INSERT INTO items(scan_id, name, description, value)
-VALUES ($1, $2, $3, $4)
+INSERT INTO items(scan_id, user_id, name, description, value)
+VALUES ($1, $2, $3, $4, $5)
 RETURNING *;
 
 -- name: CreateGreenprint :one
-INSERT INTO greenprints(image_key, description, sustainability_score, estimated_time)
-VALUES ($1, $2, $3, $4)
+INSERT INTO greenprints(item_id, image_key, description, sustainability_score, estimated_time)
+VALUES ($1, $2, $3, $4, $5)
 RETURNING *;
 
 -- name: CreateMaterials :one
@@ -777,18 +777,37 @@ INSERT INTO materials(greenprint_id,name, description, price, quantity)
 VALUES ($1, $2, $3, $4, $5)
 RETURNING *;
 
+-- name: GetMaterials :many
+SELECT * FROM materials
+WHERE greenprint_id = $1;
+
 -- name: CreateSteps :one
 INSERT INTO steps(greenprint_id, description)
 VALUES ($1, $2)
 RETURNING *;
+
+-- name: GetSteps :many
+SELECT * FROM steps
+WHERE greenprint_id = $1;
 
 -- name: CreateTools :one
 INSERT INTO tools(greenprint_id, name, description, price)
 VALUES($1, $2, $3, $4)
 RETURNING *;
 
+-- name: GetTools :many
+SELECT * FROM tools
+WHERE greenprint_id = $1;
+
 -- name: GetAllUserScans :many
 SELECT * FROM scans WHERE user_id = $1;
 
 -- name: GetItemsByScanId :many
 SELECT * FROM items WHERE scan_id = $1;
+
+-- name: GetItemsById :one
+SELECT * FROM items WHERE id = $1;
+
+-- name: GetGreenprints :one
+SELECT * FROM greenprints
+WHERE item_id = $1;

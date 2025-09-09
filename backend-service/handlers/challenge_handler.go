@@ -218,6 +218,7 @@ func (h *ChallengeHandler) handleGetChallengeParticipants(c *fiber.Ctx) error {
 	challengeId, err := c.ParamsInt("id")
 	if err != nil {
 		slog.Error("Failed to get packet id", "err", err)
+		return err
 	}
 
 	_, err = h.Repository.GetChallengeWithDetailById(context.Background(), int64(challengeId))

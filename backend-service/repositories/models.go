@@ -96,6 +96,7 @@ type Greenprint struct {
 	SustainabilityScore string
 	EstimatedTime       string
 	CreatedAt           pgtype.Timestamp
+	ItemID              int64
 }
 
 type Habit struct {
@@ -125,6 +126,7 @@ type Item struct {
 	Description string
 	Value       string
 	CreatedAt   pgtype.Timestamp
+	UserID      int64
 }
 
 type Job struct {
@@ -261,6 +263,7 @@ type Scan struct {
 	Title       string
 	Description string
 	CreatedAt   pgtype.Timestamp
+	ImageKey    pgtype.Text
 }
 
 type Session struct {
