@@ -56,6 +56,7 @@ func (h *ScanHandler) RegisterRoutes(router fiber.Router) {
 	g.Use(helpers.TokenMiddleware)
 	g.Post("/", h.handleScan)
 	g.Post("/trash", h.handleScanTrash)
+	g.Get("/", h.handleGetAllScans)
 }
 
 func (h *ScanHandler) handleScan(c *fiber.Ctx) error {
@@ -188,5 +189,51 @@ func (h *ScanHandler) handleScanTrash(c *fiber.Ctx) error {
 
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"data": modelResponse,
+	})
+}
+
+func (h *ScanHandler) handleGetAllScans(c *fiber.Ctx) error {
+	userId, err := helpers.GetSubjectFromToken(c)
+	if err != nil {
+		slog.Error("Failed to get subject from token", "err", err)
+		return nil
+	}
+
+	ctx := context.Background()
+
+	scanRes, err := h.Repository.GetAllUserScans(ctx, int64(userId))
+	if err != nil {
+		slog.Error("Failed to get scan result", "err", err)
+		return err
+	}
+
+	var scans []models.AIResponseScan
+	for _, s := range scanRes {
+		resItem, err := h.Repository.GetItemsByScanId(ctx, s.ID)
+		if err != nil {
+			slog.Error("Failed to get item", "err", err)
+			return err
+		}
+
+		var items []models.ResponseItems
+		for _, i := range resItem {
+			items = append(items, models.ResponseItems{
+				Name:        i.Name,
+				Description: i.Description,
+				Value:       i.Value,
+			})
+		}
+
+		scans = append(scans, models.AIResponseScan{
+			Title:       s.Title,
+			Description: s.Description,
+			Items:       items,
+		})
+	}
+
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"data": fiber.Map{
+			"scans": scans,
+		},
 	})
 }

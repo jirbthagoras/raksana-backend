@@ -1159,6 +1159,36 @@ func (q *Queries) GetAllUser(ctx context.Context) ([]GetAllUserRow, error) {
 	return items, nil
 }
 
+const getAllUserScans = `-- name: GetAllUserScans :many
+SELECT id, user_id, title, description, created_at FROM scans WHERE user_id = $1
+`
+
+func (q *Queries) GetAllUserScans(ctx context.Context, userID int64) ([]Scan, error) {
+	rows, err := q.db.Query(ctx, getAllUserScans, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Scan
+	for rows.Next() {
+		var i Scan
+		if err := rows.Scan(
+			&i.ID,
+			&i.UserID,
+			&i.Title,
+			&i.Description,
+			&i.CreatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const getAttendanceDetails = `-- name: GetAttendanceDetails :one
 SELECT
     a.id AS attendance_id,
@@ -1423,6 +1453,37 @@ func (q *Queries) GetEventById(ctx context.Context, id int64) (GetEventByIdRow, 
 	var i GetEventByIdRow
 	err := row.Scan(&i.ID, &i.Name, &i.Description)
 	return i, err
+}
+
+const getItemsByScanId = `-- name: GetItemsByScanId :many
+SELECT id, scan_id, name, description, value, created_at FROM items WHERE scan_id = $1
+`
+
+func (q *Queries) GetItemsByScanId(ctx context.Context, scanID int64) ([]Item, error) {
+	rows, err := q.db.Query(ctx, getItemsByScanId, scanID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Item
+	for rows.Next() {
+		var i Item
+		if err := rows.Scan(
+			&i.ID,
+			&i.ScanID,
+			&i.Name,
+			&i.Description,
+			&i.Value,
+			&i.CreatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 const getLastMonthUserHistories = `-- name: GetLastMonthUserHistories :many
@@ -1991,6 +2052,23 @@ func (q *Queries) GetQuestByCodeId(ctx context.Context, codeID string) (GetQuest
 		&i.Description,
 		&i.PointGain,
 		&i.Finished,
+	)
+	return i, err
+}
+
+const getScanById = `-- name: GetScanById :one
+SELECT id, user_id, title, description, created_at FROM scans WHERE user_id = $1
+`
+
+func (q *Queries) GetScanById(ctx context.Context, userID int64) (Scan, error) {
+	row := q.db.QueryRow(ctx, getScanById, userID)
+	var i Scan
+	err := row.Scan(
+		&i.ID,
+		&i.UserID,
+		&i.Title,
+		&i.Description,
+		&i.CreatedAt,
 	)
 	return i, err
 }

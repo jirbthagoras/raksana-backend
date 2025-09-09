@@ -786,3 +786,9 @@ RETURNING *;
 INSERT INTO tools(greenprint_id, name, description, price)
 VALUES($1, $2, $3, $4)
 RETURNING *;
+
+-- name: GetAllUserScans :many
+SELECT * FROM scans WHERE user_id = $1;
+
+-- name: GetItemsByScanId :many
+SELECT * FROM items WHERE scan_id = $1;
