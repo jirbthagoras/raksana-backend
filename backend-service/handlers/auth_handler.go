@@ -78,12 +78,11 @@ func (h *AuthHandler) handleRegister(c *fiber.Ctx) error {
 
 		var pgErr *pgconn.PgError
 		if errors.As(err, &pgErr) && pgErr.Code == "23505" {
-			// return fiber.NewError(fiber.StatusBadRequest, err.Error())
 			switch pgErr.ConstraintName {
 			case "users_email_unique":
-				return fiber.NewError(fiber.StatusBadRequest, "Email already used")
+				return fiber.NewError(fiber.StatusBadRequest, "Email sudah digunakan")
 			case "users_username_unique":
-				return fiber.NewError(fiber.StatusBadRequest, "Username already exists")
+				return fiber.NewError(fiber.StatusBadRequest, "Username sudah dipakai")
 			}
 		}
 
@@ -157,7 +156,7 @@ func (h *AuthHandler) handleLogin(c *fiber.Ctx) error {
 	}
 
 	if ok := helpers.CheckPassword(req.Password, user.Password); !ok {
-		return fiber.NewError(fiber.StatusBadRequest, "Password does not match")
+		return fiber.NewError(fiber.StatusBadRequest, "Password tidak cocok")
 	}
 
 	expiry := time.Now().Add(720 * time.Hour)
@@ -170,6 +169,11 @@ func (h *AuthHandler) handleLogin(c *fiber.Ctx) error {
 
 	return c.Status(200).JSON(fiber.Map{
 		"data": fiber.Map{
+			"user": fiber.Map{
+				"username": user.Username,
+				"email":    user.Email,
+				"id":       user.ID,
+			},
 			"token": token,
 		},
 	})
