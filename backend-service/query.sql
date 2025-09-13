@@ -799,6 +799,11 @@ RETURNING *;
 SELECT * FROM tools
 WHERE greenprint_id = $1;
 
+-- name: GetParticipants :one
+SELECT 
+  COUNT (*) FILTER (WHERE challenge_id = $1) AS participants
+FROM participations;
+
 -- name: GetAllUserScans :many
 SELECT * FROM scans WHERE user_id = $1;
 

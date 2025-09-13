@@ -169,19 +169,27 @@ func (h *ChallengeHandler) handleParticipate(c *fiber.Ctx) error {
 }
 
 func (h *ChallengeHandler) handleGetTodayChallenge(c *fiber.Ctx) error {
-	res, err := h.Repository.GetTodayChallenge(context.Background())
+	ctx := context.Background()
+	res, err := h.Repository.GetTodayChallenge(ctx)
 	if err != nil {
 		slog.Error("Failed to get today challenge", "err", err)
 		return err
 	}
 
+	participants, err := h.Repository.GetParticipants(ctx, res.ChallengeID)
+	if err != nil {
+		slog.Error("Failed to count participants")
+		return err
+	}
+
 	var challenge = models.ResponseChallenge{
-		ID:          int(res.ChallengeID),
-		Name:        res.Name,
-		Description: res.Description,
-		Difficulty:  res.Difficulty,
-		Day:         int(res.Day),
-		PointGain:   int(res.PointGain),
+		ID:           int(res.ChallengeID),
+		Name:         res.Name,
+		Description:  res.Description,
+		Difficulty:   res.Difficulty,
+		Day:          int(res.Day),
+		PointGain:    int(res.PointGain),
+		Participants: int(participants),
 	}
 
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{

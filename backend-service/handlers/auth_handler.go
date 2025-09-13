@@ -145,7 +145,7 @@ func (h *AuthHandler) handleLogin(c *fiber.Ctx) error {
 	user, err := h.Repository.GetUserByEmail(ctx, req.Email)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return fiber.NewError(fiber.StatusBadRequest, "Email does not exists")
+			return fiber.NewError(fiber.StatusBadRequest, "Email tidak terdaftar")
 		}
 		slog.Error("Failed to get user with such email", "err", err.Error())
 		return err
@@ -193,6 +193,11 @@ func (h *AuthHandler) handleMe(c *fiber.Ctx) error {
 	}
 
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
-		"data": claims,
+		"data": fiber.Map{
+			"username": claims.Username,
+			"id":       claims.ID,
+			"email":    claims.Email,
+			"token":    token,
+		},
 	})
 }

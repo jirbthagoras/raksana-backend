@@ -2121,6 +2121,19 @@ func (q *Queries) GetPacketUnlockedHabits(ctx context.Context, packetID int64) (
 	return items, nil
 }
 
+const getParticipants = `-- name: GetParticipants :one
+SELECT 
+  COUNT (*) FILTER (WHERE challenge_id = $1) AS participants
+FROM participations
+`
+
+func (q *Queries) GetParticipants(ctx context.Context, challengeID int64) (int64, error) {
+	row := q.db.QueryRow(ctx, getParticipants, challengeID)
+	var participants int64
+	err := row.Scan(&participants)
+	return participants, err
+}
+
 const getQuestByCodeId = `-- name: GetQuestByCodeId :one
 SELECT 
   q.id AS id,
