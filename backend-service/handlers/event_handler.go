@@ -285,8 +285,14 @@ func (h *EventHandler) handleAttend(c *fiber.Ctx) error {
 		return err
 	}
 
+	profile, err := h.Repository.GetUserProfile(ctx, int64(userId))
+	if err != nil {
+		slog.Error("Failed to get user profile", "err", err)
+		return err
+	}
+
 	historyMsg := fmt.Sprintf("Mendapat poin event: %s", event.Name)
-	_, err = h.PointService.UpdateUserPoint(int64(userId), event.PointGain, historyMsg, "event")
+	_, err = h.PointService.UpdateUserPoint(int64(userId), event.PointGain, historyMsg, "event", int(profile.Level))
 	if err != nil {
 		return err
 	}

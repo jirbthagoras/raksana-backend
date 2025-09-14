@@ -8,8 +8,7 @@ var LevelMultipliers = map[int]float64{
 	13: 2.0, 14: 2.0, 15: 2.0,
 }
 
-func GetMultiplier(level int, streak int) float64 {
+func GetMultiplier(level int) float64 {
 	multiplier := LevelMultipliers[level]
-	streakBonus := float64(streak/5) * 0.1
-	return multiplier + streakBonus
+	return multiplier
 }

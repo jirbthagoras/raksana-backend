@@ -134,8 +134,14 @@ func (h *ChallengeHandler) handleParticipate(c *fiber.Ctx) error {
 		return err
 	}
 
+	profile, err := h.Repository.GetUserProfile(ctx, int64(userId))
+	if err != nil {
+		slog.Error("Failed to get user profile", "err", err)
+		return err
+	}
+
 	historyMsg := fmt.Sprintf("Mendapat poin challenge %s", challenge.Name)
-	_, err = h.PointService.UpdateUserPoint(int64(userId), challenge.PointGain, historyMsg, "challenge")
+	_, err = h.PointService.UpdateUserPoint(int64(userId), challenge.PointGain, historyMsg, "challenge", int(profile.Level))
 	if err != nil {
 		return err
 	}

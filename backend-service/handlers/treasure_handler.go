@@ -98,8 +98,14 @@ func (h *TreasureHandler) handleClaimTreasure(c *fiber.Ctx) error {
 		return err
 	}
 
+	profile, err := h.Repository.GetUserProfile(ctx, int64(userId))
+	if err != nil {
+		slog.Error("Failed to get user profile", "err", err)
+		return err
+	}
+
 	historyMsg := fmt.Sprintf("Mendapatkan poin treasure: %s", treasure.Name)
-	_, err = h.PointService.UpdateUserPoint(int64(userId), treasure.PointGain, historyMsg, "treasure")
+	_, err = h.PointService.UpdateUserPoint(int64(userId), treasure.PointGain, historyMsg, "treasure", int(profile.Level))
 	if err != nil {
 		return err
 	}

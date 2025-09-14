@@ -112,8 +112,14 @@ func (h *QuestHandler) handleContribute(c *fiber.Ctx) error {
 		h.Repository.FinsihQuest(ctx, quest.ID)
 	}
 
+	profile, err := h.Repository.GetUserProfile(ctx, int64(userId))
+	if err != nil {
+		slog.Error("Failed to get user profile", "err", err)
+		return err
+	}
+
 	historyMsg := fmt.Sprintf("Mendapatkan poin quest: %s", quest.Name)
-	_, err = h.PointService.UpdateUserPoint(int64(userId), quest.PointGain, historyMsg, "quest")
+	_, err = h.PointService.UpdateUserPoint(int64(userId), quest.PointGain, historyMsg, "quest", int(profile.Level))
 	if err != nil {
 		slog.Error("Failed to count", "err", err)
 		return err
