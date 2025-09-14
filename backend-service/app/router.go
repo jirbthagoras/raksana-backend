@@ -29,6 +29,8 @@ type AppRouter struct {
 	*handlers.ScanHandler
 	*handlers.ActivityHandler
 	*handlers.HistoryHandler
+	*handlers.PointHandler
+	*handlers.RegionHandler
 }
 
 func NewAppRouter(
@@ -72,6 +74,8 @@ func NewAppRouter(
 		ScanHandler:        handlers.NewScanHandler(v, r, treasureHandler, questHandler, eventHandler, awsClient, aiClient),
 		ActivityHandler:    handlers.NewActivityHandler(v, r),
 		HistoryHandler:     handlers.NewHistoryHandler(r),
+		PointHandler:       handlers.NewPointHandler(v, r, pointService, journalService),
+		RegionHandler:      handlers.NewRegionHandler(v, r),
 	}
 }
 
@@ -92,4 +96,6 @@ func (r *AppRouter) RegisterRoute(router fiber.Router) {
 	r.ScanHandler.RegisterRoutes(router)
 	r.ActivityHandler.RegisterRoutes(router)
 	r.HistoryHandler.RegisterRoutes(router)
+	r.PointHandler.RegisterRoutes(router)
+	r.RegionHandler.RegisterRoutes(router)
 }

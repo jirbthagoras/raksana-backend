@@ -40,6 +40,20 @@ func (h *HistoryHandler) handleGetHistories(c *fiber.Ctx) error {
 		return nil
 	}
 
+	if len(res) == 0 {
+		return c.Status(fiber.StatusOK).JSON(fiber.Map{
+			"data": fiber.Map{
+				"histories": []string{},
+			},
+		})
+	}
+
+	userProfile, err := h.Repository.GetUserProfile(context.Background(), int64(userId))
+	if err != nil {
+		slog.Error("Failed to get user profile", "err", err)
+		return err
+	}
+
 	var histories []models.ResponseHistory
 	for _, h := range res {
 		histories = append(histories, models.ResponseHistory{
@@ -53,6 +67,7 @@ func (h *HistoryHandler) handleGetHistories(c *fiber.Ctx) error {
 
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"data": fiber.Map{
+			"balance":   userProfile.Points,
 			"histories": histories,
 		},
 	})

@@ -257,6 +257,17 @@ type RecapDetail struct {
 	CreatedAt      pgtype.Timestamp
 }
 
+type Region struct {
+	ID         int64
+	Name       string
+	Location   string
+	Latitude   float64
+	Longitude  float64
+	TreeAmount int32
+	CreatedAt  pgtype.Timestamp
+	UpdatedAt  pgtype.Timestamp
+}
+
 type Scan struct {
 	ID          int64
 	UserID      int64

@@ -798,6 +798,33 @@ func (q *Queries) DeactivateTreasure(ctx context.Context, id int64) error {
 	return err
 }
 
+const decreaseUserPoints = `-- name: DecreaseUserPoints :one
+UPDATE profiles
+SET points = points - $1
+WHERE user_id = $2
+RETURNING id, user_id, current_exp, exp_needed, level, points, profile_key
+`
+
+type DecreaseUserPointsParams struct {
+	Points int64
+	UserID int64
+}
+
+func (q *Queries) DecreaseUserPoints(ctx context.Context, arg DecreaseUserPointsParams) (Profile, error) {
+	row := q.db.QueryRow(ctx, decreaseUserPoints, arg.Points, arg.UserID)
+	var i Profile
+	err := row.Scan(
+		&i.ID,
+		&i.UserID,
+		&i.CurrentExp,
+		&i.ExpNeeded,
+		&i.Level,
+		&i.Points,
+		&i.ProfileKey,
+	)
+	return i, err
+}
+
 const deleteMemory = `-- name: DeleteMemory :one
 DELETE FROM memories
 WHERE id = $1 AND user_id = $2
@@ -1117,6 +1144,40 @@ func (q *Queries) GetAllPackets(ctx context.Context, userID int64) ([]Packet, er
 			&i.TaskPerDay,
 			&i.Completed,
 			&i.CreatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getAllRegions = `-- name: GetAllRegions :many
+SELECT id, name, location, latitude, longitude, tree_amount, created_at, updated_at FROM regions
+ORDER BY tree_amount DESC
+`
+
+func (q *Queries) GetAllRegions(ctx context.Context) ([]Region, error) {
+	rows, err := q.db.Query(ctx, getAllRegions)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Region
+	for rows.Next() {
+		var i Region
+		if err := rows.Scan(
+			&i.ID,
+			&i.Name,
+			&i.Location,
+			&i.Latitude,
+			&i.Longitude,
+			&i.TreeAmount,
+			&i.CreatedAt,
+			&i.UpdatedAt,
 		); err != nil {
 			return nil, err
 		}
@@ -2179,6 +2240,27 @@ func (q *Queries) GetQuestByCodeId(ctx context.Context, codeID string) (GetQuest
 	return i, err
 }
 
+const getRegionById = `-- name: GetRegionById :one
+SELECT id, name, location, latitude, longitude, tree_amount, created_at, updated_at FROM regions
+WHERE id = $1
+`
+
+func (q *Queries) GetRegionById(ctx context.Context, id int64) (Region, error) {
+	row := q.db.QueryRow(ctx, getRegionById, id)
+	var i Region
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.Location,
+		&i.Latitude,
+		&i.Longitude,
+		&i.TreeAmount,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
 const getSteps = `-- name: GetSteps :many
 SELECT id, greenprint_id, description, created_at FROM steps
 WHERE greenprint_id = $1
@@ -3183,6 +3265,22 @@ func (q *Queries) IncreaseQuestsFieldByOne(ctx context.Context, userID int64) (S
 		&i.TreeGrown,
 	)
 	return i, err
+}
+
+const increaseRegionTreeAmount = `-- name: IncreaseRegionTreeAmount :exec
+UPDATE regions
+SET tree_amount = tree_amount + $1
+WHERE id = $2
+`
+
+type IncreaseRegionTreeAmountParams struct {
+	TreeAmount int32
+	ID         int64
+}
+
+func (q *Queries) IncreaseRegionTreeAmount(ctx context.Context, arg IncreaseRegionTreeAmountParams) error {
+	_, err := q.db.Exec(ctx, increaseRegionTreeAmount, arg.TreeAmount, arg.ID)
+	return err
 }
 
 const increaseTreasuresFieldByOne = `-- name: IncreaseTreasuresFieldByOne :one

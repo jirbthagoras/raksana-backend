@@ -287,6 +287,12 @@ SET points = points + $1
 WHERE user_id = $2
 RETURNING *;
 
+-- name: DecreaseUserPoints :one
+UPDATE profiles
+SET points = points - $1
+WHERE user_id = $2
+RETURNING *;
+
 -- name: IncreaseChallengesFieldByOne :one
 UPDATE statistics
 SET challenges = challenges + 1
@@ -819,4 +825,17 @@ WHERE item_id = $1;
 
 -- name: GetGreenprintsById :one
 SELECT * FROM greenprints
+WHERE id = $1;
+
+-- name: GetAllRegions :many
+SELECT * FROM regions
+ORDER BY tree_amount DESC;
+
+-- name: IncreaseRegionTreeAmount :exec
+UPDATE regions
+SET tree_amount = tree_amount + $1
+WHERE id = $2;
+
+-- name: GetRegionById :one
+SELECT * FROM regions
 WHERE id = $1;
