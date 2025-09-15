@@ -51,7 +51,7 @@ func main() {
 	<-quit
 	slog.Info("Shutting down gracefully.")
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 	if err := server.ShutdownWithContext(ctx); err != nil {
 		slog.Error("Error shutting down fiber server", "err", err.Error())

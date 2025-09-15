@@ -195,7 +195,7 @@ func (h *AuthHandler) handleMe(c *fiber.Ctx) error {
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"data": fiber.Map{
 			"username": claims.Username,
-			"id":       claims.ID,
+			"id":       claims.Subject,
 			"email":    claims.Email,
 			"token":    token,
 		},

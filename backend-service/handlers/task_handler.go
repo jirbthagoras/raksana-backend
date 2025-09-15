@@ -197,6 +197,8 @@ func (h *TaskHandler) handleCompleteTask(c *fiber.Ctx) error {
 		return err
 	}
 
+	var isPacketCompleted bool = false
+
 	activePacket.CompletedTask++
 	if activePacket.CompletedTask >= activePacket.ExpectedTask {
 		err = h.Repository.CompletePacket(ctx, activePacket.ID)
@@ -221,6 +223,8 @@ func (h *TaskHandler) handleCompleteTask(c *fiber.Ctx) error {
 		if packetTask.AssignedTask != 0 {
 			completionRate = float64(activePacket.CompletedTask) * 100.0 / float64(packetTask.AssignedTask)
 		}
+
+		isPacketCompleted = true
 
 		logMsg := fmt.Sprintf("Aku baru saja menyelesaikan packet %s! Dengan completion rate: %v", activePacket.Name, completionRate) + "%"
 		err = h.JournalService.AppendLog(&models.PostLogAppend{
@@ -270,9 +274,11 @@ func (h *TaskHandler) handleCompleteTask(c *fiber.Ctx) error {
 
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"data": fiber.Map{
-			"message":       "sucessfully completed task",
-			"leveled_up":    levelUp,
-			"current_level": level,
+			"message":          "sucessfully completed task",
+			"leveled_up":       levelUp,
+			"packet_completed": isPacketCompleted,
+			"packet_name":      activePacket.Name,
+			"current_level":    level,
 		},
 	})
 }

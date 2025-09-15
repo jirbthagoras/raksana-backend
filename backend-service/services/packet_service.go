@@ -59,6 +59,7 @@ func (s *PacketService) GetALlPackets(userId int64) ([]models.ResponseGetPacket,
 			AssignedTask:   int32(packetTask.AssignedTask),
 			TaskPerDay:     packet.TaskPerDay,
 			CreatedAt:      packet.CreatedAt.Time.Format("2006-01-02 15:04"),
+			Completed:      packet.Completed,
 		})
 	}
 
