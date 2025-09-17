@@ -146,7 +146,7 @@ func ecoachConfig(generativeModel *genai.GenerativeModel) {
 				},
 			},
 		},
-		Required: []string{"expected_task", "task_per_day"},
+		Required: []string{"name", "expected_task", "task_per_day"},
 	}
 }
 

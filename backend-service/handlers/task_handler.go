@@ -60,6 +60,20 @@ func (h *TaskHandler) handleGetTodayTask(c *fiber.Ctx) error {
 		return err
 	}
 
+	activePacket, err := h.Repository.GetUserActivePackets(ctx, int64(userId))
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return c.Status(fiber.StatusConflict).JSON(fiber.Map{
+				"data": fiber.Map{
+					"tasks":   []string{},
+					"message": "Kamu tidak memiliki packet aktif.",
+				},
+			})
+		}
+		slog.Error("Failed to get active packets", "err", err)
+		return err
+	}
+
 	var tasks []models.ResponseGetTask
 
 	if len(todayTasks) != 0 {
@@ -78,20 +92,6 @@ func (h *TaskHandler) handleGetTodayTask(c *fiber.Ctx) error {
 				"tasks": tasks,
 			},
 		})
-	}
-
-	activePacket, err := h.Repository.GetUserActivePackets(ctx, int64(userId))
-	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			return c.Status(fiber.StatusConflict).JSON(fiber.Map{
-				"data": fiber.Map{
-					"tasks":   []string{},
-					"message": "Kamu tidak memiliki packet aktif.",
-				},
-			})
-		}
-		slog.Error("Failed to get active packets", "err", err)
-		return err
 	}
 
 	unlockedHabits, err := h.HabitService.GetUnlockedHabits(activePacket.ID)

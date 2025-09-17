@@ -111,7 +111,7 @@ func (s *PacketService) GetPacketDetail(id int) (models.ResponsePacketDetail, er
 		return habitDetail, err
 	}
 
-	completionRate := float64(packetDetails.CompletedTask) * 100.0 / float64(packetTask.AssignedTask)
+	completionRate := float64(packetTask.CompletedTask) / float64(packetTask.AssignedTask) * 100.0
 	if packetTask.AssignedTask == 0 {
 		completionRate = 0
 	}
