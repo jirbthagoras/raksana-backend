@@ -21,11 +21,22 @@ func NewHabitService(
 	}
 }
 
+type CheckHabitStateReturn struct {
+	PacketName string `json:"packet_name,omitempty"`
+	Difficulty string `json:"difficulty,omitempty"`
+	IsUnlock   bool   `json:"is_unlocked"`
+}
+
 func (s *HabitService) CheckHabitState(
 	ctx context.Context,
 	packet repositories.Packet,
 	userId int,
-) error {
+) (CheckHabitStateReturn, error) {
+
+	var res = CheckHabitStateReturn{
+		IsUnlock: false,
+	}
+
 	packetTask, err := s.Repository.CountPacketTasks(
 		ctx,
 		repositories.CountPacketTasksParams{
@@ -33,26 +44,27 @@ func (s *HabitService) CheckHabitState(
 			PacketID: packet.ID,
 		},
 	)
+
 	if err != nil {
 		slog.Error("Failed sum assigned task", "err", err)
-		return err
+		return res, err
 	}
 
 	if packetTask.AssignedTask == 0 {
-		return nil
+		return res, nil
 	}
 
-	completionRate := float64(packet.CompletedTask) * 100.0 / float64(packetTask.AssignedTask)
+	completionRate := int(float64(packet.CompletedTask) * 100.0 / float64(packetTask.AssignedTask))
 
-	habits, err := s.Repository.GetPacketHabits(ctx, packet.ID)
+	habits, err := s.Repository.GetLockedHabits(ctx, packet.ID)
 	if err != nil {
 		slog.Error("Failed to get all habits")
-		return nil
+		return res, nil
 	}
 
 	currentStreak, err := s.StreakService.GetCurrentStreak(userId)
 	if err != nil {
-		return err
+		return res, err
 	}
 
 	for _, habit := range habits {
@@ -60,15 +72,21 @@ func (s *HabitService) CheckHabitState(
 		case "normal":
 			if completionRate >= 50 && currentStreak >= 3 {
 				s.Repository.UnlockHabit(ctx, habit.ID)
+				res.PacketName = packet.Name
+				res.IsUnlock = true
+				res.Difficulty = "sedang"
 			}
 		case "hard":
 			if completionRate >= 70 && currentStreak >= 5 {
 				s.Repository.UnlockHabit(ctx, habit.ID)
+				res.PacketName = packet.Name
+				res.IsUnlock = true
+				res.Difficulty = "sulit"
 			}
 		}
 	}
 
-	return nil
+	return res, nil
 }
 
 func (s *HabitService) GetAllHabits(packetId int64) ([]repositories.Habit, error) {

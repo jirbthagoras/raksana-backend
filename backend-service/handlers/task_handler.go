@@ -234,11 +234,6 @@ func (h *TaskHandler) handleCompleteTask(c *fiber.Ctx) error {
 		}, userId)
 	}
 
-	err = h.HabitService.CheckHabitState(ctx, activePacket, userId)
-	if err != nil {
-		return err
-	}
-
 	err = h.StreakService.UpdateStreak(ctx, int64(userId))
 	if err != nil {
 		return err
@@ -272,6 +267,11 @@ func (h *TaskHandler) handleCompleteTask(c *fiber.Ctx) error {
 		return err
 	}
 
+	checkRes, err := h.HabitService.CheckHabitState(ctx, activePacket, userId)
+	if err != nil {
+		return err
+	}
+
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"data": fiber.Map{
 			"message":          "sucessfully completed task",
@@ -279,6 +279,7 @@ func (h *TaskHandler) handleCompleteTask(c *fiber.Ctx) error {
 			"packet_completed": isPacketCompleted,
 			"packet_name":      activePacket.Name,
 			"current_level":    level,
+			"unlock":           checkRes,
 		},
 	})
 }

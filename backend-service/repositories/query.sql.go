@@ -1122,6 +1122,7 @@ func (q *Queries) GetAllMonthlyRecapsWithDetails(ctx context.Context, userID int
 const getAllPackets = `-- name: GetAllPackets :many
 SELECT id, user_id, name, target, description, completed_task, expected_task, task_per_day, completed, created_at FROM packets
 WHERE user_id = $1
+ORDER BY created_at DESC
 `
 
 func (q *Queries) GetAllPackets(ctx context.Context, userID int64) ([]Packet, error) {
@@ -1801,6 +1802,41 @@ func (q *Queries) GetLatestRecap(ctx context.Context, userID int64) (Recap, erro
 		&i.CreatedAt,
 	)
 	return i, err
+}
+
+const getLockedHabits = `-- name: GetLockedHabits :many
+SELECT 
+  id, packet_id, name, description, difficulty, locked, weight
+FROM habits
+WHERE packet_id = $1 AND locked = true
+`
+
+func (q *Queries) GetLockedHabits(ctx context.Context, packetID int64) ([]Habit, error) {
+	rows, err := q.db.Query(ctx, getLockedHabits, packetID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Habit
+	for rows.Next() {
+		var i Habit
+		if err := rows.Scan(
+			&i.ID,
+			&i.PacketID,
+			&i.Name,
+			&i.Description,
+			&i.Difficulty,
+			&i.Locked,
+			&i.Weight,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 const getLogs = `-- name: GetLogs :many

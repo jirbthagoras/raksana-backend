@@ -102,6 +102,7 @@ func (s *PacketService) GetPacketDetail(id int) (models.ResponsePacketDetail, er
 			ExpGain:     int32(expGain),
 		})
 	}
+
 	packetTask, err := s.Repository.CountPacketTasks(context.Background(), repositories.CountPacketTasksParams{
 		UserID:   int64(packetDetails.UserID),
 		PacketID: packetDetails.PacketID,
@@ -111,7 +112,7 @@ func (s *PacketService) GetPacketDetail(id int) (models.ResponsePacketDetail, er
 		return habitDetail, err
 	}
 
-	completionRate := float64(packetTask.CompletedTask) / float64(packetTask.AssignedTask) * 100.0
+	completionRate := int(float64(packetTask.CompletedTask) / float64(packetTask.AssignedTask) * 100.0)
 	if packetTask.AssignedTask == 0 {
 		completionRate = 0
 	}

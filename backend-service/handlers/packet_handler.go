@@ -50,7 +50,7 @@ func (h *PacketHandler) RegisterRoutes(router fiber.Router) {
 	g.Use(helpers.TokenMiddleware)
 	g.Post("/", h.handleGeneratePacket)
 	g.Get("/me", h.handleGetAllPackets)
-	g.Get("/:id", h.handleGetPacketById)
+	g.Get("/:id", h.handleGetPacketByUserId)
 	g.Get("/detail/:id", h.handleGetPacketDetail)
 }
 
@@ -206,7 +206,7 @@ func (h *PacketHandler) handleGetPacketDetail(c *fiber.Ctx) error {
 	})
 }
 
-func (h *PacketHandler) handleGetPacketById(c *fiber.Ctx) error {
+func (h *PacketHandler) handleGetPacketByUserId(c *fiber.Ctx) error {
 	userId, err := c.ParamsInt("id")
 	if err != nil {
 		slog.Error("Failed to get packet id", "err", err)

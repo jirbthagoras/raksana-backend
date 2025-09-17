@@ -78,13 +78,20 @@ WHERE user_id = $1 AND completed = false;
 
 -- name: GetAllPackets :many
 SELECT * FROM packets
-WHERE user_id = $1;
+WHERE user_id = $1
+ORDER BY created_at DESC;
 
 -- name: GetPacketHabits :many
 SELECT 
   *
 FROM habits
 WHERE packet_id = $1;
+
+-- name: GetLockedHabits :many
+SELECT 
+  *
+FROM habits
+WHERE packet_id = $1 AND locked = true;
 
 -- name: GetPacketUnlockedHabits :many
 SELECT * FROM habits
