@@ -1,11 +1,13 @@
 ### Overview
 
-This repo are containing Backend Services used by Raksana, my BeeFest SDLC 2025 Project.
+Raksana Backend adalah repository yang saya dedikasikan untuk project BeeFest SDLC.
+Dibangun dengan Go + Fiber framework.
 
 ### Techstack
 
-TBA
+- Go
+- SQLC semi ORM
 
 ### Todo
 
-- Finish the auth
+- Integrate with Frontend

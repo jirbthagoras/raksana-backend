@@ -62,7 +62,7 @@ func (s *HabitService) CheckHabitState(
 		return res, nil
 	}
 
-	currentStreak, err := s.StreakService.GetCurrentStreak(userId)
+	currentStreak, err := s.StreakService.GetCurrentStreak(ctx, int64(userId))
 	if err != nil {
 		return res, err
 	}

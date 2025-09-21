@@ -226,7 +226,7 @@ func (h *TaskHandler) handleCompleteTask(c *fiber.Ctx) error {
 
 		isPacketCompleted = true
 
-		logMsg := fmt.Sprintf("Aku baru saja menyelesaikan packet %s! Dengan completion rate: %v", activePacket.Name, completionRate) + "%"
+		logMsg := fmt.Sprintf("Baru saja menyelesaikan packet %s! Dengan winrate: %v", activePacket.Name, completionRate) + "%"
 		err = h.JournalService.AppendLog(&models.PostLogAppend{
 			Text:      logMsg,
 			IsSystem:  true,
@@ -253,7 +253,7 @@ func (h *TaskHandler) handleCompleteTask(c *fiber.Ctx) error {
 
 	if len(todayTask) <= 0 {
 		err := h.JournalService.AppendLog(&models.PostLogAppend{
-			Text:      "Aku baru saja menyelesaikan semua task hari ini!",
+			Text:      "Baru saja menyelesaikan semua task hari ini!",
 			IsSystem:  true,
 			IsPrivate: false,
 		}, userId)

@@ -64,7 +64,6 @@ func (s *StreakService) UpdateStreak(ctx context.Context, id int64) error {
 		if err != nil {
 			return fmt.Errorf("redis incr failed: %w", err)
 		}
-
 	default:
 		err = s.Redis.Set(ctx, streakKey, 1, 0).Err()
 		if err != nil {
@@ -101,22 +100,67 @@ func (s *StreakService) UpdateStreak(ctx context.Context, id int64) error {
 	return nil
 }
 
-func (s *StreakService) GetCurrentStreak(id int) (int, error) {
-	streakKey := fmt.Sprintf("user:%v:streak", id)
+// func (s *StreakService) GetCurrentStreak(id int) (int, error) {
+// 	streakKey := fmt.Sprintf("user:%v:streak", id)
+//
+// 	result, err := s.Redis.Get(context.Background(), streakKey).Result()
+// 	if err == redis.Nil {
+// 		return 0, nil
+// 	}
+// 	if err != nil {
+// 		slog.Error("Failed to get keyval", "err", err)
+// 		return 0, err
+// 	}
+//
+// 	streak, err := strconv.Atoi(result)
+// 	if err != nil {
+// 		slog.Error("Failed to convert value", "err", err)
+// 		return 0, err
+// 	}
+//
+// 	return streak, nil
+// }
 
-	result, err := s.Redis.Get(context.Background(), streakKey).Result()
+func (s *StreakService) GetCurrentStreak(ctx context.Context, id int64) (int, error) {
+	loc, err := time.LoadLocation("Asia/Jakarta")
+	if err != nil {
+		return 0, fmt.Errorf("failed to load timezone: %w", err)
+	}
+
+	today := time.Now().In(loc).Format("2006-01-02")
+	yesterday := time.Now().In(loc).Add(-24 * time.Hour).Format("2006-01-02")
+
+	streakKey := fmt.Sprintf("user:%d:streak", id)
+	lastCheckinKey := fmt.Sprintf("user:%d:last_checkin", id)
+
+	lastCheckin, err := s.Redis.Get(ctx, lastCheckinKey).Result()
+	if err == redis.Nil {
+		return 0, nil
+	} else if err != nil {
+		return 0, fmt.Errorf("redis get last_checkin failed: %w", err)
+	}
+
+	// 🔥 Validate streak based on last checkin
+	if lastCheckin != today && lastCheckin != yesterday {
+		// Reset streak because user skipped
+		if err := s.Redis.Set(ctx, streakKey, 0, 0).Err(); err != nil {
+			return 0, fmt.Errorf("redis reset streak failed: %w", err)
+		}
+		return 0, nil
+	}
+
+	// If streak is valid, fetch it
+	result, err := s.Redis.Get(ctx, streakKey).Result()
 	if err == redis.Nil {
 		return 0, nil
 	}
 	if err != nil {
-		slog.Error("Failed to get keyval", "err", err)
-		return 0, err
+		return 0, fmt.Errorf("redis get streak failed: %w", err)
 	}
 
 	streak, err := strconv.Atoi(result)
 	if err != nil {
-		slog.Error("Failed to convert value", "err", err)
-		return 0, err
+		return 0, fmt.Errorf("failed to convert streak value: %w", err)
 	}
 
 	return streak, nil

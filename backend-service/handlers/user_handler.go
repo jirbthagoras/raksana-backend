@@ -158,7 +158,7 @@ func (h *UserHandler) handleGetAllUsers(c *fiber.Ctx) error {
 
 	var users []models.ResponseUser
 	for _, user := range res {
-		streak, err := h.StreakService.GetCurrentStreak(int(user.UserID))
+		streak, err := h.StreakService.GetCurrentStreak(ctx, user.UserID)
 		if err != nil {
 			return err
 		}

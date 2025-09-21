@@ -60,7 +60,7 @@ func (s *UserService) GetUserDetail(id int) (models.ResponseGetUserProfileStatis
 	cnf := helpers.NewConfig()
 	bucketUrl := cnf.GetString("AWS_URL")
 
-	streak, err := s.StreakService.GetCurrentStreak(int(res.UserID))
+	streak, err := s.StreakService.GetCurrentStreak(context.Background(), res.UserID)
 	if err != nil {
 		return profile, err
 	}
