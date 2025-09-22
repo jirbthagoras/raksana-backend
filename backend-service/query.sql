@@ -232,7 +232,7 @@ WHERE user_id = $2;
 -- name: GetLastWeekTasks :many
 SELECT *
 FROM tasks
-WHERE created_at >= NOW() - INTERVAL '7 weeks' AND user_id = $1
+WHERE created_at >= NOW() - INTERVAL '1 weeks' AND user_id = $1
 ORDER BY created_at DESC;
 
 -- name: GetLatestRecap :one

@@ -48,6 +48,8 @@ func (h *TaskHandler) RegisterRoutes(router fiber.Router) {
 }
 
 func (h *TaskHandler) handleGetTodayTask(c *fiber.Ctx) error {
+	h.Mu.Lock()
+	defer h.Mu.Unlock()
 	ctx := context.Background()
 	userId, err := helpers.GetSubjectFromToken(c)
 	if err != nil {
@@ -76,7 +78,7 @@ func (h *TaskHandler) handleGetTodayTask(c *fiber.Ctx) error {
 
 	var tasks []models.ResponseGetTask
 
-	if len(todayTasks) != 0 {
+	if len(todayTasks) > 0 {
 		for _, task := range todayTasks {
 			tasks = append(tasks, models.ResponseGetTask{
 				Id:          int(task.ID),
@@ -105,6 +107,8 @@ func (h *TaskHandler) handleGetTodayTask(c *fiber.Ctx) error {
 	if remainingTask < taskPerDay {
 		taskPerDay = remainingTask
 	}
+
+	slog.Info(fmt.Sprintf("Task per day: %v", taskPerDay))
 
 	randomizedHabits := helpers.PickMultiple(unlockedHabits, taskPerDay)
 
@@ -140,7 +144,6 @@ func (h *TaskHandler) handleGetTodayTask(c *fiber.Ctx) error {
 }
 
 func (h *TaskHandler) handleCompleteTask(c *fiber.Ctx) error {
-	// Lock the process because ts can happens so multiple times at the same time hehe
 	h.Mu.Lock()
 	defer h.Mu.Unlock()
 

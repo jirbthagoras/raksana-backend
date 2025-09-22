@@ -70,27 +70,31 @@ func (s *UserService) GetUserDetail(id int) (models.ResponseGetUserProfileStatis
 		return profile, err
 	}
 
+	levelBefore := res.Level - 2
+	neededExpBefore := helpers.CalculateExpNeeded(int(levelBefore))
+
 	profile = models.ResponseGetUserProfileStatistic{
-		Id:                 int(res.UserID),
-		Name:               res.Name,
-		Username:           res.Username,
-		Email:              res.Email,
-		Rank:               int(rank),
-		CurrentExp:         res.CurrentExp,
-		ExpNeeded:          res.ExpNeeded,
-		Level:              res.Level,
-		Points:             res.Points,
-		ProfileUrl:         bucketUrl + res.ProfileKey,
-		Challenges:         res.Challenges,
-		Events:             res.Events,
-		Quests:             res.Quests,
-		Treasures:          res.Treasures,
-		TaskCompletionRate: stringCompletionRate,
-		CompletedTask:      int32(tasks.CompletedTask),
-		AssignedTask:       int32(tasks.AssignedTask),
-		LongestStreak:      res.LongestStreak,
-		CurrentStreak:      streak,
-		Badges:             s.CheckBadges(res),
+		Id:                     int(res.UserID),
+		Name:                   res.Name,
+		Username:               res.Username,
+		Email:                  res.Email,
+		Rank:                   int(rank),
+		CurrentExp:             res.CurrentExp,
+		ExpNeeded:              res.ExpNeeded,
+		Level:                  res.Level,
+		Points:                 res.Points,
+		ProfileUrl:             bucketUrl + res.ProfileKey,
+		Challenges:             res.Challenges,
+		Events:                 res.Events,
+		Quests:                 res.Quests,
+		Treasures:              res.Treasures,
+		TaskCompletionRate:     stringCompletionRate,
+		NeededExpPreviousLevel: neededExpBefore,
+		CompletedTask:          int32(tasks.CompletedTask),
+		AssignedTask:           int32(tasks.AssignedTask),
+		LongestStreak:          res.LongestStreak,
+		CurrentStreak:          streak,
+		Badges:                 s.CheckBadges(res),
 	}
 
 	return profile, nil
