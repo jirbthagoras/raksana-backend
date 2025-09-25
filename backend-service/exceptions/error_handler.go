@@ -3,10 +3,12 @@ package exceptions
 import (
 	"errors"
 	"fmt"
-	"github.com/go-playground/validator/v10"
-	"github.com/gofiber/fiber/v2"
+	"log/slog"
 	"reflect"
 	"strings"
+
+	"github.com/go-playground/validator/v10"
+	"github.com/gofiber/fiber/v2"
 )
 
 type Errors map[string]interface{}
@@ -44,6 +46,7 @@ func ErrorHandler(c *fiber.Ctx, err error) error {
 		})
 	}
 
+	slog.Error("err", err.Error())
 	return c.Status(fiberErr.Code).JSON(fiber.Map{
 		"success": false,
 		"error": fiber.Map{
