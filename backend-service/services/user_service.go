@@ -72,7 +72,7 @@ func (s *UserService) GetUserDetail(id int) (models.ResponseGetUserProfileStatis
 
 	levelBefore := res.Level - 2
 	neededExpBefore := helpers.CalculateExpNeeded(int(levelBefore))
-	if res.Level == 0 {
+	if res.Level == 1 {
 		neededExpBefore = 0
 	}
 
