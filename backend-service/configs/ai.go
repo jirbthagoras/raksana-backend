@@ -170,7 +170,7 @@ func recapConfig(generativeModel *genai.GenerativeModel) {
 				Type: genai.TypeString,
 			},
 		},
-		Required: []string{"expected_task", "task_per_day"},
+		Required: []string{"growth_rating", "summary", "tips"},
 	}
 }
 

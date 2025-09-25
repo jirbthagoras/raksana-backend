@@ -11,6 +11,7 @@ import (
 	"jirbthagoras/raksana-backend/repositories"
 	"jirbthagoras/raksana-backend/services"
 	"log/slog"
+	"math"
 	"time"
 
 	"github.com/gofiber/fiber/v2"
@@ -68,7 +69,28 @@ func (h *RecapHandler) handleCreateWeeklyRecap(c *fiber.Ctx) error {
 		return err
 	}
 
+	// if time.Now().In(loc).Weekday() != time.Sunday {
+	// 	return fiber.NewError(fiber.StatusBadRequest, "Sekarang bukanlah hari minggu")
+	// }
+
+	var todayDate string = time.Now().In(loc).Format("2006-01-02")
+	var isFirstTime bool = false
 	ctx := context.Background()
+
+	latestRecap, err := h.Repository.GetLatestRecap(ctx, int64(userId))
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			isFirstTime = true
+		} else {
+			slog.Error("Failed to get latest recap", "err", err)
+			return err
+		}
+	}
+
+	if latestRecap.CreatedAt.Time.Format("2006-01-02") == todayDate {
+		return fiber.NewError(fiber.StatusBadRequest, "Anda sudah mengambil weekly recap minggu ini")
+	}
+
 	res, err := h.Repository.GetLastWeekTasks(ctx, int64(userId))
 	if err != nil {
 		slog.Error("Failed to get last week tasks", "err", err)
@@ -89,26 +111,8 @@ func (h *RecapHandler) handleCreateWeeklyRecap(c *fiber.Ctx) error {
 		})
 	}
 
-	var todayDate string = time.Now().In(loc).Format("2006-01-02")
-
 	session := aiModel.StartChat()
 	session.History = []*genai.Content{}
-
-	var isFirstTime bool = false
-
-	latestRecap, err := h.Repository.GetLatestRecap(ctx, int64(userId))
-	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			isFirstTime = true
-		} else {
-			slog.Error("Failed to get latest recap", "err", err)
-			return err
-		}
-	}
-
-	if latestRecap.CreatedAt.Time.Format("2006-01-02") == todayDate {
-		return fiber.NewError(fiber.StatusBadRequest, "Anda sudah mengambil weekly recap minggu ini")
-	}
 
 	userTasks, err := h.Repository.CountUserTask(ctx, int64(userId))
 	if err != nil {
@@ -117,7 +121,7 @@ func (h *RecapHandler) handleCreateWeeklyRecap(c *fiber.Ctx) error {
 	}
 	var completionRate float64 = 0.0
 
-	completionRate = float64(userTasks.CompletedTask) * 100.0 / float64(userTasks.AssignedTask)
+	completionRate = math.Round(float64(userTasks.CompletedTask) * 100.0 / float64(userTasks.AssignedTask))
 	stringCompletionRate := fmt.Sprintf("%v", completionRate) + "%"
 
 	if userTasks.AssignedTask == 0 {
@@ -250,12 +254,12 @@ func (h *RecapHandler) handleCreateMonthlyRecap(c *fiber.Ctx) error {
 
 	ctx := context.Background()
 
-	now := time.Now()
-	lastDay := time.Date(now.Year(), now.Month()+1, 0, 0, 0, 0, 0, now.Location()).Day()
+	// now := time.Now()
+	// lastDay := time.Date(now.Year(), now.Month()+1, 0, 0, 0, 0, 0, now.Location()).Day()
 
-	if now.Day() != lastDay {
-		return fiber.NewError(fiber.StatusBadRequest, "Hari ini bukan akhir bulan")
-	}
+	// if now.Day() != lastDay {
+	// 	return fiber.NewError(fiber.StatusBadRequest, "Hari ini bukan akhir bulan")
+	// }
 
 	resLogs, err := h.Repository.GetLastMonthUserLogs(ctx, int64(userId))
 	if err != nil {
