@@ -72,6 +72,9 @@ func (s *UserService) GetUserDetail(id int) (models.ResponseGetUserProfileStatis
 
 	levelBefore := res.Level - 2
 	neededExpBefore := helpers.CalculateExpNeeded(int(levelBefore))
+	if res.Level == 0 {
+		neededExpBefore = 0
+	}
 
 	profile = models.ResponseGetUserProfileStatistic{
 		Id:                     int(res.UserID),
