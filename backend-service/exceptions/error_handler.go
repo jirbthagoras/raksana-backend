@@ -3,7 +3,6 @@ package exceptions
 import (
 	"errors"
 	"fmt"
-	"log/slog"
 	"reflect"
 	"strings"
 
@@ -41,12 +40,12 @@ func ErrorHandler(c *fiber.Ctx, err error) error {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"success": false,
 			"error": fiber.Map{
+				"errmsg":  err.Error(),
 				"message": "Internal server error",
 			},
 		})
 	}
 
-	slog.Error("err", err.Error())
 	return c.Status(fiberErr.Code).JSON(fiber.Map{
 		"success": false,
 		"error": fiber.Map{
