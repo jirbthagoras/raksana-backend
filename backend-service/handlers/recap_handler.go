@@ -13,6 +13,7 @@ import (
 	"log/slog"
 	"math"
 	"time"
+	_ "time/tzdata"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/generative-ai-go/genai"

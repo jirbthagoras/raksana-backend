@@ -8,6 +8,7 @@ import (
 	"log/slog"
 	"strconv"
 	"time"
+	_ "time/tzdata"
 
 	"github.com/redis/go-redis/v9"
 )

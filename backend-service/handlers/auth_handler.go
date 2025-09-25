@@ -11,6 +11,7 @@ import (
 	"log/slog"
 	"strconv"
 	"time"
+	_ "time/tzdata"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v2"
