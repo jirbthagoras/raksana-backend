@@ -8,6 +8,7 @@ import (
 	"jirbthagoras/raksana-backend/models"
 	"jirbthagoras/raksana-backend/repositories"
 	"log/slog"
+	"math"
 	"strconv"
 
 	"github.com/gofiber/fiber/v2"
@@ -52,7 +53,7 @@ func (s *UserService) GetUserDetail(id int) (models.ResponseGetUserProfileStatis
 	var completionRate float64 = 0.0
 
 	if tasks.AssignedTask != 0 || tasks.CompletedTask != 0 {
-		completionRate = float64(tasks.CompletedTask) * 100.0 / float64(tasks.AssignedTask)
+		completionRate = math.Round(float64(tasks.CompletedTask) * 100.0 / float64(tasks.AssignedTask))
 	}
 
 	stringCompletionRate := fmt.Sprintf("%v", completionRate) + "%"
