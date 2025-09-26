@@ -1698,7 +1698,7 @@ func (q *Queries) GetLastMonthUserLogs(ctx context.Context, userID int64) ([]Log
 const getLastWeekTasks = `-- name: GetLastWeekTasks :many
 SELECT id, habit_id, user_id, packet_id, name, description, difficulty, completed, created_at, updated_at
 FROM tasks
-WHERE created_at >= NOW() - INTERVAL '7 weeks' AND user_id = $1
+WHERE created_at >= NOW() - INTERVAL '1 weeks' AND user_id = $1
 ORDER BY created_at DESC
 `
 
@@ -2229,6 +2229,17 @@ func (q *Queries) GetParticipants(ctx context.Context, challengeID int64) (int64
 	var participants int64
 	err := row.Scan(&participants)
 	return participants, err
+}
+
+const getParticipationByMemoryId = `-- name: GetParticipationByMemoryId :one
+SELECT COUNT(*) as participations FROM participations WHERE memory_id = $1
+`
+
+func (q *Queries) GetParticipationByMemoryId(ctx context.Context, memoryID int64) (int64, error) {
+	row := q.db.QueryRow(ctx, getParticipationByMemoryId, memoryID)
+	var participations int64
+	err := row.Scan(&participations)
+	return participations, err
 }
 
 const getQuestByCodeId = `-- name: GetQuestByCodeId :one

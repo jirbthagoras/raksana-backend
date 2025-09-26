@@ -158,6 +158,16 @@ func (h *MemoryHandler) handleDeleteMemory(c *fiber.Ctx) error {
 		return err
 	}
 
+	participation, err := h.Repository.GetParticipationByMemoryId(context.Background(), int64(memoryId))
+	if err != nil {
+		slog.Error("Failed to communicate to db", "err", err)
+		return err
+	}
+
+	if participation > 0 {
+		return fiber.NewError(fiber.StatusBadRequest, "Memori adalah bagian dari partisipasi, tidak bisa dihapus")
+	}
+
 	ctx := context.Background()
 
 	key, err := h.Repository.DeleteMemory(ctx, repositories.DeleteMemoryParams{

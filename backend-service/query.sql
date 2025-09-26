@@ -846,3 +846,6 @@ WHERE id = $2;
 -- name: GetRegionById :one
 SELECT * FROM regions
 WHERE id = $1;
+
+-- name: GetParticipationByMemoryId :one
+SELECT COUNT(*) as participations FROM participations WHERE memory_id = $1;
