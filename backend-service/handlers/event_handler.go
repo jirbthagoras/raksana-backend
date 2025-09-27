@@ -318,6 +318,11 @@ func (h *EventHandler) handleAttend(c *fiber.Ctx) error {
 		"data": fiber.Map{
 			"message": "success",
 			"type":    "event",
+			"event": fiber.Map{
+				"name":        event.Name,
+				"description": event.Description,
+				"point_gain":  event.PointGain,
+			},
 		},
 	})
 }

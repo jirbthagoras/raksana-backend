@@ -135,6 +135,10 @@ func (h *TreasureHandler) handleClaimTreasure(c *fiber.Ctx) error {
 		"data": fiber.Map{
 			"type":    "treasures",
 			"message": "success",
+			"treasure": fiber.Map{
+				"name":       treasure.Name,
+				"point_gain": treasure.PointGain,
+			},
 		},
 	})
 }

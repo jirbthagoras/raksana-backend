@@ -150,6 +150,12 @@ func (h *QuestHandler) handleContribute(c *fiber.Ctx) error {
 		"data": fiber.Map{
 			"message": "success",
 			"type":    "quest",
+			"quest": fiber.Map{
+				"name":        quest.Name,
+				"contributor": len(contributors),
+				"point_gain":  quest.PointGain,
+				"description": quest.Description,
+			},
 		},
 	})
 }
