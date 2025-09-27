@@ -214,13 +214,10 @@ func (h *QuestHandler) handleGetContributedQuestDetails(c *fiber.Ctx) error {
 func (h *QuestHandler) handleGetNearestQuest(c *fiber.Ctx) error {
 	req := &models.GetNearestQuest{}
 
-	err := c.BodyParser(req)
-	if err != nil {
-		slog.Error("Failed to parse payload", "err", err)
-		return err
-	}
+	req.Latitude = c.QueryFloat("latitude")
+	req.Longitude = c.QueryFloat("longitude")
 
-	err = h.Validator.Struct(req)
+	err := h.Validator.Struct(req)
 	if err != nil && errors.As(err, &validator.ValidationErrors{}) {
 		return exceptions.NewFailedValidationError(*req, err.(validator.ValidationErrors))
 	}
