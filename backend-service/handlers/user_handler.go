@@ -124,7 +124,9 @@ func (h *UserHandler) handleUpdateProfilePicture(c *fiber.Ctx) error {
 		return err
 	}
 
-	_ = h.AWSClient.DeleteObject(bucketName, profile.ProfileKey)
+	if profile.ProfileKey != "profiles/Portrait_Placeholder.png" {
+		_ = h.AWSClient.DeleteObject(bucketName, profile.ProfileKey)
+	}
 
 	err = h.Repository.UpdateUserProfile(ctx, repositories.UpdateUserProfileParams{
 		UserID:     int64(userId),
