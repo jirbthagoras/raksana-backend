@@ -30,7 +30,7 @@ func (h *ActivityHandler) RegisterRoutes(router fiber.Router) {
 	g := router.Group("/activity")
 	g.Use(helpers.TokenMiddleware)
 	g.Get("/", h.handleGetActivityMap)
-	g.Get("/:id")
+	g.Get("/:id", h.handleGetActivityMapByUserId)
 }
 
 func (h *ActivityHandler) handleGetActivityMap(c *fiber.Ctx) error {
