@@ -56,6 +56,7 @@ func (h *ActivityHandler) handleGetActivityMap(c *fiber.Ctx) error {
 			Latitude:    c.Latitude,
 			Longitude:   c.Longitude,
 			PointGain:   c.PointGain,
+			Category:    "contribution",
 		})
 	}
 
@@ -73,6 +74,7 @@ func (h *ActivityHandler) handleGetActivityMap(c *fiber.Ctx) error {
 			Latitude:    a.Latitude,
 			Longitude:   a.Longitude,
 			PointGain:   a.PointGain,
+			Category:    "attendance",
 		})
 	}
 
@@ -106,6 +108,7 @@ func (h *ActivityHandler) handleGetActivityMapByUserId(c *fiber.Ctx) error {
 			Latitude:    c.Latitude,
 			Longitude:   c.Longitude,
 			PointGain:   c.PointGain,
+			Category:    "contribution",
 		})
 	}
 
@@ -123,6 +126,7 @@ func (h *ActivityHandler) handleGetActivityMapByUserId(c *fiber.Ctx) error {
 			Latitude:    a.Latitude,
 			Longitude:   a.Longitude,
 			PointGain:   a.PointGain,
+			Category:    "attendance",
 		})
 	}
 

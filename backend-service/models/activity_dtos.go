@@ -29,4 +29,5 @@ type Activity struct {
 	Name        string  `json:"name"`
 	Description string  `json:"description"`
 	PointGain   int64   `json:"point_gain"`
+	Category    string  `json:"type"`
 }
