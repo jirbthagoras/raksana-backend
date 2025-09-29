@@ -849,3 +849,9 @@ WHERE id = $1;
 
 -- name: GetParticipationByMemoryId :one
 SELECT COUNT(*) as participations FROM participations WHERE memory_id = $1;
+
+-- name: GetContribution :one
+SELECT
+  COUNT(*) AS is_exist
+FROM contributions
+WHERE quest_id = $1 AND user_id = $2;

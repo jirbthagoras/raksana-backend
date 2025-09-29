@@ -1425,6 +1425,25 @@ func (q *Queries) GetChallengeWithDetailById(ctx context.Context, id int64) (Get
 	return i, err
 }
 
+const getContribution = `-- name: GetContribution :one
+SELECT
+  COUNT(*) AS is_exist
+FROM contributions
+WHERE quest_id = $1 AND user_id = $2
+`
+
+type GetContributionParams struct {
+	QuestID int64
+	UserID  int64
+}
+
+func (q *Queries) GetContribution(ctx context.Context, arg GetContributionParams) (int64, error) {
+	row := q.db.QueryRow(ctx, getContribution, arg.QuestID, arg.UserID)
+	var is_exist int64
+	err := row.Scan(&is_exist)
+	return is_exist, err
+}
+
 const getContributionDetails = `-- name: GetContributionDetails :one
 SELECT 
     c.id               AS id,

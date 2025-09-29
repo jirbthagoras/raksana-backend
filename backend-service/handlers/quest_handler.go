@@ -10,6 +10,7 @@ import (
 	"jirbthagoras/raksana-backend/repositories"
 	"jirbthagoras/raksana-backend/services"
 	"log/slog"
+	"strconv"
 	"sync"
 
 	"github.com/go-playground/validator/v10"
@@ -77,7 +78,21 @@ func (h *QuestHandler) handleContribute(c *fiber.Ctx) error {
 		return fiber.NewError(fiber.StatusBadRequest, "Token Invalid")
 	}
 
+	questId, err := strconv.Atoi(payload.ID)
+	if err != nil {
+		return err
+	}
+
 	ctx := context.Background()
+
+	exist, err := h.Repository.GetContribution(ctx, repositories.GetContributionParams{
+		UserID:  int64(userId),
+		QuestID: int64(questId),
+	})
+
+	if exist > 0 {
+		return fiber.NewError(fiber.StatusBadRequest, "Anda sudah berkontribusi dalam quest ini")
+	}
 
 	quest, err := h.Repository.GetUncompletedQuestByCodeId(ctx, payload.Subject)
 	if err != nil {
