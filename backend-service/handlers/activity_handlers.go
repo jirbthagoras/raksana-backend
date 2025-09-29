@@ -47,15 +47,15 @@ func (h *ActivityHandler) handleGetActivityMap(c *fiber.Ctx) error {
 		return err
 	}
 
-	var contributions []models.ResponseContributions
+	var activities []models.Activity
 	for _, c := range contributionsRes {
-		contributions = append(contributions, models.ResponseContributions{
+		activities = append(activities, models.Activity{
 			Id:          c.ContributionID,
 			Name:        c.Name,
 			Description: c.Description,
 			Latitude:    c.Latitude,
 			Longitude:   c.Longitude,
-			PointGain:   float64(c.PointGain),
+			PointGain:   c.PointGain,
 		})
 	}
 
@@ -65,9 +65,8 @@ func (h *ActivityHandler) handleGetActivityMap(c *fiber.Ctx) error {
 		return err
 	}
 
-	var attendances []models.ResponseAttendances
 	for _, a := range attendanceRes {
-		attendances = append(attendances, models.ResponseAttendances{
+		activities = append(activities, models.Activity{
 			Id:          a.AttendanceID,
 			Name:        a.DetailName,
 			Description: a.DetailDescription,
@@ -79,8 +78,7 @@ func (h *ActivityHandler) handleGetActivityMap(c *fiber.Ctx) error {
 
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"data": fiber.Map{
-			"contributions": contributions,
-			"attendances":   attendances,
+			"activities": activities,
 		},
 	})
 }
@@ -99,15 +97,15 @@ func (h *ActivityHandler) handleGetActivityMapByUserId(c *fiber.Ctx) error {
 		return err
 	}
 
-	var contributions []models.ResponseContributions
+	var activities []models.Activity
 	for _, c := range contributionsRes {
-		contributions = append(contributions, models.ResponseContributions{
+		activities = append(activities, models.Activity{
 			Id:          c.ContributionID,
 			Name:        c.Name,
 			Description: c.Description,
 			Latitude:    c.Latitude,
 			Longitude:   c.Longitude,
-			PointGain:   float64(c.PointGain),
+			PointGain:   c.PointGain,
 		})
 	}
 
@@ -117,9 +115,8 @@ func (h *ActivityHandler) handleGetActivityMapByUserId(c *fiber.Ctx) error {
 		return err
 	}
 
-	var attendances []models.ResponseAttendances
 	for _, a := range attendanceRes {
-		attendances = append(attendances, models.ResponseAttendances{
+		activities = append(activities, models.Activity{
 			Id:          a.AttendanceID,
 			Name:        a.DetailName,
 			Description: a.DetailDescription,
@@ -131,8 +128,7 @@ func (h *ActivityHandler) handleGetActivityMapByUserId(c *fiber.Ctx) error {
 
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"data": fiber.Map{
-			"contributions": contributions,
-			"attendances":   attendances,
+			"activities": activities,
 		},
 	})
 }
