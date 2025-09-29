@@ -134,7 +134,7 @@ func (h *PointHandler) handleConvertPoint(c *fiber.Ctx) error {
 	err = h.Repository.AppendHistry(ctx, repositories.AppendHistryParams{
 		UserID:   int64(userId),
 		Name:     histMsg,
-		Category: "Convert",
+		Category: "convert",
 		Type:     "output",
 		Amount:   int32(req.Amount * convertionRate),
 	})

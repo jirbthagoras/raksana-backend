@@ -49,6 +49,10 @@ func (s *PointService) UpdateUserPoint(userId int64, pointGain int64, name strin
 		Category: category,
 		Name:     name,
 	})
+	if err != nil {
+		slog.Error("err", "Failed to append history", err)
+		return profile, err
+	}
 
 	return profile, nil
 }
