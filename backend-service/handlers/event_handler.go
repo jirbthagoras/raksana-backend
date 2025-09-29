@@ -335,6 +335,13 @@ func (h *EventHandler) handleGetAttendanceDetail(c *fiber.Ctx) error {
 	}
 
 	attendance, err := h.Repository.GetUserAttendance(context.Background(), int64(attendanceId))
+	if err != nil {
+		if errors.As(err, pgx.ErrNoRows) {
+			return fiber.NewError(fiber.StatusBadRequest, "attendance tidak ditemukan")
+		}
+		slog.Error("err", "failed to get attendance", err)
+		return err
+	}
 
 	bucketUrl := "https://raksana-admin.s3.ap-southeast-2.amazonaws.com/"
 
