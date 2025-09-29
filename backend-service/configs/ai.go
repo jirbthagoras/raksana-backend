@@ -214,6 +214,7 @@ func greenprintConfig(generativeModel *genai.GenerativeModel) {
 							Type: genai.TypeInteger,
 						},
 					},
+					Required: []string{"name", "description", "price", "quantity"},
 				},
 			},
 			"tools": {
@@ -231,6 +232,7 @@ func greenprintConfig(generativeModel *genai.GenerativeModel) {
 							Type: genai.TypeInteger,
 						},
 					},
+					Required: []string{"name", "description", "price"},
 				},
 			},
 			"steps": {
@@ -242,6 +244,7 @@ func greenprintConfig(generativeModel *genai.GenerativeModel) {
 							Type: genai.TypeString,
 						},
 					},
+					Required: []string{"description"},
 				},
 			},
 		},

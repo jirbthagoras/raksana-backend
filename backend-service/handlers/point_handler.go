@@ -136,7 +136,7 @@ func (h *PointHandler) handleConvertPoint(c *fiber.Ctx) error {
 		Name:     histMsg,
 		Category: "Convert",
 		Type:     "output",
-		Amount:   int32(req.Amount),
+		Amount:   int32(req.Amount * convertionRate),
 	})
 
 	logMsg := fmt.Sprintf("Saya baru suaja menukar %v GP menjadi pohon dengan jumlah %v di region: %s", pointTotal, req.Amount, region.Name)
