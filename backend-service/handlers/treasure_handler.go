@@ -77,7 +77,7 @@ func (h *TreasureHandler) handleClaimTreasure(c *fiber.Ctx) error {
 	treasure, err := h.Repository.GetTreasureByCodeId(ctx, payload.Subject)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return fiber.NewError(fiber.StatusBadRequest, "Treasure not found")
+			return fiber.NewError(fiber.StatusBadRequest, "Treasure tidak ditemukan")
 		}
 		slog.Error("Failed to get treasure from db", "err", err)
 		return err
