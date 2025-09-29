@@ -65,6 +65,7 @@ func (h *AuthHandler) handleRegister(c *fiber.Ctx) error {
 	hashedPassword, err := helpers.HashPassword(req.Password)
 	if err != nil {
 		slog.Error("Failed to hash password", "err", err.Error())
+		return err
 	}
 
 	ctx := context.Background()
@@ -76,7 +77,6 @@ func (h *AuthHandler) handleRegister(c *fiber.Ctx) error {
 		Email:    req.Email,
 	})
 	if err != nil {
-
 		var pgErr *pgconn.PgError
 		if errors.As(err, &pgErr) && pgErr.Code == "23505" {
 			switch pgErr.ConstraintName {
