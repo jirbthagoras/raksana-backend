@@ -10,7 +10,6 @@ import (
 	"jirbthagoras/raksana-backend/repositories"
 	"jirbthagoras/raksana-backend/services"
 	"log/slog"
-	"strconv"
 	"sync"
 
 	"github.com/go-playground/validator/v10"
@@ -78,21 +77,13 @@ func (h *QuestHandler) handleContribute(c *fiber.Ctx) error {
 		return fiber.NewError(fiber.StatusBadRequest, "Token Invalid")
 	}
 
-	questId, err := strconv.Atoi(payload.ID)
-	if err != nil {
-		return err
-	}
+	// questId, err := strconv.Atoi(payload.ID)
+	// if err != nil {
+	// 	slog.Error("err", "Failed on converting")
+	// 	return err
+	// }
 
 	ctx := context.Background()
-
-	exist, err := h.Repository.GetContribution(ctx, repositories.GetContributionParams{
-		UserID:  int64(userId),
-		QuestID: int64(questId),
-	})
-
-	if exist > 0 {
-		return fiber.NewError(fiber.StatusBadRequest, "Anda sudah berkontribusi dalam quest ini")
-	}
 
 	quest, err := h.Repository.GetUncompletedQuestByCodeId(ctx, payload.Subject)
 	if err != nil {
@@ -101,6 +92,16 @@ func (h *QuestHandler) handleContribute(c *fiber.Ctx) error {
 		}
 		slog.Error("Failed to get quest", "err", err)
 		return err
+	}
+
+	exist, err := h.Repository.GetContribution(ctx, repositories.GetContributionParams{
+		UserID:  int64(userId),
+		QuestID: quest.ID,
+	})
+
+	if exist > 0 {
+		slog.Error("Contribution Exists", "err")
+		return fiber.NewError(fiber.StatusBadRequest, "Anda sudah berkontribusi pada quest ini")
 	}
 
 	contributors, err := h.Repository.CountQuestContributors(ctx, quest.ID)

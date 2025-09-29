@@ -855,3 +855,5 @@ SELECT
   COUNT(*) AS is_exist
 FROM contributions
 WHERE quest_id = $1 AND user_id = $2;
+
+-- name: GetQuestByCodeId
