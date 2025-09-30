@@ -118,11 +118,20 @@ func (h *AuthHandler) handleRegister(c *fiber.Ctx) error {
 
 	err = h.Repository.CreateStatistics(ctx, user.ID)
 
+	expiry := time.Now().Add(720 * time.Hour)
+	token, err := helpers.GenerateToken(
+		int(user.ID),
+		user.Username,
+		user.Email,
+		expiry,
+	)
+
 	return c.Status(fiber.StatusCreated).JSON(fiber.Map{
 		"data": fiber.Map{
 			"username": req.Username,
 			"name":     req.Name,
 			"email":    req.Email,
+			"token":    token,
 		},
 	})
 }
