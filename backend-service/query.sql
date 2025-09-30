@@ -856,4 +856,7 @@ SELECT
 FROM contributions
 WHERE quest_id = $1 AND user_id = $2;
 
--- name: GetQuestByCodeId
+-- name: IncreaseUserTreeGrownm :exec
+UPDATE statistics
+SET tree_grown = tree_grown + $1
+WHERE user_id = $2;

@@ -130,6 +130,15 @@ func (h *PointHandler) handleConvertPoint(c *fiber.Ctx) error {
 		return err
 	}
 
+	err = h.Repository.IncreaseUserTreeGrownm(ctx, repositories.IncreaseUserTreeGrownmParams{
+		UserID:    int64(userId),
+		TreeGrown: int32(req.Amount),
+	})
+	if err != nil {
+		slog.Error("Failed to update the field tree_grown")
+		return err
+	}
+
 	histMsg := fmt.Sprintf("Konversi poin ke pohon untuk region %s dalam jumlah %v pohon", region.Name, req.Amount)
 	err = h.Repository.AppendHistry(ctx, repositories.AppendHistryParams{
 		UserID:   int64(userId),

@@ -3404,6 +3404,22 @@ func (q *Queries) IncreaseUserPoints(ctx context.Context, arg IncreaseUserPoints
 	return i, err
 }
 
+const increaseUserTreeGrownm = `-- name: IncreaseUserTreeGrownm :exec
+UPDATE statistics
+SET tree_grown = tree_grown + $1
+WHERE user_id = $2
+`
+
+type IncreaseUserTreeGrownmParams struct {
+	TreeGrown int32
+	UserID    int64
+}
+
+func (q *Queries) IncreaseUserTreeGrownm(ctx context.Context, arg IncreaseUserTreeGrownmParams) error {
+	_, err := q.db.Exec(ctx, increaseUserTreeGrownm, arg.TreeGrown, arg.UserID)
+	return err
+}
+
 const unlockHabit = `-- name: UnlockHabit :exec
 UPDATE habits
 SET locked = false
