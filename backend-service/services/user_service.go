@@ -99,6 +99,7 @@ func (s *UserService) GetUserDetail(id int) (models.ResponseGetUserProfileStatis
 		LongestStreak:          res.LongestStreak,
 		CurrentStreak:          streak,
 		Badges:                 s.CheckBadges(res),
+		TreeGrown:              res.TreeGrown,
 	}
 
 	return profile, nil
