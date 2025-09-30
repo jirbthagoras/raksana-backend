@@ -334,7 +334,15 @@ func (h *EventHandler) handleGetAttendanceDetail(c *fiber.Ctx) error {
 		return err
 	}
 
-	attendance, err := h.Repository.GetUserAttendance(context.Background(), int64(attendanceId))
+	userId, err := helpers.GetSubjectFromToken(c)
+	if err != nil {
+		return err
+	}
+
+	attendance, err := h.Repository.GetUserAttendance(context.Background(), repositories.GetUserAttendanceParams{
+		ID:     int64(attendanceId),
+		UserID: int64(userId),
+	})
 	if err != nil {
 		if errors.As(err, pgx.ErrNoRows) {
 			return fiber.NewError(fiber.StatusBadRequest, "attendance tidak ditemukan")

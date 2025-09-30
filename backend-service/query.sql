@@ -576,7 +576,7 @@ SELECT
 FROM attendances a
 JOIN events e ON a.event_id = e.id
 JOIN details d ON e.detail_id = d.id
-WHERE a.id = $1;
+WHERE a.id = $1 AND a.user_id = $2;
 
 -- name: UpdaAttendedAt :exec
 UPDATE attendances

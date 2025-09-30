@@ -260,7 +260,7 @@ func (h *ChallengeHandler) handleGetChallengeParticipants(c *fiber.Ctx) error {
 			UserName:    memory.Username,
 			FileURL:     bucketUrl + memory.FileKey,
 			Description: memory.Description,
-			CreatedAt:   memory.MemoryCreatedAt.Time.Format("2006-01-02 15:00"),
+			CreatedAt:   memory.MemoryCreatedAt.Time.Format("2006-01-02 15:04"),
 		})
 	}
 
