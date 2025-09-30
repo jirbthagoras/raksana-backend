@@ -2604,13 +2604,8 @@ SELECT
 FROM attendances a
 JOIN events e ON a.event_id = e.id
 JOIN details d ON e.detail_id = d.id
-WHERE a.id = $1 AND a.user_id = $2
+WHERE a.id = $1
 `
-
-type GetUserAttendanceParams struct {
-	ID     int64
-	UserID int64
-}
 
 type GetUserAttendanceRow struct {
 	AttendanceID      int64
@@ -2632,8 +2627,8 @@ type GetUserAttendanceRow struct {
 	CreatedAt         pgtype.Timestamp
 }
 
-func (q *Queries) GetUserAttendance(ctx context.Context, arg GetUserAttendanceParams) (GetUserAttendanceRow, error) {
-	row := q.db.QueryRow(ctx, getUserAttendance, arg.ID, arg.UserID)
+func (q *Queries) GetUserAttendance(ctx context.Context, id int64) (GetUserAttendanceRow, error) {
+	row := q.db.QueryRow(ctx, getUserAttendance, id)
 	var i GetUserAttendanceRow
 	err := row.Scan(
 		&i.AttendanceID,
